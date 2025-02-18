@@ -1,0 +1,5 @@
+NAME         USED  AVAIL  REFER  MOUNTPOINT
+tank        6.99M  4.35G  1.73M  /Volumes/tank
+tank/test   1.72M  4.35G  1.72M  /Volumes/tank/test
+tank/test2  1.72M  4.35G  1.72M  /Volumes/tank/test2
+tank/test3  1.69M  4.35G  1.69M  /Volumes/tank/test3
