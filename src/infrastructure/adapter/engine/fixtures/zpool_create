@@ -1,0 +1,5 @@
+cannot create 'tank/test': permission denied
+
+cannot create 'tan/test': no such pool 'tan'
+
+cannot create 'tank/test': dataset already exists
