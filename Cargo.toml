@@ -1,0 +1,50 @@
+[package]
+name = "guepard-cli"
+authors = ["Guepard Engineering <engineering@guepard.run>"]
+description = "Guepard CLI"
+license = "Guepard (c) 2025"
+homepage = "https://www.guepard.run"
+edition = "2021"
+readme = "README.md"
+repository = "https://github.com/Guepard-Corp/guepard-cli.git"
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "gprd"
+path = "src/cli.rs"
+
+[dependencies]
+tokio = { version = "1.36.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.109"
+lazy_static = "1.4.0"
+dotenvy = "0.15.7"
+pest = "2.7.5"
+pest_derive = "2.7.5"
+anyhow = "1.0.56"
+
+# CLI
+clap = { version = "4.5.7", features = ["derive"] }
+
+# For Logging support
+log = "0.4.20"
+env_logger = "0.11.5"
+
+[build-dependencies]
+mockall = "0.13.0"
+
+[package.metadata.deb]
+copyright = "Guepard (c) 2025"
+maintainer = "Guepard Engineering <engineering@guepard.run>"
+depends = ""
+section = "utility"
+priority = "optional"
+assets = [
+    # binary
+    ["target/release/gfs", "usr/bin/", "755"],
+    # assets - point to the correct relative path to the scripts directory
+    ["./scripts/**/*", "etc/guepard/", "755"],
+    ["./debian/environment", "etc/guepard/gfs/environment", "755"],
+]
