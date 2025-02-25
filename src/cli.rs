@@ -1,7 +1,6 @@
 use clap::Parser;
 use dotenvy::dotenv;
 use guepard_cli::application::commands::deploy;
-use guepard_cli::application::services::deploy_service;
 use guepard_cli::domain::errors::deploy_error::DeployError;
 use guepard_cli::structure::{CLI, DeployCommand, SubCommand};
 
@@ -38,9 +37,6 @@ async fn run(sub_commands: &SubCommand) -> anyhow::Result<()> {
             DeployCommand::Create(args) => deploy::create(args).await,
             DeployCommand::Update(args) => deploy::update(args).await,
         },
-        SubCommand::Volume(_) => {
-            // Handle the Volume command here
-            unimplemented!();
-        },
+        _ => Ok(()),
     }
 }

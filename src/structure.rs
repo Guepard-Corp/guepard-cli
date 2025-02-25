@@ -1,5 +1,5 @@
 use clap::{Args, Parser, Subcommand};
-
+//  Command Parsing & CLI Structure
 pub fn get_version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }
@@ -30,8 +30,9 @@ pub enum VolumeCommand {
     ///List Volume command
     List,
 }
-/// Deploy commands
 
+
+/// Deploy commands
 #[derive(Subcommand, Debug)]
 pub enum DeployCommand {
     /// Create a new deployment

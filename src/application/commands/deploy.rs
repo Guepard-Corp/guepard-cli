@@ -2,7 +2,7 @@ use crate::application::dto::deploy_dto::{CreateDeploymentRequest, UpdateDeploym
 use crate::application::services::deploy_service;
 use crate::structure::{CreateDeployArgs, UpdateDeployArgs};
 use anyhow::Result;
-
+// (Handles Command Execution)
 pub async fn create(args: &CreateDeployArgs) -> Result<()> {
     let request = CreateDeploymentRequest {
         database_provider: args.database_provider.clone(),
@@ -15,7 +15,6 @@ pub async fn create(args: &CreateDeployArgs) -> Result<()> {
     };
 
     deploy_service::create_deployment(request).await?;
-    println!("Deployment successfully created!");
     Ok(())
 }
 
@@ -25,6 +24,5 @@ pub async fn update(args: &UpdateDeployArgs) -> Result<()> {
     };
 
     deploy_service::update_deployment(&args.deployment_id, request).await?;
-    println!("Deployment successfully updated!");
     Ok(())
 }
