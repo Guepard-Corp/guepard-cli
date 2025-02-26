@@ -60,7 +60,7 @@ async fn run(sub_commands: &SubCommand) -> anyhow::Result<()> {
             DeployCommand::Create(args) => deploy::create(args).await,
             DeployCommand::Update(args) => deploy::update(args).await,
             DeployCommand::List => deploy::list().await,
-
+            DeployCommand::Get(args) => deploy::get(&args.deployment_id).await,
         },
     }
 }

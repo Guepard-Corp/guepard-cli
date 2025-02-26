@@ -9,7 +9,7 @@ pub enum DeployError {
 
     #[error("Request failed: {0}")]
     RequestFailed(#[from] reqwest::Error),
-    
+
     #[error("Failed to parse response: {0}")]
     ParseError(String), // Changed to String for simplicity
 

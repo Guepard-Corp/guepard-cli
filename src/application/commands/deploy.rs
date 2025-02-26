@@ -77,3 +77,32 @@ pub async fn list() -> Result<()> {
     }
     Ok(())
 }
+
+/// Fetches and displays details of a specific deployment
+pub async fn get(deployment_id: &str) -> Result<()> {
+    //calls get_deployment and prints all fields, including the new ones (clone_id, snapshot_id, database_password).
+    let deployment = deploy_service::get_deployment(deployment_id).await?;
+
+    println!(
+        "✅ Deployment Details:\n\
+         ID: {}\nName: {}\nStatus: {}\nRepository: {}\nClone ID: {}\nSnapshot ID: {}\nFQDN: {}\n\
+         Database: {} {}\nRegion: {}\nInstance Type: {}\n\
+         Created By: {}\nCreated Date: {}\nCustomer ID: {}\nDatabase Password: {}\n",
+        deployment.id,
+        deployment.name,
+        deployment.status,
+        deployment.repository_name,
+        deployment.clone_id,
+        deployment.snapshot_id,
+        deployment.fqdn,
+        deployment.database_provider,
+        deployment.database_version,
+        deployment.region,
+        deployment.instance_type,
+        deployment.created_by,
+        deployment.created_date,
+        deployment.customer_id,
+        deployment.database_password
+    );
+    Ok(())
+}
