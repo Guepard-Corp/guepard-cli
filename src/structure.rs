@@ -50,6 +50,7 @@ pub enum DeployCommand {
 
     /// Update an existing deployment
     Update(UpdateDeployArgs),
+    List, 
 }
 #[derive(Args, Debug)]
 pub struct CreateDeployArgs {

@@ -1,15 +1,55 @@
 use anyhow::Result;
+use reqwest::StatusCode;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum DeployError {
     #[error("API error: {0}")]
     ApiError(String),
-    #[error("Request error: {0}")]
-    RequestError(#[from] reqwest::Error),
+
+    #[error("Request failed: {0}")]
+    RequestFailed(#[from] reqwest::Error),
+    
+    #[error("Failed to parse response: {0}")]
+    ParseError(String), // Changed to String for simplicity
+
+    #[error("400 Bad Request: {0}")]
+    BadRequest(String),
+
+    #[error("403 Forbidden: Invalid API token or permissions")]
+    Forbidden,
+
+    #[error("404 Not Found: The requested resource was not found")]
+    NotFound,
+
+    #[error("500 Internal Server Error: Something went wrong on the server")]
+    InternalServerError,
+
+    #[error("503 Service Unavailable: The API is currently down")]
+    ServiceUnavailable,
+
+    #[error("Unexpected response: {0}")]
+    Unexpected(String),
 }
 
-//use reqwest::Client;
+impl DeployError {
+    pub async fn from_response(response: reqwest::Response) -> Self {
+        let status = response.status();
+        let text = response
+            .text()
+            .await
+            .unwrap_or_else(|_| "Unknown error".to_string());
+
+        match status {
+            StatusCode::BAD_REQUEST => DeployError::BadRequest(text),
+            StatusCode::FORBIDDEN => DeployError::Forbidden,
+            StatusCode::NOT_FOUND => DeployError::NotFound,
+            StatusCode::INTERNAL_SERVER_ERROR => DeployError::InternalServerError,
+            StatusCode::SERVICE_UNAVAILABLE => DeployError::ServiceUnavailable,
+            _ => DeployError::Unexpected(format!("{}: {}", status, text)),
+        }
+    }
+}
 
 /// handles API responses
 pub async fn handle_api_response(response: reqwest::Response) -> Result<()> {
