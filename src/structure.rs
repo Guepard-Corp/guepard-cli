@@ -50,8 +50,21 @@ pub enum DeployCommand {
 
     /// Update an existing deployment
     Update(UpdateDeployArgs),
-    List, 
+
+    /// List all deployments
+    List,
+
+    /// Fetch details of a specific deployment
+    Get(GetDeployArgs),
 }
+/// Arguments for fetching a specific deployment
+#[derive(Args, Debug)]
+pub struct GetDeployArgs {
+    /// The ID of the deployment to fetch
+    #[clap(short = 'x', long, required = true)]
+    pub deployment_id: String,
+}
+
 #[derive(Args, Debug)]
 pub struct CreateDeployArgs {
     /// The database provider (e.g., PostgreSQL, MySQL)
