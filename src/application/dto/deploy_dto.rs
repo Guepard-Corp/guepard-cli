@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-
+/// This module contains data transfer objects (DTOs) for deployment requests.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CreateDeploymentRequest {
     pub database_provider: String,

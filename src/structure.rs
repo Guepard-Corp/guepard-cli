@@ -7,6 +7,14 @@ pub fn get_version() -> &'static str {
 #[derive(Parser, Debug)]
 #[clap(version = get_version(), about, long_about = None)]
 #[clap(propagate_version = true)]
+/// Represents the Command Line Interface (CLI) structure for the application.
+///
+/// This struct is used to define the CLI and its subcommands using the `clap` crate.
+///
+/// # Fields
+///
+/// * `sub_commands` - A field that holds the subcommands for the CLI. The `#[clap(subcommand)]` attribute
+///   indicates that this field will be populated with the appropriate subcommand based on user input.
 pub struct CLI {
     #[clap(subcommand)]
     pub sub_commands: SubCommand,
@@ -17,11 +25,14 @@ pub struct CLI {
 pub enum SubCommand {
     /// Deployment-related commands
     #[clap(subcommand)]
+    /// Represents a deploy command in the CLI.
+    ///
+    /// This variant is used to handle deployment-related operations.
+    ///
+    /// # Fields
+    ///
+    /// * `DeployCommand` - The command structure containing the necessary information for deployment.
     Deploy(DeployCommand),
-
-    /// Volume-related commands
-    #[clap(subcommand)]
-    Volume(VolumeCommand),
 }
 
 /// Volume commands
@@ -30,7 +41,6 @@ pub enum VolumeCommand {
     ///List Volume command
     List,
 }
-
 
 /// Deploy commands
 #[derive(Subcommand, Debug)]
@@ -43,32 +53,43 @@ pub enum DeployCommand {
 }
 #[derive(Args, Debug)]
 pub struct CreateDeployArgs {
+    /// The database provider (e.g., PostgreSQL, MySQL)
     #[clap(short = 'p', long, required = true)]
     pub database_provider: String,
 
+    /// The version of the database
     #[clap(short = 'v', long, required = true)]
     pub database_version: String,
 
+    /// The region where the deployment will be created
     #[clap(short = 'r', long, required = true)]
     pub region: String,
 
+    /// The instance type for the deployment
     #[clap(short = 'i', long, required = true)]
     pub instance_type: String,
 
+    /// The datacenter for the deployment
     #[clap(short = 'd', long, required = true)]
     pub datacenter: String,
 
+    /// The name of the repository
     #[clap(short = 'n', long, required = true)]
     pub repository_name: String,
 
+    /// The password for the database
     #[clap(short = 'w', long, required = true)]
     pub database_password: String,
 }
+
+/// Arguments for updating an existing deployment
 #[derive(Args, Debug)]
 pub struct UpdateDeployArgs {
+    /// The ID of the deployment to update
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
 
+    /// The name of the repository
     #[clap(short = 'n', long, required = true)]
     pub repository_name: String,
 }
