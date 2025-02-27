@@ -33,14 +33,17 @@ pub enum SubCommand {
     ///
     /// * `DeployCommand` - The command structure containing the necessary information for deployment.
     Deploy(DeployCommand),
+    #[clap(subcommand)]
+    Branch(BranchCommand),
+}
+#[derive(Subcommand, Debug)]
+pub enum BranchCommand {
+    Create(CreateBranchArgs),
+    List(GetDeployArgs), // Reuses deployment_id arg
+    Checkout(CheckoutBranchArgs),
+    Update(UpdateBranchArgs),
 }
 
-/// Volume commands
-#[derive(Subcommand, Debug)]
-pub enum VolumeCommand {
-    ///List Volume command
-    List,
-}
 
 /// Deploy commands
 #[derive(Subcommand, Debug)]
@@ -106,4 +109,57 @@ pub struct UpdateDeployArgs {
     /// The name of the repository
     #[clap(short = 'n', long, required = true)]
     pub repository_name: String,
+}
+
+    #[derive(Args, Debug)]
+/// Arguments required for creating a new branch.
+
+pub struct CreateBranchArgs {
+    #[clap(short = 'x', long, required = true)]
+    pub deployment_id: String,
+    #[clap(short = 'c', long, required = true)]
+    pub clone_id: String,
+    #[clap(short = 's', long, required = true)]
+    pub snapshot_id: String,
+    #[clap(short = 'd', long, required = true)]
+    pub discard_changes: String,
+    #[clap(short = 'k', long)]
+    pub checkout: bool,
+    #[clap(short = 'e', long)]
+    pub ephemeral: bool,
+}
+
+#[derive(Args, Debug)]
+pub struct CheckoutBranchArgs {
+    #[clap(short = 'x', long, required = true)]
+    pub deployment_id: String,
+    #[clap(short = 'c', long, required = true)]
+    pub clone_id: String,
+}
+
+#[derive(Args, Debug)]
+/// Arguments for updating a branch.
+///
+/// # Fields
+/// - `deployment_id`: The ID of the deployment.
+/// - `clone_id`: The ID of the clone.
+/// - `snapshot_id`: The ID of the snapshot.
+/// - `discard_changes`: Whether to discard changes.
+/// - `checkout`: Whether to checkout the branch.
+/// - `ephemeral`: Whether the branch is ephemeral.
+pub struct UpdateBranchArgs {
+    #[clap(short = 'x', long, required = true)]
+    pub deployment_id: String,
+    #[clap(short = 'c', long, required = true)]
+    pub clone_id: String,
+    #[clap(short = 's', long, required = true)]
+    pub snapshot_id: String,
+    #[clap(short = 'd', long, required = true)]
+    pub discard_changes: String,
+    ///The checkout and ephemeral fields are optional in the API request body for both POST and PUT /branch endpoints.
+    ///  The JSON bodysent to the server already set  them as false by defaul
+    #[clap(short = 'k', long)]
+    pub checkout: bool,
+    #[clap(short = 'e', long)]
+    pub ephemeral: bool,
 }
