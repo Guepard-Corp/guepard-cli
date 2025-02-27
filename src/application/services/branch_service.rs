@@ -2,8 +2,9 @@
 use crate::application::dto::branch_dto::{BranchRequest, BranchResponse, ListBranchesResponse};
 use crate::domain::errors::branch_error::BranchError;
 
-use anyhow::{Context, Result};
-use dotenvy::var;
+
+use crate::config::config::Config;
+
 use reqwest::Client;
 /// Creates a new branch from a snapshot
 pub async fn create_branch(
@@ -11,21 +12,17 @@ pub async fn create_branch(
     clone_id: &str,
     snapshot_id: &str,
     request: BranchRequest,
+    config: &Config,
 ) -> Result<BranchResponse, BranchError> {
-    let api_url = var("PUBLIC_API_DEPLOY")
-        .context("Missing API URL in .env")
-        .map_err(|e| BranchError::ApiError(e.to_string()))?;
-    let token = var("API_TOKEN")
-        .context("Missing API token in .env")
-        .map_err(|e| BranchError::ApiError(e.to_string()))?;
+
 
     let client = Client::new();
     let response = client
         .post(format!(
             "{}/deploy/{}/{}/{}/branch",
-            api_url, deployment_id, clone_id, snapshot_id
+            config.api_url,deployment_id, clone_id, snapshot_id
         ))
-        .header("Authorization", format!("Bearer {}", token))
+        .header("Authorization", format!("Bearer {}", config.api_token))
         .json(&request)
         .send()
         .await
@@ -42,18 +39,13 @@ pub async fn create_branch(
 }
 
 /// Lists all clones/branches for a deployment
-pub async fn list_branches(deployment_id: &str) -> Result<Vec<ListBranchesResponse>, BranchError> {
-    let api_url = var("PUBLIC_API_DEPLOY")
-        .context("Missing API URL in .env")
-        .map_err(|e| BranchError::ApiError(e.to_string()))?;
-    let token = var("API_TOKEN")
-        .context("Missing API token in .env")
-        .map_err(|e| BranchError::ApiError(e.to_string()))?;
+pub async fn list_branches(deployment_id: &str, config: &Config) -> Result<Vec<ListBranchesResponse>, BranchError> {
+    
 
     let client = Client::new();
     let response = client
-        .get(format!("{}/deploy/{}/clone", api_url, deployment_id))
-        .header("Authorization", format!("Bearer {}", token))
+        .get(format!("{}/deploy/{}/clone", config.api_url,deployment_id))
+        .header("Authorization", format!("Bearer {}", config.api_token))
         .send()
         .await
         .map_err(BranchError::RequestFailed)?;
@@ -72,21 +64,16 @@ pub async fn list_branches(deployment_id: &str) -> Result<Vec<ListBranchesRespon
 pub async fn checkout_branch(
     deployment_id: &str,
     clone_id: &str,
+    config: &Config,
 ) -> Result<BranchResponse, BranchError> {
-    let api_url = var("PUBLIC_API_DEPLOY")
-        .context("Missing API URL in .env")
-        .map_err(|e| BranchError::ApiError(e.to_string()))?;
-    let token = var("API_TOKEN")
-        .context("Missing API token in .env")
-        .map_err(|e| BranchError::ApiError(e.to_string()))?;
-
+    
     let client = Client::new();
     let response = client
         .post(format!(
             "{}/deploy/{}/{}/checkout",
-            api_url, deployment_id, clone_id
+            config.api_url, deployment_id, clone_id
         ))
-        .header("Authorization", format!("Bearer {}", token))
+        .header("Authorization", format!("Bearer {}", config.api_token))
         .send()
         .await
         .map_err(BranchError::RequestFailed)?;
@@ -107,21 +94,17 @@ pub async fn update_branch(
     clone_id: &str,
     snapshot_id: &str,
     request: BranchRequest,
+    config: &Config,
 ) -> Result<BranchResponse, BranchError> {
-    let api_url = var("PUBLIC_API_DEPLOY")
-        .context("Missing API URL in .env")
-        .map_err(|e| BranchError::ApiError(e.to_string()))?;
-    let token = var("API_TOKEN")
-        .context("Missing API token in .env")
-        .map_err(|e| BranchError::ApiError(e.to_string()))?;
+    
     
     let client = Client::new();
     let response = client
         .post(format!(
             "{}/deploy/{}/{}/{}/branch",
-            api_url, deployment_id, clone_id, snapshot_id
+            config.api_url, deployment_id, clone_id, snapshot_id
         ))
-        .header("Authorization", format!("Bearer {}", token))
+        .header("Authorization", format!("Bearer {}", config.api_token))
         .json(&request)
         .send()
         .await

@@ -2,8 +2,9 @@ use crate::application::dto::branch_dto::BranchRequest;
 use crate::application::services::branch_service;
 use crate::structure::{CheckoutBranchArgs, CreateBranchArgs, UpdateBranchArgs};
 use anyhow::Result;
+use crate::config::config::Config;
 
-pub async fn create(args: &CreateBranchArgs) -> Result<()> {
+pub async fn create(args: &CreateBranchArgs, config: &Config) -> Result<()> {
     let request = BranchRequest {
         discard_changes: args.discard_changes.clone(),
         checkout: args.checkout,
@@ -14,6 +15,7 @@ pub async fn create(args: &CreateBranchArgs) -> Result<()> {
         &args.clone_id,
         &args.snapshot_id,
         request,
+        config, 
     )
     .await?;
     println!(
@@ -38,8 +40,8 @@ pub async fn create(args: &CreateBranchArgs) -> Result<()> {
     Ok(())
 }
 
-pub async fn list(deployment_id: &str) -> Result<()> {
-    let branches = branch_service::list_branches(deployment_id).await?;
+pub async fn list(deployment_id: &str, config: &Config) -> Result<()> {
+    let branches = branch_service::list_branches(deployment_id, config).await?;
     if branches.is_empty() {
         println!("ℹ️ No branches found for deployment ID: {}", deployment_id);
         return Ok(());
@@ -69,8 +71,8 @@ pub async fn list(deployment_id: &str) -> Result<()> {
     Ok(())
 }
 
-pub async fn checkout(args: &CheckoutBranchArgs) -> Result<()> {
-    let branch = branch_service::checkout_branch(&args.deployment_id, &args.clone_id).await?;
+pub async fn checkout(args: &CheckoutBranchArgs, config: &Config) -> Result<()> {
+    let branch = branch_service::checkout_branch(&args.deployment_id, &args.clone_id, config).await?;
     println!(
         "✅ Branch Checked Out:\n\
          ID: {}\nName: {}\nStatus: {}\nSnapshot ID: {}\nDeployment ID: {}\n\
@@ -93,7 +95,7 @@ pub async fn checkout(args: &CheckoutBranchArgs) -> Result<()> {
     Ok(())
 }
 
-pub async fn update(args: &UpdateBranchArgs) -> Result<()> {
+pub async fn update(args: &UpdateBranchArgs, config: &Config) -> Result<()> {
     let request = BranchRequest {
         discard_changes: args.discard_changes.clone(),
         checkout: args.checkout,
@@ -104,6 +106,7 @@ pub async fn update(args: &UpdateBranchArgs) -> Result<()> {
         &args.clone_id,
         &args.snapshot_id,
         request,
+        config,
     )
     .await?;
     println!(
