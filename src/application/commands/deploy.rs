@@ -2,6 +2,7 @@ use crate::application::dto::deploy_dto::{CreateDeploymentRequest, UpdateDeploym
 use crate::application::services::deploy_service;
 use crate::structure::{CreateDeployArgs, UpdateDeployArgs};
 use anyhow::Result;
+use crate::config::config::Config;
 /// (Handles Command Execution)
 ///
 ///
@@ -13,7 +14,7 @@ use anyhow::Result;
 /// # Arguments
 ///
 /// * `args` - A reference to the parsed arguments for creating a deployment.
-pub async fn create(args: &CreateDeployArgs) -> Result<()> {
+pub async fn create(args: &CreateDeployArgs, config: &Config) -> Result<()> {
     let request = CreateDeploymentRequest {
         database_provider: args.database_provider.clone(),
         database_version: args.database_version.clone(),
@@ -23,9 +24,10 @@ pub async fn create(args: &CreateDeployArgs) -> Result<()> {
         repository_name: args.repository_name.clone(),
         database_password: args.database_password.clone(),
     };
+    deploy_service::create_deployment(request, config).await?;
 
-    deploy_service::create_deployment(request).await?;
     Ok(())
+    
 }
 // Handles the update of an existing deployment.
 ///
@@ -35,19 +37,18 @@ pub async fn create(args: &CreateDeployArgs) -> Result<()> {
 /// # Arguments
 ///
 /// * `args` - A reference to the parsed arguments for updating a deployment.
-pub async fn update(args: &UpdateDeployArgs) -> Result<()> {
+pub async fn update(args: &UpdateDeployArgs, config: &Config) -> Result<()> {
     let request = UpdateDeploymentRequest {
         repository_name: args.repository_name.clone(),
     };
 
-    deploy_service::update_deployment(&args.deployment_id, request).await?;
+    deploy_service::update_deployment(&args.deployment_id, request, config).await?; 
     Ok(())
 }
 /// Handles the listing of deployments.
 ///
-pub async fn list() -> Result<()> {
-    let deployments = deploy_service::list_deployments().await?;
-
+pub async fn list(config: &Config) -> Result<()> {
+    let deployments = deploy_service::list_deployments(config).await?; 
     if deployments.is_empty() {
         println!("ℹ️ No deployments found.");
         return Ok(());
@@ -79,10 +80,9 @@ pub async fn list() -> Result<()> {
 }
 
 /// Fetches and displays details of a specific deployment
-pub async fn get(deployment_id: &str) -> Result<()> {
+pub async fn get(deployment_id: &str,config: &Config) -> Result<()> {
     //calls get_deployment and prints all fields, including the new ones (clone_id, snapshot_id, database_password).
-    let deployment = deploy_service::get_deployment(deployment_id).await?;
-
+    let deployment = deploy_service::get_deployment(deployment_id, config).await?;
     println!(
         "✅ Deployment Details:\n\
          ID: {}\nName: {}\nStatus: {}\nRepository: {}\nClone ID: {}\nSnapshot ID: {}\nFQDN: {}\n\

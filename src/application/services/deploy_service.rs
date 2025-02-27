@@ -7,26 +7,19 @@ use crate::domain::errors::deploy_error::handle_api_response;
 use crate::domain::errors::deploy_error::DeployError;
 
 use anyhow::{Context, Result};
-use dotenvy::var;
+
+use crate::config::config::Config;
 use reqwest::Client;
 
 /// Creates a new deployment
-pub async fn create_deployment(request: CreateDeploymentRequest) -> Result<()> {
-    let api_url = var("PUBLIC_API_DEPLOY")
-        .context("Missing API URL in .env")
-        .map_err(|e| DeployError::ApiError(e.to_string()))?;
-    let token = var("API_TOKEN")
-        .context("Missing API token in .env")
-        .map_err(|e| DeployError::ApiError(e.to_string()))?;
-
+pub async fn create_deployment(request: CreateDeploymentRequest, config: &Config) -> Result<()> {
     let client = Client::new();
     let response = client
-        .post(format!("{}/deploy", api_url))
-        .header("Authorization", format!("Bearer {}", token))
+        .post(format!("{}/deploy", config.api_url))
+        .header("Authorization", format!("Bearer {}", config.api_token))
         .json(&request)
         .send()
-        .await
-        .context("Failed to send deployment request")?;
+        .await?;
 
     handle_api_response(response).await
 }
@@ -35,18 +28,13 @@ pub async fn create_deployment(request: CreateDeploymentRequest) -> Result<()> {
 pub async fn update_deployment(
     deployment_id: &str,
     request: UpdateDeploymentRequest,
+    config: &Config,
 ) -> Result<()> {
-    let api_url = var("PUBLIC_API_DEPLOY")
-        .context("Missing API URL in .env")
-        .map_err(|e| DeployError::ApiError(e.to_string()))?;
-    let token = var("API_TOKEN")
-        .context("Missing API token in .env")
-        .map_err(|e| DeployError::ApiError(e.to_string()))?;
 
     let client = Client::new();
     let response = client
-        .put(format!("{}/deploy/{}", api_url, deployment_id))
-        .header("Authorization", format!("Bearer {}", token))
+        .put(format!("{}/deploy/{}",  config.api_url, deployment_id))
+        .header("Authorization", format!("Bearer {}", config.api_token))
         .json(&request)
         .send()
         .await
@@ -55,18 +43,11 @@ pub async fn update_deployment(
     handle_api_response(response).await
 }
 
-pub async fn list_deployments() -> Result<Vec<ListDeploymentsResponse>, DeployError> {
-    let api_url = var("PUBLIC_API_DEPLOY")
-        .context("Missing API URL in .env")
-        .map_err(|e| DeployError::ApiError(e.to_string()))?;
-    let token = var("API_TOKEN")
-        .context("Missing API token in .env")
-        .map_err(|e| DeployError::ApiError(e.to_string()))?;
-
+pub async fn list_deployments(config: &Config) -> Result<Vec<ListDeploymentsResponse>, DeployError> {
     let client = Client::new();
     let response = client
-        .get(format!("{}/deploy", api_url))
-        .header("Authorization", format!("Bearer {}", token))
+        .get(format!("{}/deploy", config.api_url))
+        .header("Authorization", format!("Bearer {}", config.api_token))
         .send()
         .await
         .map_err(DeployError::RequestFailed)?;
@@ -84,18 +65,12 @@ pub async fn list_deployments() -> Result<Vec<ListDeploymentsResponse>, DeployEr
 }
 
 /// Fetches details of a specific deployment by ID
-pub async fn get_deployment(deployment_id: &str) -> Result<GetDeploymentResponse, DeployError> {
-    let api_url = var("PUBLIC_API_DEPLOY")
-        .context("Missing API URL in .env")
-        .map_err(|e| DeployError::ApiError(e.to_string()))?;
-    let token = var("API_TOKEN")
-        .context("Missing API token in .env")
-        .map_err(|e| DeployError::ApiError(e.to_string()))?;
+pub async fn get_deployment(deployment_id: &str, config: &Config) -> Result<GetDeploymentResponse, DeployError> {
 
     let client = Client::new();
     let response = client
-        .get(format!("{}/deploy/{}", api_url, deployment_id))
-        .header("Authorization", format!("Bearer {}", token))
+        .get(format!("{}/deploy/{}", config.api_url, deployment_id))
+        .header("Authorization", format!("Bearer {}",  config.api_token))
         .send()
         .await
         .map_err(DeployError::RequestFailed)?;
