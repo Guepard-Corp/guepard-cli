@@ -11,19 +11,24 @@
 /// to the standard error output and the application will exit with a non-zero
 /// exit code.
 use clap::Parser;
-use dotenvy::dotenv;
-use guepard_cli::application::commands::deploy;
+
+use guepard_cli::application::commands::{branch, deploy};
 use guepard_cli::domain::errors::deploy_error::DeployError;
-use guepard_cli::structure::{DeployCommand, SubCommand, CLI};
+use guepard_cli::structure::{DeployCommand, SubCommand, CLI,BranchCommand};
+use guepard_cli::config::config::load_config;
 
 #[tokio::main]
 async fn main() {
-    dotenv().ok(); // Load .env variables
 
     let args = CLI::parse();
-
     let sub_commands: &SubCommand = &args.sub_commands;
-
+    let config = match load_config() {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            eprintln!("❌ Configuration Error: {}", e);
+            std::process::exit(1);
+        }
+    };
     let mut exit_code = 0;
     if let Err(err) = run(sub_commands).await {
         match err.downcast_ref::<DeployError>() {
@@ -61,6 +66,12 @@ async fn run(sub_commands: &SubCommand) -> anyhow::Result<()> {
             DeployCommand::Update(args) => deploy::update(args).await,
             DeployCommand::List => deploy::list().await,
             DeployCommand::Get(args) => deploy::get(&args.deployment_id).await,
+        },
+        SubCommand::Branch(cmd) => match cmd {
+            BranchCommand::Create(args) => branch::create(args).await,
+            BranchCommand::List(args) => branch::list(&args.deployment_id).await,
+            BranchCommand::Checkout(args) => branch::checkout(args).await,
+            BranchCommand::Update(args) => branch::update(args).await,
         },
     }
 }
