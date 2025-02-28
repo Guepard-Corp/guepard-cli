@@ -58,7 +58,6 @@ async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
             BranchCommand::Create(args) => branch::create(args, config).await,
             BranchCommand::List(args) => branch::list(&args.deployment_id, config).await, 
             BranchCommand::Checkout(args) => branch::checkout(args, config).await, 
-            BranchCommand::Update(args) => branch::update(args, config).await, 
         },
     }
 }

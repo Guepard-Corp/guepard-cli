@@ -88,34 +88,3 @@ pub async fn checkout_branch(
     }
 }
 
-/// Updates an existing branch
-pub async fn update_branch(
-    deployment_id: &str,
-    clone_id: &str,
-    snapshot_id: &str,
-    request: BranchRequest,
-    config: &Config,
-) -> Result<BranchResponse, BranchError> {
-    
-    
-    let client = Client::new();
-    let response = client
-        .post(format!(
-            "{}/deploy/{}/{}/{}/branch",
-            config.api_url, deployment_id, clone_id, snapshot_id
-        ))
-        .header("Authorization", format!("Bearer {}", config.api_token))
-        .json(&request)
-        .send()
-        .await
-        .map_err(BranchError::RequestFailed)?;
-
-    if response.status().is_success() {
-        response
-            .json::<BranchResponse>()
-            .await
-            .map_err(|e| BranchError::ParseError(e.to_string()))
-    } else {
-        Err(BranchError::from_response(response).await)
-    }
-}

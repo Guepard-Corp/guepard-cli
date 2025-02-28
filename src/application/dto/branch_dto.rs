@@ -8,7 +8,7 @@ pub struct BranchRequest {
     pub ephemeral: bool,
 }
 
-/// matches the POST, Checkout, and UPDATE responses.
+/// matches the POST, Checkout responses.
 #[derive(Debug, Deserialize)]
 pub struct BranchResponse {
     pub id: String,
