@@ -24,13 +24,16 @@ dotenvy = "0.15.7"
 pest = "2.7.5"
 pest_derive = "2.7.5"
 anyhow = "1.0.56"
-
+#Adding the reqwest crate to the dependencies section
+reqwest = { version = "0.11", features = ["json"] }
 # CLI
 clap = { version = "4.5.7", features = ["derive"] }
-
 # For Logging support
 log = "0.4.20"
 env_logger = "0.11.5"
+# Added for using env variables
+dotenv = "0.15.0"
+thiserror = "2.0.11"
 
 [build-dependencies]
 mockall = "0.13.0"
