@@ -35,6 +35,15 @@ pub enum SubCommand {
     Deploy(DeployCommand),
     #[clap(subcommand)]
     Branch(BranchCommand),
+    #[clap(subcommand)] 
+    Bookmark(BookmarkCommand),
+}
+#[derive(Subcommand, Debug)] // UPDATE 2: Added
+pub enum BookmarkCommand {
+    ListAll(GetDeployArgs),
+    List(GetBookmarkArgs),
+    Checkout(CheckoutBookmarkArgs),
+    Create(CreateBookmarkArgs),
 }
 #[derive(Subcommand, Debug)]
 pub enum BranchCommand {
@@ -136,3 +145,39 @@ pub struct CheckoutBranchArgs {
     pub clone_id: String,
 }
 
+
+#[derive(Args, Debug)]
+pub struct GetBookmarkArgs {
+    #[clap(short = 'x', long, required = true)]
+    pub deployment_id: String,
+    #[clap(short = 'c', long, required = true)]
+    pub clone_id: String,
+}
+
+#[derive(Args, Debug)]
+pub struct CreateBookmarkArgs {
+    #[clap(short = 'x', long, required = true)]
+    pub deployment_id: String,
+    #[clap(short = 'c', long, required = true)]
+    pub clone_id: String,
+    #[clap(short = 'm', long, required = true)]
+    pub snapshot_comment: String,
+}
+
+
+
+#[derive(Args, Debug)]
+pub struct CheckoutBookmarkArgs {
+    #[clap(short = 'x', long, required = true)]
+    pub deployment_id: String,
+    #[clap(short = 'c', long, required = true)]
+    pub clone_id: String,
+    #[clap(short = 's', long, required = true)]
+    pub snapshot_id: String,
+    #[clap(short = 'd', long, required = true)]
+    pub discard_changes: String,
+    #[clap(short = 'k', long)]
+    pub checkout: bool,
+    #[clap(short = 'e', long)]
+    pub ephemeral: bool,
+}
