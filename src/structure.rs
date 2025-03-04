@@ -1,5 +1,5 @@
 use clap::{Args, Parser, Subcommand};
-//  Command Parsing & CLI Structure
+
 pub fn get_version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }
@@ -7,38 +7,41 @@ pub fn get_version() -> &'static str {
 #[derive(Parser, Debug)]
 #[clap(version = get_version(), about, long_about = None)]
 #[clap(propagate_version = true)]
-/// Represents the Command Line Interface (CLI) structure for the application.
-///
-/// This struct is used to define the CLI and its subcommands using the `clap` crate.
-///
-/// # Fields
-///
-/// * `sub_commands` - A field that holds the subcommands for the CLI. The `#[clap(subcommand)]` attribute
-///   indicates that this field will be populated with the appropriate subcommand based on user input.
+
 pub struct CLI {
     #[clap(subcommand)]
     pub sub_commands: SubCommand,
 }
 
-/// sub commands
+
 #[derive(Subcommand, Debug)]
 pub enum SubCommand {
     /// Deployment-related commands
     #[clap(subcommand)]
-    /// Represents a deploy command in the CLI.
-    ///
-    /// This variant is used to handle deployment-related operations.
-    ///
-    /// # Fields
-    ///
-    /// * `DeployCommand` - The command structure containing the necessary information for deployment.
     Deploy(DeployCommand),
     #[clap(subcommand)]
     Branch(BranchCommand),
     #[clap(subcommand)] 
     Bookmark(BookmarkCommand),
+    #[clap(subcommand)]
+    Compute(ComputeCommand),
 }
-#[derive(Subcommand, Debug)] // UPDATE 2: Added
+#[derive(Subcommand, Debug)]
+pub enum ComputeCommand {
+    List(GetComputeArgs),
+    Start(GetComputeArgs),
+    Stop(GetComputeArgs),
+    Logs(GetComputeArgs),
+    Status(GetComputeArgs),
+}
+#[derive(Args, Debug)]
+pub struct GetComputeArgs {
+    #[clap(short = 'x', long, required = true)]
+    pub deployment_id: String,
+    #[clap(short = 'c', long, required = true)]
+    pub clone_id: String,
+}
+#[derive(Subcommand, Debug)] 
 pub enum BookmarkCommand {
     ListAll(GetDeployArgs),
     List(GetBookmarkArgs),
@@ -48,23 +51,18 @@ pub enum BookmarkCommand {
 #[derive(Subcommand, Debug)]
 pub enum BranchCommand {
     Create(CreateBranchArgs),
-    List(GetDeployArgs), // Reuses deployment_id arg
+    List(GetDeployArgs), 
     Checkout(CheckoutBranchArgs),
 }
 
-
-/// Deploy commands
 #[derive(Subcommand, Debug)]
 pub enum DeployCommand {
     /// Create a new deployment
     Create(CreateDeployArgs),
-
     /// Update an existing deployment
     Update(UpdateDeployArgs),
-
     /// List all deployments
     List,
-
     /// Fetch details of a specific deployment
     Get(GetDeployArgs),
 }
@@ -120,8 +118,6 @@ pub struct UpdateDeployArgs {
 }
 
     #[derive(Args, Debug)]
-/// Arguments required for creating a new branch.
-
 pub struct CreateBranchArgs {
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
