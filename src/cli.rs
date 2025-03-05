@@ -74,7 +74,7 @@ async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
             BranchCommand::Create(args) => branch::create(args, config).await,
             BranchCommand::List(args) => branch::list(&args.deployment_id, config).await, 
             BranchCommand::Checkout(args) => branch::checkout(args, config).await, 
-        },SubCommand::Bookmark(cmd) => match cmd { // UPDATE 5: Added
+        },SubCommand::Bookmark(cmd) => match cmd {
             BookmarkCommand::ListAll(args) => bookmark::list_all(&args.deployment_id, config).await,
             BookmarkCommand::List(args) => bookmark::list(&args.deployment_id, &args.clone_id, config).await,
             BookmarkCommand::Create(args) => bookmark::create(args, config).await,
