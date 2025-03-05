@@ -1,7 +1,7 @@
 use clap::Parser;
 
-use guepard_cli::application::commands::{bookmark,branch, deploy, compute};
-use guepard_cli::domain::errors::{bookmark_error::BookmarkError,branch_error::BranchError, deploy_error::DeployError};
+use guepard_cli::application::commands::{bookmark,branch, deploy, compute,usage};
+use guepard_cli::domain::errors::{bookmark_error::BookmarkError,branch_error::BranchError, deploy_error::DeployError,usage_error::UsageError};
 use guepard_cli::domain::errors::compute_error::ComputeError;
 use guepard_cli::structure::{BookmarkCommand,DeployCommand, SubCommand, CLI,BranchCommand,ComputeCommand};
 use guepard_cli::config::config::load_config;
@@ -42,10 +42,16 @@ async fn main() {
                             eprintln!("Compute Error: {}", compute_error);
                             exit_code = 5;
                         }
-                        None => {
-                            eprintln!("{}", err);
-                            exit_code = 1;
-                        }
+                        None => match err.downcast_ref::<UsageError>() { // UPDATE 3: Added UsageError handling
+                            Some(usage_error) => {
+                                eprintln!("Usage Error: {}", usage_error);
+                                exit_code = 6;
+                            }
+                            None => {
+                                eprintln!("{}", err);
+                                exit_code = 1;
+                            }
+                        },
                     },
                 },
             },
@@ -68,7 +74,7 @@ async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
             BranchCommand::Create(args) => branch::create(args, config).await,
             BranchCommand::List(args) => branch::list(&args.deployment_id, config).await, 
             BranchCommand::Checkout(args) => branch::checkout(args, config).await, 
-        },SubCommand::Bookmark(cmd) => match cmd { // UPDATE 5: Added
+        },SubCommand::Bookmark(cmd) => match cmd {
             BookmarkCommand::ListAll(args) => bookmark::list_all(&args.deployment_id, config).await,
             BookmarkCommand::List(args) => bookmark::list(&args.deployment_id, &args.clone_id, config).await,
             BookmarkCommand::Create(args) => bookmark::create(args, config).await,
@@ -80,5 +86,6 @@ async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
             ComputeCommand::Logs(args) => compute::logs(args, config).await,
             ComputeCommand::Status(args) => compute::status(args, config).await,
         },
+        SubCommand::Usage => usage::usage(config).await,
     }
 }
