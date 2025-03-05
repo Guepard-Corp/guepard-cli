@@ -1,7 +1,7 @@
 use clap::Parser;
 
-use guepard_cli::application::commands::{bookmark,branch, deploy, compute};
-use guepard_cli::domain::errors::{bookmark_error::BookmarkError,branch_error::BranchError, deploy_error::DeployError};
+use guepard_cli::application::commands::{bookmark,branch, deploy, compute,usage};
+use guepard_cli::domain::errors::{bookmark_error::BookmarkError,branch_error::BranchError, deploy_error::DeployError,usage_error::UsageError};
 use guepard_cli::domain::errors::compute_error::ComputeError;
 use guepard_cli::structure::{BookmarkCommand,DeployCommand, SubCommand, CLI,BranchCommand,ComputeCommand};
 use guepard_cli::config::config::load_config;
@@ -42,10 +42,16 @@ async fn main() {
                             eprintln!("Compute Error: {}", compute_error);
                             exit_code = 5;
                         }
-                        None => {
-                            eprintln!("{}", err);
-                            exit_code = 1;
-                        }
+                        None => match err.downcast_ref::<UsageError>() { // UPDATE 3: Added UsageError handling
+                            Some(usage_error) => {
+                                eprintln!("Usage Error: {}", usage_error);
+                                exit_code = 6;
+                            }
+                            None => {
+                                eprintln!("{}", err);
+                                exit_code = 1;
+                            }
+                        },
                     },
                 },
             },
@@ -80,5 +86,6 @@ async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
             ComputeCommand::Logs(args) => compute::logs(args, config).await,
             ComputeCommand::Status(args) => compute::status(args, config).await,
         },
+        SubCommand::Usage => usage::usage(config).await,
     }
 }
