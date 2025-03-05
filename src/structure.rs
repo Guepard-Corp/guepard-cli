@@ -25,6 +25,7 @@ pub enum SubCommand {
     Bookmark(BookmarkCommand),
     #[clap(subcommand)]
     Compute(ComputeCommand),
+    Usage,
 }
 #[derive(Subcommand, Debug)]
 pub enum ComputeCommand {
