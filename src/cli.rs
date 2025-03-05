@@ -1,8 +1,9 @@
 use clap::Parser;
 
-use guepard_cli::application::commands::{bookmark,branch, deploy};
+use guepard_cli::application::commands::{bookmark,branch, deploy, compute};
 use guepard_cli::domain::errors::{bookmark_error::BookmarkError,branch_error::BranchError, deploy_error::DeployError};
-use guepard_cli::structure::{BookmarkCommand,DeployCommand, SubCommand, CLI,BranchCommand};
+use guepard_cli::domain::errors::compute_error::ComputeError;
+use guepard_cli::structure::{BookmarkCommand,DeployCommand, SubCommand, CLI,BranchCommand,ComputeCommand};
 use guepard_cli::config::config::load_config;
 use guepard_cli::config::config::Config;
 
@@ -31,15 +32,21 @@ async fn main() {
                     eprintln!("Branch Error: {}", branch_error);
                     exit_code = 3;
                 }
-                None => match err.downcast_ref::<BookmarkError>() { // UPDATE 4: Added
+                None => match err.downcast_ref::<BookmarkError>() {
                     Some(bookmark_error) => {
                         eprintln!("Bookmark Error: {}", bookmark_error);
                         exit_code = 4;
                     }
-                    None => {
-                        eprintln!("{}", err);
-                        exit_code = 1;
-                    }
+                    None => match err.downcast_ref::<ComputeError>() {
+                        Some(compute_error) => {
+                            eprintln!("Compute Error: {}", compute_error);
+                            exit_code = 5;
+                        }
+                        None => {
+                            eprintln!("{}", err);
+                            exit_code = 1;
+                        }
+                    },
                 },
             },
         }
@@ -66,6 +73,12 @@ async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
             BookmarkCommand::List(args) => bookmark::list(&args.deployment_id, &args.clone_id, config).await,
             BookmarkCommand::Create(args) => bookmark::create(args, config).await,
             BookmarkCommand::Checkout(args) => bookmark::checkout(args, config).await,
+        },SubCommand::Compute(cmd) => match cmd {
+            ComputeCommand::List(args) => compute::list(args, config).await,
+            ComputeCommand::Start(args) => compute::start(args, config).await,
+            ComputeCommand::Stop(args) => compute::stop(args, config).await,
+            ComputeCommand::Logs(args) => compute::logs(args, config).await,
+            ComputeCommand::Status(args) => compute::status(args, config).await,
         },
     }
 }
