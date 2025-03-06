@@ -6,7 +6,7 @@ use crate::config::config::Config;
 
 pub async fn create(args: &CreateBranchArgs, config: &Config) -> Result<()> {
     let request = BranchRequest {
-        discard_changes: args.discard_changes.clone(),
+        discard_changes: Some(args.discard_changes.clone()),
         checkout: args.checkout,
         ephemeral: args.ephemeral,
     };
@@ -57,7 +57,7 @@ pub async fn list(deployment_id: &str, config: &Config) -> Result<()> {
             branch.id,
             branch.name,
             branch.status,
-            branch.snapshot_id,
+            branch.snapshot_id.as_ref().unwrap_or(&"None".to_string()),
             branch.deployment_id,
             branch.database_provider,
             branch.is_ephemeral,

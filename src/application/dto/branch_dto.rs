@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 /// matches the POST and UPDATE body.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BranchRequest {
-    pub discard_changes: String,
+    pub discard_changes: Option<String>,
     pub checkout: bool,
     pub ephemeral: bool,
 }
@@ -33,7 +33,7 @@ pub struct ListBranchesResponse {
     pub id: String, // deployment id 
     pub name: String,
     pub status: String,
-    pub snapshot_id: String,
+    pub snapshot_id: Option<String>,
     pub deployment_id: String,
     pub environment_type: Option<String>,
     pub database_provider: String,
