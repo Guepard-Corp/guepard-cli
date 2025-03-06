@@ -26,6 +26,21 @@ pub enum SubCommand {
     #[clap(subcommand)]
     Compute(ComputeCommand),
     Usage,
+    #[clap(subcommand)] 
+    Show(ShowCommand),
+}
+#[derive(Subcommand, Debug)]
+pub enum ShowCommand {
+    Branches(GetDeployArgs),
+    Bookmarks(GetDeployArgs),
+}
+
+#[derive(Args, Debug)]
+pub struct GetComputeArgs {
+    #[clap(short = 'x', long, required = true)]
+    pub deployment_id: String,
+    #[clap(short = 'c', long, required = true)]
+    pub compute_id: String,
 }
 #[derive(Subcommand, Debug)]
 pub enum ComputeCommand {
@@ -35,13 +50,7 @@ pub enum ComputeCommand {
     Logs(GetComputeArgs),
     Status(GetComputeArgs),
 }
-#[derive(Args, Debug)]
-pub struct GetComputeArgs {
-    #[clap(short = 'x', long, required = true)]
-    pub deployment_id: String,
-    #[clap(short = 'c', long, required = true)]
-    pub clone_id: String,
-}
+
 #[derive(Subcommand, Debug)] 
 pub enum BookmarkCommand {
     ListAll(GetDeployArgs),

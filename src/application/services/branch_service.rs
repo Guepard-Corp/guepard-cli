@@ -40,8 +40,6 @@ pub async fn create_branch(
 
 /// Lists all clones/branches for a deployment
 pub async fn list_branches(deployment_id: &str, config: &Config) -> Result<Vec<ListBranchesResponse>, BranchError> {
-    
-
     let client = Client::new();
     let response = client
         .get(format!("{}/deploy/{}/clone", config.api_url,deployment_id))

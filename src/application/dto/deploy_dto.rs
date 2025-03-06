@@ -17,8 +17,8 @@ pub struct UpdateDeploymentRequest {
 }
 #[derive(Debug, Deserialize)]
 pub struct ListDeploymentsResponse {
-    pub id: String,
-    pub name: String,
+    pub id: String, // Deployment ID
+    pub name: String, // Compute name
     pub status: String,
     pub repository_name: String,
     pub fqdn: String,
@@ -33,10 +33,10 @@ pub struct ListDeploymentsResponse {
 #[derive(Debug, Deserialize)]
 pub struct GetDeploymentResponse {
     pub id: String,
-    pub name: String,
+    pub name: String, // Compute name
     pub status: String,
     pub repository_name: String,
-    pub clone_id: String,
+    pub clone_id: String, // same as  Active compute_id
     pub snapshot_id: String,
     pub fqdn: String,
     pub database_provider: String,

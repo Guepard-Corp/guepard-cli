@@ -11,10 +11,10 @@ pub struct BranchRequest {
 /// matches the POST, Checkout responses.
 #[derive(Debug, Deserialize)]
 pub struct BranchResponse {
-    pub id: String,
-    pub name: String,
+    pub id: String,  // Branch ID (UUID)
+    pub name: String, // Branch name
     pub status: String,
-    pub snapshot_id: String,
+    pub snapshot_id: String, // Source bookmark
     pub deployment_id: String,
     pub environment_type: Option<String>,
     pub database_provider: String,
@@ -30,7 +30,7 @@ pub struct BranchResponse {
 /// matches the GET /clone response.
 #[derive(Debug, Deserialize)]
 pub struct ListBranchesResponse {
-    pub id: String,
+    pub id: String, // deployment id 
     pub name: String,
     pub status: String,
     pub snapshot_id: String,

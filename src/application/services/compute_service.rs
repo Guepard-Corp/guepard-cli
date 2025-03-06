@@ -5,10 +5,10 @@ use crate::domain::errors::compute_error::ComputeError;
 use anyhow::Result;
 use reqwest::{Client, StatusCode};
 
-pub async fn list_compute(deployment_id: &str, clone_id: &str, config: &Config) -> Result<ListComputeResponse, ComputeError> {
+pub async fn list_compute(deployment_id: &str, compute_id: &str, config: &Config) -> Result<ListComputeResponse, ComputeError> {
     let client = Client::new();
     let response = client
-        .get(format!("{}/deploy/{}/{}", config.api_url, deployment_id, clone_id))
+        .get(format!("{}/deploy/{}/{}", config.api_url, deployment_id, compute_id))
         .header("Authorization", format!("Bearer {}", config.api_token))
         .send()
         .await
@@ -26,10 +26,10 @@ pub async fn list_compute(deployment_id: &str, clone_id: &str, config: &Config) 
     }
 }
 
-pub async fn start_compute(deployment_id: &str, clone_id: &str, config: &Config) -> Result<(), ComputeError> {
+pub async fn start_compute(deployment_id: &str, compute_id: &str, config: &Config) -> Result<(), ComputeError> {
     let client = Client::new();
     let response = client
-        .get(format!("{}/deploy/{}/{}/start", config.api_url, deployment_id, clone_id))
+        .get(format!("{}/deploy/{}/{}/start", config.api_url, deployment_id, compute_id))
         .header("Authorization", format!("Bearer {}", config.api_token))
         .send()
         .await
@@ -44,10 +44,10 @@ pub async fn start_compute(deployment_id: &str, clone_id: &str, config: &Config)
     }
 }
 
-pub async fn stop_compute(deployment_id: &str, clone_id: &str, config: &Config) -> Result<(), ComputeError> {
+pub async fn stop_compute(deployment_id: &str, compute_id: &str, config: &Config) -> Result<(), ComputeError> {
     let client = Client::new();
     let response = client
-        .get(format!("{}/deploy/{}/{}/stop", config.api_url, deployment_id, clone_id))
+        .get(format!("{}/deploy/{}/{}/stop", config.api_url, deployment_id, compute_id))
         .header("Authorization", format!("Bearer {}", config.api_token))
         .send()
         .await
@@ -62,10 +62,10 @@ pub async fn stop_compute(deployment_id: &str, clone_id: &str, config: &Config) 
     }
 }
 
-pub async fn get_logs(deployment_id: &str, clone_id: &str, config: &Config) -> Result<LogsResponse, ComputeError> {
+pub async fn get_logs(deployment_id: &str, compute_id: &str, config: &Config) -> Result<LogsResponse, ComputeError> {
     let client = Client::new();
     let response = client
-        .get(format!("{}/deploy/{}/{}/logs", config.api_url, deployment_id, clone_id))
+        .get(format!("{}/deploy/{}/{}/logs", config.api_url, deployment_id, compute_id))
         .header("Authorization", format!("Bearer {}", config.api_token))
         .send()
         .await
@@ -87,10 +87,10 @@ pub async fn get_logs(deployment_id: &str, clone_id: &str, config: &Config) -> R
     }
 }
 
-pub async fn get_status(deployment_id: &str, clone_id: &str, config: &Config) -> Result<(), ComputeError> {
+pub async fn get_status(deployment_id: &str, compute_id: &str, config: &Config) -> Result<(), ComputeError> {
     let client = Client::new();
     let response = client
-        .get(format!("{}/deploy/{}/{}/status", config.api_url, deployment_id, clone_id))
+        .get(format!("{}/deploy/{}/{}/status", config.api_url, deployment_id, compute_id))
         .header("Authorization", format!("Bearer {}", config.api_token))
         .send()
         .await
