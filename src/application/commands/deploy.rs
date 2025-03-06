@@ -3,17 +3,7 @@ use crate::application::services::deploy_service;
 use crate::structure::{CreateDeployArgs, UpdateDeployArgs};
 use anyhow::Result;
 use crate::config::config::Config;
-/// (Handles Command Execution)
-///
-///
-/// Handles the creation of a new deployment.
-///
-/// This function takes the parsed arguments for creating a deployment,
-/// constructs a `CreateDeploymentRequest`, and calls the service to create the deployment.
-///
-/// # Arguments
-///
-/// * `args` - A reference to the parsed arguments for creating a deployment.
+
 pub async fn create(args: &CreateDeployArgs, config: &Config) -> Result<()> {
     let request = CreateDeploymentRequest {
         database_provider: args.database_provider.clone(),
@@ -29,14 +19,7 @@ pub async fn create(args: &CreateDeployArgs, config: &Config) -> Result<()> {
     Ok(())
     
 }
-// Handles the update of an existing deployment.
-///
-/// This function takes the parsed arguments for updating a deployment,
-/// constructs an `UpdateDeploymentRequest`, and calls the service to update the deployment.
-///
-/// # Arguments
-///
-/// * `args` - A reference to the parsed arguments for updating a deployment.
+
 pub async fn update(args: &UpdateDeployArgs, config: &Config) -> Result<()> {
     let request = UpdateDeploymentRequest {
         repository_name: args.repository_name.clone(),
@@ -45,8 +28,7 @@ pub async fn update(args: &UpdateDeployArgs, config: &Config) -> Result<()> {
     deploy_service::update_deployment(&args.deployment_id, request, config).await?; 
     Ok(())
 }
-/// Handles the listing of deployments.
-///
+
 pub async fn list(config: &Config) -> Result<()> {
     let deployments = deploy_service::list_deployments(config).await?; 
     if deployments.is_empty() {
@@ -82,7 +64,7 @@ pub async fn list(config: &Config) -> Result<()> {
 /// Fetches and displays details of a specific deployment
 pub async fn get(deployment_id: &str,config: &Config) -> Result<()> {
     //calls get_deployment and prints all fields, including the new ones (clone_id, snapshot_id, database_password).
-    let deployment = deploy_service::get_deployment(deployment_id, config).await?;
+    let deployment: crate::application::dto::deploy_dto::GetDeploymentResponse = deploy_service::get_deployment(deployment_id, config).await?;
     println!(
         "✅ Deployment Details:\n\
          ID: {}\nName: {}\nStatus: {}\nRepository: {}\nClone ID: {}\nSnapshot ID: {}\nFQDN: {}\n\
