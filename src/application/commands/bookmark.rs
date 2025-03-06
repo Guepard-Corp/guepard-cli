@@ -74,7 +74,7 @@ pub async fn create(args: &CreateBookmarkArgs, config: &Config) -> Result<()> {
 
 pub async fn checkout(args: &CheckoutBookmarkArgs, config: &Config) -> Result<()> {
     let request = BranchRequest {
-        discard_changes: args.discard_changes.clone(),
+        discard_changes: Some(args.discard_changes.clone()),
         checkout: args.checkout,
         ephemeral: args.ephemeral,
     };

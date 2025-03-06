@@ -14,7 +14,6 @@ pub async fn get_active_branch_and_bookmark(deployment_id: &str, config: &Config
 }
 
 pub async fn list_branches_with_active(deployment_id: &str, config: &Config) -> Result<(Vec<ListBranchesResponse>, String)> {
-    // UPDATE: Changed Vec<BranchResponse> to Vec<ListBranchesResponse>
     let (active_branch_id, _) = get_active_branch_and_bookmark(deployment_id, config).await?;
     let branches = branch_service::list_branches(deployment_id, config).await?;
     Ok((branches, active_branch_id))
