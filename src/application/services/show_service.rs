@@ -8,7 +8,7 @@ use crate::config::config::Config;
 use anyhow::Result;
 pub async fn get_active_branch_and_bookmark(deployment_id: &str, config: &Config) -> Result<(String, String)> {
     let deployment = deploy_service::get_deployment(deployment_id, config).await?;
-    let compute_id = deployment.clone_id;
+    let compute_id = deployment.clone_id; // the deployment's clone_id is the compute_id 
     let compute = compute_service::list_compute(deployment_id, &compute_id, config).await?;
     Ok((compute.attached_branch, compute.snapshot_id))
 }
