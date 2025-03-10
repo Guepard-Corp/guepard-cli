@@ -49,9 +49,20 @@ Ok(())
 pub async fn list(deployment_id: &str, config: &Config) -> Result<()> {
     let branches = branch_service::list_branches(deployment_id, config).await?;
     if branches.is_empty() {
-        println!("{} No branches found for deployment ID: {}", "ℹ️".blue(), deployment_id);        return Ok(());
+        println!("{} No branches found for deployment ID: {}", "ℹ️".blue(), deployment_id);
     }
-    let rows: Vec<BranchRow> = branches.into_iter().map(|b| BranchRow {
+
+
+    let filtered_branches: Vec<_> = branches.into_iter()
+        .filter(|b| !b.is_ephemeral) // Filter out ephemeral branches
+        .collect();
+
+    if filtered_branches.is_empty() {
+        println!("{} No non-ephemeral branches found for deployment ID: {}", "ℹ️".blue(), deployment_id);
+        return Ok(());
+    }
+
+    let rows: Vec<BranchRow> = filtered_branches.into_iter().map(|b| BranchRow {
         id: b.id,
         name: b.name,
         status: b.status,
@@ -59,7 +70,7 @@ pub async fn list(deployment_id: &str, config: &Config) -> Result<()> {
         clone_id: b.clone_id,
     }).collect();
 
-    println!("{} Retrieved {} branches:", "✅".green(), rows.len());
+    println!("{} Retrieved {} non-ephemeral branches:", "✅".green(), rows.len());
     println!("{}", Table::new(rows).with(Style::rounded()));
     Ok(())
 }
