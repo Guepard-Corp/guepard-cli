@@ -3,8 +3,8 @@ use serde::{Deserialize};
 #[derive(Debug, Deserialize)]
 pub struct ListComputeResponse {
     pub id: String, // deployment_id
-    pub repository_name: String, // deployment_name
-    pub clone_id: String,
+    pub repository_name: String, // deployment_name 
+    pub clone_id: String,  // Compute ID
     pub snapshot_id: String, // Bookmark (snapshot) ID
     pub name: String, // Compute name
     pub fqdn: String,
