@@ -3,7 +3,22 @@ use crate::application::services::deploy_service;
 use crate::structure::{CreateDeployArgs, UpdateDeployArgs};
 use anyhow::Result;
 use crate::config::config::Config;
+use tabled::{Table, Tabled, settings::Style};
+use colored::Colorize;
 
+#[derive(Tabled)]
+struct DeployRow {
+    #[tabled(rename = "ID")]
+    id: String,
+    #[tabled(rename = "Name")]
+    name: String,
+    #[tabled(rename = "Status")]
+    status: String,
+    #[tabled(rename = "Repository")]
+    repository_name: String,
+    #[tabled(rename = "Region")]
+    region: String,
+}
 pub async fn create(args: &CreateDeployArgs, config: &Config) -> Result<()> {
     let request = CreateDeploymentRequest {
         database_provider: args.database_provider.clone(),
@@ -15,7 +30,12 @@ pub async fn create(args: &CreateDeployArgs, config: &Config) -> Result<()> {
         database_password: args.database_password.clone(),
     };
     deploy_service::create_deployment(request, config).await?;
-
+    println!(
+        "{} Created deployment with provider [{}] in [{}]",
+        "✅".green(),
+        args.database_provider,
+        args.region
+    );
     Ok(())
     
 }
@@ -26,65 +46,45 @@ pub async fn update(args: &UpdateDeployArgs, config: &Config) -> Result<()> {
     };
 
     deploy_service::update_deployment(&args.deployment_id, request, config).await?; 
+    println!(
+        "{} Updated deployment [{}] to repo [{}]",
+        "✅".green(),
+        args.deployment_id.cyan(),
+        args.repository_name
+    );
     Ok(())
 }
 
 pub async fn list(config: &Config) -> Result<()> {
     let deployments = deploy_service::list_deployments(config).await?; 
     if deployments.is_empty() {
-        println!("ℹ️ No deployments found.");
+        println!("{} No deployments found", "ℹ️".blue());
         return Ok(());
     }
+    let rows: Vec<DeployRow> = deployments.into_iter().map(|d| DeployRow {
+        id: d.id,
+        name: d.name,
+        status: d.status,
+        repository_name: d.repository_name,
+        region: d.region,
+    }).collect();
 
-    println!("✅ Retrieved {} deployments:", deployments.len());
-    for (i, deployment) in deployments.iter().enumerate() {
-        println!(
-            "Deployment #{}:\n\
-             ID: {}\nName: {}\nStatus: {}\nRepository: {}\nFQDN: {}\n\
-             Database: {} {}\nRegion: {}\nInstance Type: {}\n\
-             Created By: {}\nCreated Date: {}\nCustomer ID: {}\n",
-            i + 1,
-            deployment.id,
-            deployment.name,
-            deployment.status,
-            deployment.repository_name,
-            deployment.fqdn,
-            deployment.database_provider,
-            deployment.database_version,
-            deployment.region,
-            deployment.instance_type,
-            deployment.created_by,
-            deployment.created_date,
-            deployment.customer_id
-        );
-    }
+    println!("{} Retrieved {} deployments:", "✅".green(), rows.len());
+    println!("{}", Table::new(rows).with(Style::rounded()));
     Ok(())
 }
 
-/// Fetches and displays details of a specific deployment
 pub async fn get(deployment_id: &str,config: &Config) -> Result<()> {
-    //calls get_deployment and prints all fields, including the new ones (clone_id, snapshot_id, database_password).
     let deployment: crate::application::dto::deploy_dto::GetDeploymentResponse = deploy_service::get_deployment(deployment_id, config).await?;
     println!(
-        "✅ Deployment Details:\n\
-         ID: {}\nName: {}\nStatus: {}\nRepository: {}\nClone ID: {}\nSnapshot ID: {}\nFQDN: {}\n\
-         Database: {} {}\nRegion: {}\nInstance Type: {}\n\
-         Created By: {}\nCreated Date: {}\nCustomer ID: {}\nDatabase Password: {}\n",
-        deployment.id,
+        "{} Deployment [{}]: '{}', Status: [{}], Repo: [{}], Region: [{}], Active Compute: [{}]",
+        "✅".green(),
+        deployment.id.cyan(),
         deployment.name,
         deployment.status,
         deployment.repository_name,
-        deployment.clone_id,
-        deployment.snapshot_id,
-        deployment.fqdn,
-        deployment.database_provider,
-        deployment.database_version,
         deployment.region,
-        deployment.instance_type,
-        deployment.created_by,
-        deployment.created_date,
-        deployment.customer_id,
-        deployment.database_password
+        deployment.clone_id
     );
     Ok(())
 }
