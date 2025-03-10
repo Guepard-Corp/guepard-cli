@@ -56,7 +56,7 @@ pub async fn list_deployments(config: &Config) -> Result<Vec<ListDeploymentsResp
         let deployments = response
             .json::<Vec<ListDeploymentsResponse>>()
             .await
-            .map_err(|e| DeployError::ParseError(e.to_string()))?;
+            .map_err(|e: reqwest::Error| DeployError::ParseError(e.to_string()))?;
         println!("✅ Success: {} deployments retrieved", deployments.len());
         Ok(deployments)
     } else {

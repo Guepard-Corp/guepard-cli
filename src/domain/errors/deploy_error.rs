@@ -55,11 +55,6 @@ impl DeployError {
 pub async fn handle_api_response(response: reqwest::Response) -> Result<()> {
     match response.status() {
         reqwest::StatusCode::OK => {
-            let text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Success".to_string());
-            println!("✅ Success: {}", text);
             Ok(())
         }
         reqwest::StatusCode::BAD_REQUEST => {
