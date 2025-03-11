@@ -11,7 +11,6 @@ use anyhow::{Context, Result};
 use crate::config::config::Config;
 use reqwest::Client;
 
-/// Creates a new deployment
 pub async fn create_deployment(request: CreateDeploymentRequest, config: &Config) -> Result<()> {
     let client = Client::new();
     let response = client
@@ -24,7 +23,6 @@ pub async fn create_deployment(request: CreateDeploymentRequest, config: &Config
     handle_api_response(response).await
 }
 
-/// Updates an existing deployment
 pub async fn update_deployment(
     deployment_id: &str,
     request: UpdateDeploymentRequest,
@@ -64,7 +62,6 @@ pub async fn list_deployments(config: &Config) -> Result<Vec<ListDeploymentsResp
     }
 }
 
-/// Fetches details of a specific deployment by ID
 pub async fn get_deployment(deployment_id: &str, config: &Config) -> Result<GetDeploymentResponse, DeployError> {
 
     let client = Client::new();
