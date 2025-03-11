@@ -11,7 +11,7 @@ pub enum DeployError {
     RequestFailed(#[from] reqwest::Error),
 
     #[error("Failed to parse response: {0}")]
-    ParseError(String), // Changed to String for simplicity
+    ParseError(String), 
 
     #[error("400 Bad Request: {0}")]
     BadRequest(String),

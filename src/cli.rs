@@ -24,27 +24,27 @@ async fn main() {
     if let Err(err) = run(sub_commands, &config).await {
         match err.downcast_ref::<DeployError>() {
             Some(deploy_error) => {
-                eprintln!("Deployment Error: {}", deploy_error);
+                eprintln!(" ❌ Deployment Error: {}", deploy_error);
                 exit_code = 2;
             }
             None => match err.downcast_ref::<BranchError>() {
                 Some(branch_error) => {
-                    eprintln!("Branch Error: {}", branch_error);
+                    eprintln!("❌ Branch Error: {}", branch_error);
                     exit_code = 3;
                 }
                 None => match err.downcast_ref::<BookmarkError>() {
                     Some(bookmark_error) => {
-                        eprintln!("Bookmark Error: {}", bookmark_error);
+                        eprintln!("❌ Bookmark Error: {}", bookmark_error);
                         exit_code = 4;
                     }
                     None => match err.downcast_ref::<ComputeError>() {
                         Some(compute_error) => {
-                            eprintln!("Compute Error: {}", compute_error);
+                            eprintln!("❌ Compute Error: {}", compute_error);
                             exit_code = 5;
                         }
                         None => match err.downcast_ref::<UsageError>() {
                             Some(usage_error) => {
-                                eprintln!("Usage Error: {}", usage_error);
+                                eprintln!("❌ Usage Error: {}", usage_error);
                                 exit_code = 6;
                             }
                             None => {
