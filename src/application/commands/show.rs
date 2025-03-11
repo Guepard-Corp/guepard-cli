@@ -3,7 +3,8 @@ use crate::config::config::Config;
 use crate::structure::GetDeployArgs;
 use anyhow::Result;
 use tabled::{Table, Tabled, settings::Style};
-use colored::Colorize;
+// use colored::Colorize;
+
 
 #[derive(Tabled)]
 struct ShowRow {
@@ -16,8 +17,9 @@ struct ShowRow {
 pub async fn show_branches(args: &GetDeployArgs, config: &Config) -> Result<()> {
     let (branches, active_branch_id) = show_service::list_branches_with_active(&args.deployment_id, config).await?;
 
+   
     let rows: Vec<ShowRow> = branches.into_iter().map(|b| ShowRow {
-        marker: if b.clone_id == active_branch_id { "                          🐆                                      ".green().to_string() } else { " ".to_string() },
+        marker: if b.clone_id == active_branch_id { format!("{: <10}", "🐆") } else { format!("{: <10}", " ") },
         name: b.name,
     }).collect();
 
@@ -29,9 +31,10 @@ pub async fn show_branches(args: &GetDeployArgs, config: &Config) -> Result<()> 
 pub async fn show_bookmarks(args: &GetDeployArgs, config: &Config) -> Result<()> {
     let (bookmarks, active_snapshot_id) = show_service::list_bookmarks_with_active(&args.deployment_id, config).await?;
 
+   
     let rows: Vec<ShowRow> = bookmarks.into_iter().map(|b| ShowRow {
-        marker: if b.id == active_snapshot_id { "                                 🐆                               ".green().to_string() } else { " ".to_string() },
-        name: b.name,   
+        marker: if b.id == active_snapshot_id { format!("{: <10}", "🐆") } else { format!("{: <10}", " ") },
+        name: b.name,
     }).collect();
 
     println!("Bookmarks:");
