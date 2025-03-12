@@ -8,7 +8,7 @@ use tabled::{Table, Tabled, settings::Style};
 
 #[derive(Tabled)]
 struct ShowRow {
-    #[tabled(rename = "          ")] // 10 spaces for fixed width
+    #[tabled(rename = "   Compute       ")] // 10 spaces for fixed width
     marker: String,
     #[tabled(rename = "Name")]
     name: String,
