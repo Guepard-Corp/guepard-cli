@@ -1,15 +1,26 @@
 use crate::application::services::usage_service;
 use crate::config::config::Config;
 use anyhow::Result;
+use tabled::{Table, Tabled, settings::Style};
+use colored::Colorize;
 
+#[derive(Tabled)]
+struct UsageRow {
+    #[tabled(rename = "Resource")]
+    resource: String,
+    #[tabled(rename = "Quota")]
+    quota: i32,
+    #[tabled(rename = "Used")]
+    used: i32,
+}
 pub async fn usage(config: &Config) -> Result<()> {
     let usage = usage_service::get_usage(config).await?;
-    println!(
-        "✅ Usage Details:\n\
-         Deployment Quota: {}\nSnapshot Quota: {}\nClone Quota: {}\n\
-         Deployments Used: {}\nSnapshots Used: {}\nClones Used: {}",
-        usage.quota_deployments, usage.quota_snapshots, usage.quota_clones,
-        usage.usage_deployments, usage.usage_snapshots, usage.usage_clones
-    );
+    let rows = vec![
+        UsageRow { resource: "Deployments".to_string(), quota: usage.quota_deployments, used: usage.usage_deployments },
+        UsageRow { resource: "Snapshots".to_string(), quota: usage.quota_snapshots, used: usage.usage_snapshots },
+        UsageRow { resource: "Clones".to_string(), quota: usage.quota_clones, used: usage.usage_clones },
+    ];
+    println!("{} Usage Summary:", "✅".green());
+    println!("{}", Table::new(rows).with(Style::rounded()));
     Ok(())
 }

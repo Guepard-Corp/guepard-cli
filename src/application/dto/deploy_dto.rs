@@ -17,8 +17,8 @@ pub struct UpdateDeploymentRequest {
 }
 #[derive(Debug, Deserialize)]
 pub struct ListDeploymentsResponse {
-    pub id: String,
-    pub name: String,
+    pub id: String, // Deployment ID
+    pub name: String, // Compute name
     pub status: String,
     pub repository_name: String,
     pub fqdn: String,
@@ -33,10 +33,10 @@ pub struct ListDeploymentsResponse {
 #[derive(Debug, Deserialize)]
 pub struct GetDeploymentResponse {
     pub id: String,
-    pub name: String,
+    pub name: String, // Compute name
     pub status: String,
     pub repository_name: String,
-    pub clone_id: String,
+    pub clone_id: String, // represents the   Active compute_id
     pub snapshot_id: String,
     pub fqdn: String,
     pub database_provider: String,
@@ -48,3 +48,5 @@ pub struct GetDeploymentResponse {
     pub customer_id: String,
     pub database_password: String,
 }
+// THE APIS WILL BE UPDATED , The Compute name is the same as the deployment name ( deplotment_name= repository_name)
+// Note : in the response of GetDeploymentResponse, the clone_id is the same as the active compute_id , the attributes in the api will change and the dtos will be updated
