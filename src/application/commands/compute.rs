@@ -3,56 +3,63 @@ use crate::config::config::Config;
 use crate::domain::errors::compute_error::ComputeError;
 use crate::structure::GetComputeArgs;
 use anyhow::Result;
+use colored::Colorize;
 
 pub async fn list(args: &GetComputeArgs, config: &Config) -> Result<()> {
-    let compute = compute_service::list_compute(&args.deployment_id, &args.clone_id, config).await?;
+    let compute = compute_service::list_compute(&args.deployment_id, &args.compute_id, config).await?;
     println!(
-        "✅ Compute Details:\n\
-         ID: {}\nRepository Name: {}\nClone ID: {}\nSnapshot ID: {}\nName: {}\nFQDN: {}\n\
-         Connection String: {}\nDatabase Provider: {}\nDatabase Version: {}\nRegion: {}\n\
-         Instance Type: {}\nEphemeral: {}\nAttached Branch: {}",
-        compute.id, compute.repository_name, compute.clone_id, compute.snapshot_id, compute.name,
-        compute.fqdn, compute.connection_string, compute.database_provider, compute.database_version,
-        compute.region, compute.instance_type, compute.is_ephemeral, compute.attached_branch
+        "{} Compute [{}]: '{}', FQDN: [{}], Branch: [{}]",
+        "✅".green(),
+        compute.clone_id.cyan(), // Using clone_id as Compute ID
+        compute.name,
+        compute.fqdn,
+        compute.attached_branch
     );
     Ok(())
 }
 
 pub async fn start(args: &GetComputeArgs, config: &Config) -> Result<()> {
-    compute_service::start_compute(&args.deployment_id, &args.clone_id, config).await?;
-    println!("✅ Compute Started for Clone ID: {}", args.clone_id);
-    Ok(())
+    compute_service::start_compute(&args.deployment_id, &args.compute_id, config).await?;
+    println!("{} Started compute [{}]", "✅".green(), args.compute_id.cyan());    Ok(())
 }
 
 pub async fn stop(args: &GetComputeArgs, config: &Config) -> Result<()> {
-    compute_service::stop_compute(&args.deployment_id, &args.clone_id, config).await?;
-    println!("✅ Compute Stopped for Clone ID: {}", args.clone_id);
-    Ok(())
+    compute_service::stop_compute(&args.deployment_id, &args.compute_id, config).await?;
+    println!("{} Stopped compute [{}]", "✅".green(), args.compute_id.cyan());    Ok(())
 }
 
 pub async fn logs(args: &GetComputeArgs, config: &Config) -> Result<()> {
-    let logs = compute_service::get_logs(&args.deployment_id, &args.clone_id, config).await?;
+    let logs = compute_service::get_logs(&args.deployment_id, &args.compute_id, config).await?;
+    let stdout_truncated: Vec<&str> = logs.stdout_logs.lines().collect();
+    let stderr_truncated: Vec<&str> = logs.stderr_logs.lines().collect();
+    let stdout_display = if stdout_truncated.len() > 5 {
+        format!("{}\n...", stdout_truncated[..5].join("\n"))
+    } else {
+        logs.stdout_logs.clone()
+    };
+    let stderr_display = if stderr_truncated.len() > 5 {
+        format!("{}\n...", stderr_truncated[..5].join("\n"))
+    } else {
+        logs.stderr_logs.clone()
+    };
+
     println!(
-        "✅ Compute Logs for Clone ID: {}\n\
-         Stdout Logs:\n{}\n\
-         Stderr Logs:\n{}",
-        args.clone_id, logs.stdout_logs, logs.stderr_logs
+        "{} Compute Logs for Compute ID: {}\n{} Stdout Logs:\n{}\n{} Stderr Logs:\n{}",
+        "✅".green(),
+        args.compute_id.cyan(),
+        "📜".green(),
+        stdout_display,
+        "⚠️".yellow(),
+        stderr_display
     );
     Ok(())
 }
 
 pub async fn status(args: &GetComputeArgs, config: &Config) -> Result<()> {
-    match compute_service::get_status(&args.deployment_id, &args.clone_id, config).await {
-        Ok(()) => {
-            println!("✅ Compute is Healthy for Clone ID: {}", args.clone_id);
-            Ok(())
-        }
-        Err(err) => match err {
-            ComputeError::NotHealthy(msg) => {
-                println!("⚠️ Compute Status: {}", msg);
-                Ok(())
-            }
-            other => Err(other.into()),
-        },
+    match compute_service::get_status(&args.deployment_id, &args.compute_id, config).await {
+        Ok(()) => println!("{} Compute [{}] is healthy", "✅".green(), args.compute_id.cyan()),
+        Err(ComputeError::NotHealthy(msg)) => println!("{} Compute [{}] is unhealthy: {}", "⚠️".yellow(), args.compute_id.cyan(), msg),
+        Err(e) => return Err(e.into()),
     }
+    Ok(())
 }

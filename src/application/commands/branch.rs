@@ -3,10 +3,26 @@ use crate::application::services::branch_service;
 use crate::structure::{CheckoutBranchArgs, CreateBranchArgs};
 use anyhow::Result;
 use crate::config::config::Config;
+use tabled::{Table, Tabled, settings::Style};
+use colored::Colorize;
+
+#[derive(Tabled)]
+struct BranchRow {
+    #[tabled(rename = "ID")]
+    id: String,
+    #[tabled(rename = "Name")]
+    name: String,
+    #[tabled(rename = "Status")]
+    status: String,
+    #[tabled(rename = "Snapshot ID")]
+    snapshot_id: String,
+    #[tabled(rename = "Clone ID")]
+    clone_id: String,
+}
 
 pub async fn create(args: &CreateBranchArgs, config: &Config) -> Result<()> {
     let request = BranchRequest {
-        discard_changes: args.discard_changes.clone(),
+        discard_changes: Some(args.discard_changes.clone()),
         checkout: args.checkout,
         ephemeral: args.ephemeral,
     };
@@ -18,79 +34,57 @@ pub async fn create(args: &CreateBranchArgs, config: &Config) -> Result<()> {
         config, 
     )
     .await?;
-    println!(
-        "✅ Branch Created:\n\
-         ID: {}\nName: {}\nStatus: {}\nSnapshot ID: {}\nDeployment ID: {}\n\
-         Database: {}\nUsername: {}\nPassword: {}\nEphemeral: {}\nMasked: {}\nPurged: {}\n\
-         Created By: {}\nCreated Date: {}",
-        branch.id,
-        branch.name,
-        branch.status,
-        branch.snapshot_id,
-        branch.deployment_id,
-        branch.database_provider,
-        branch.database_username,
-        branch.database_password,
-        branch.is_ephemeral,
-        branch.is_masked,
-        branch.is_purged,
-        branch.created_by,
-        branch.created_date
-    );
-    Ok(())
+println!(
+    "{} Created branch [{}] '{}' ({}) from snapshot [{}] in deployment [{}]",
+    "✅".green(),
+    branch.id.cyan(),
+    branch.name,
+    branch.status,
+    branch.snapshot_id,
+    branch.deployment_id
+);
+Ok(())
 }
 
 pub async fn list(deployment_id: &str, config: &Config) -> Result<()> {
     let branches = branch_service::list_branches(deployment_id, config).await?;
     if branches.is_empty() {
-        println!("ℹ️ No branches found for deployment ID: {}", deployment_id);
+        println!("{} No branches found for deployment ID: {}", "ℹ️".blue(), deployment_id);
+    }
+
+
+    let filtered_branches: Vec<_> = branches.into_iter()
+        .filter(|b| !b.is_ephemeral) // Filter out ephemeral branches
+        .collect();
+
+    if filtered_branches.is_empty() {
+        println!("{} No non-ephemeral branches found for deployment ID: {}", "ℹ️".blue(), deployment_id);
         return Ok(());
     }
-    println!("✅ Retrieved {} branches:", branches.len());
-    for (i, branch) in branches.iter().enumerate() {
-        println!(
-            "Branch #{}:\n\
-             ID: {}\nName: {}\nStatus: {}\nSnapshot ID: {}\nDeployment ID: {}\n\
-             Database: {}\nEphemeral: {}\nMasked: {}\nPurged: {}\n\
-             Created By: {}\nCreated Date: {}\nClone ID: {}",
-            i + 1,
-            branch.id,
-            branch.name,
-            branch.status,
-            branch.snapshot_id,
-            branch.deployment_id,
-            branch.database_provider,
-            branch.is_ephemeral,
-            branch.is_masked,
-            branch.is_purged,
-            branch.created_by,
-            branch.created_date,
-            branch.clone_id
-        );
-    }
+
+    let rows: Vec<BranchRow> = filtered_branches.into_iter().map(|b| BranchRow {
+        id: b.id,
+        name: b.name,
+        status: b.status,
+        snapshot_id: b.snapshot_id.unwrap_or("None".to_string()),
+        clone_id: b.clone_id,
+    }).collect();
+
+    println!("{} Retrieved {} non-ephemeral branches:", "✅".green(), rows.len());
+    println!("{}", Table::new(rows).with(Style::rounded()));
     Ok(())
 }
 
 pub async fn checkout(args: &CheckoutBranchArgs, config: &Config) -> Result<()> {
     let branch = branch_service::checkout_branch(&args.deployment_id, &args.clone_id, config).await?;
     println!(
-        "✅ Branch Checked Out:\n\
-         ID: {}\nName: {}\nStatus: {}\nSnapshot ID: {}\nDeployment ID: {}\n\
-         Database: {}\nUsername: {}\nPassword: {}\nEphemeral: {}\nMasked: {}\nPurged: {}\n\
-         Created By: {}\nCreated Date: {}",
-        branch.id,
+        "{} Checked out branch [{}] '{}' ({}) from snapshot [{}] in deployment [{}]",
+        "✅".green(),
+        branch.id.cyan(),
         branch.name,
         branch.status,
         branch.snapshot_id,
-        branch.deployment_id,
-        branch.database_provider,
-        branch.database_username,
-        branch.database_password,
-        branch.is_ephemeral,
-        branch.is_masked,
-        branch.is_purged,
-        branch.created_by,
-        branch.created_date
+        branch.deployment_id
     );
     Ok(())
 }

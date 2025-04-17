@@ -1,17 +1,13 @@
+use anyhow::{Context, Result};
+use reqwest::Client;
+
 use crate::application::dto::deploy_dto::{
     CreateDeploymentRequest, GetDeploymentResponse, ListDeploymentsResponse,
     UpdateDeploymentRequest,
 };
-
-use crate::domain::errors::deploy_error::handle_api_response;
-use crate::domain::errors::deploy_error::DeployError;
-
-use anyhow::{Context, Result};
-
 use crate::config::config::Config;
-use reqwest::Client;
+use crate::domain::errors::deploy_error::{handle_api_response, DeployError};
 
-/// Creates a new deployment
 pub async fn create_deployment(request: CreateDeploymentRequest, config: &Config) -> Result<()> {
     let client = Client::new();
     let response = client
@@ -24,16 +20,14 @@ pub async fn create_deployment(request: CreateDeploymentRequest, config: &Config
     handle_api_response(response).await
 }
 
-/// Updates an existing deployment
 pub async fn update_deployment(
     deployment_id: &str,
     request: UpdateDeploymentRequest,
     config: &Config,
 ) -> Result<()> {
-
     let client = Client::new();
     let response = client
-        .put(format!("{}/deploy/{}",  config.api_url, deployment_id))
+        .put(format!("{}/deploy/{}", config.api_url, deployment_id))
         .header("Authorization", format!("Bearer {}", config.api_token))
         .json(&request)
         .send()
@@ -64,13 +58,14 @@ pub async fn list_deployments(config: &Config) -> Result<Vec<ListDeploymentsResp
     }
 }
 
-/// Fetches details of a specific deployment by ID
-pub async fn get_deployment(deployment_id: &str, config: &Config) -> Result<GetDeploymentResponse, DeployError> {
-
+pub async fn get_deployment(
+    deployment_id: &str,
+    config: &Config,
+) -> Result<GetDeploymentResponse, DeployError> {
     let client = Client::new();
     let response = client
         .get(format!("{}/deploy/{}", config.api_url, deployment_id))
-        .header("Authorization", format!("Bearer {}",  config.api_token))
+        .header("Authorization", format!("Bearer {}", config.api_token))
         .send()
         .await
         .map_err(DeployError::RequestFailed)?;

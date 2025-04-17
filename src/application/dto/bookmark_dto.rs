@@ -2,10 +2,10 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
 pub struct GetBookmarkResponse {
-    pub id: String,
-    pub name: String,
+    pub id: String, // bookmark_id = snapshot_id
+    pub name: String,  // bookmark_name = snapshot_name
     pub status: String,
-    pub clone_id: String,
+    pub clone_id: String, // clone_id = branch_id
     pub parent_id: Option<String>,
     pub created_by: String,
     pub created_date: String,
@@ -17,15 +17,15 @@ pub struct GetBookmarkResponse {
 
 #[derive(Debug, Deserialize)]
 pub struct CreateBookmarkResponse {
-    pub id: String,
+    pub id: String, // bookmark_id = snapshot_id
     pub name: String,
     pub status: String,
     pub snapshot_type: String,
     pub snapshot_comment: String,
     pub snapshot_schema: BookmarkSchema,
     pub customer_id: String,
-    pub dataset_id: String,
-    pub deployment_id: String,
+    pub dataset_id: String, // clone_id = branch_id
+    pub deployment_id: String, // repository_id
     pub parent_id: Option<String>,
     pub is_ephemeral: bool,
     pub is_golden: bool,

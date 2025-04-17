@@ -7,52 +7,99 @@ pub fn get_version() -> &'static str {
 #[derive(Parser, Debug)]
 #[clap(version = get_version(), about, long_about = None)]
 #[clap(propagate_version = true)]
-
 pub struct CLI {
     #[clap(subcommand)]
     pub sub_commands: SubCommand,
 }
-
 
 #[derive(Subcommand, Debug)]
 pub enum SubCommand {
     /// Deployment-related commands
     #[clap(subcommand)]
     Deploy(DeployCommand),
+
+    /// Branch-related commands
     #[clap(subcommand)]
     Branch(BranchCommand),
-    #[clap(subcommand)] 
+
+    /// Bookmark-related commands
+    #[clap(subcommand)]
     Bookmark(BookmarkCommand),
+
+    /// Compute-related commands
     #[clap(subcommand)]
     Compute(ComputeCommand),
+
+    /// Show usage information
     Usage,
+
+    /// Show details about branches, bookmarks, etc.
+    #[clap(subcommand)]
+    Show(ShowCommand),
 }
+
 #[derive(Subcommand, Debug)]
-pub enum ComputeCommand {
-    List(GetComputeArgs),
-    Start(GetComputeArgs),
-    Stop(GetComputeArgs),
-    Logs(GetComputeArgs),
-    Status(GetComputeArgs),
+pub enum ShowCommand {
+    /// List all branches for a deployment
+    Branches(GetDeployArgs),
+
+    /// List all bookmarks for a deployment
+    Bookmarks(GetDeployArgs),
 }
+
 #[derive(Args, Debug)]
 pub struct GetComputeArgs {
+    /// The ID of the deployment
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
+
+    /// The ID of the compute instance
     #[clap(short = 'c', long, required = true)]
-    pub clone_id: String,
+    pub compute_id: String,
 }
-#[derive(Subcommand, Debug)] 
+
+#[derive(Subcommand, Debug)]
+pub enum ComputeCommand {
+    /// List all compute instances for a deployment
+    List(GetComputeArgs),
+
+    /// Start a compute instance
+    Start(GetComputeArgs),
+
+    /// Stop a compute instance
+    Stop(GetComputeArgs),
+
+    /// View logs for a compute instance
+    Logs(GetComputeArgs),
+
+    /// Check the status of a compute instance
+    Status(GetComputeArgs),
+}
+
+#[derive(Subcommand, Debug)]
 pub enum BookmarkCommand {
+    /// List all bookmarks for a deployment
     ListAll(GetDeployArgs),
+
+    /// List bookmarks for a specific clone
     List(GetBookmarkArgs),
+
+    /// Checkout a bookmark
     Checkout(CheckoutBookmarkArgs),
+
+    /// Create a new bookmark
     Create(CreateBookmarkArgs),
 }
+
 #[derive(Subcommand, Debug)]
 pub enum BranchCommand {
+    /// Create a new branch
     Create(CreateBranchArgs),
-    List(GetDeployArgs), 
+
+    /// List all branches for a deployment
+    List(GetDeployArgs),
+
+    /// Checkout a branch
     Checkout(CheckoutBranchArgs),
 }
 
@@ -60,13 +107,17 @@ pub enum BranchCommand {
 pub enum DeployCommand {
     /// Create a new deployment
     Create(CreateDeployArgs),
+
     /// Update an existing deployment
     Update(UpdateDeployArgs),
+
     /// List all deployments
     List,
+
     /// Fetch details of a specific deployment
     Get(GetDeployArgs),
 }
+
 /// Arguments for fetching a specific deployment
 #[derive(Args, Debug)]
 pub struct GetDeployArgs {
@@ -118,63 +169,93 @@ pub struct UpdateDeployArgs {
     pub repository_name: String,
 }
 
-    #[derive(Args, Debug)]
+#[derive(Args, Debug)]
 pub struct CreateBranchArgs {
+    /// The ID of the deployment
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
+
+    /// The ID of the clone
     #[clap(short = 'c', long, required = true)]
     pub clone_id: String,
+
+    /// The ID of the snapshot
     #[clap(short = 's', long, required = true)]
     pub snapshot_id: String,
+
+    /// Whether to discard changes
     #[clap(short = 'd', long, required = true)]
     pub discard_changes: String,
+
+    /// Whether to checkout the branch after creation
     #[clap(short = 'k', long)]
     pub checkout: bool,
+
+    /// Whether the branch is ephemeral
     #[clap(short = 'e', long)]
     pub ephemeral: bool,
 }
 
 #[derive(Args, Debug)]
 pub struct CheckoutBranchArgs {
+    /// The ID of the deployment
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
+
+    /// The ID of the clone
     #[clap(short = 'c', long, required = true)]
     pub clone_id: String,
 }
 
-
 #[derive(Args, Debug)]
 pub struct GetBookmarkArgs {
+    /// The ID of the deployment
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
+
+    /// The ID of the clone
     #[clap(short = 'c', long, required = true)]
     pub clone_id: String,
 }
 
 #[derive(Args, Debug)]
 pub struct CreateBookmarkArgs {
+    /// The ID of the deployment
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
+
+    /// The ID of the clone
     #[clap(short = 'c', long, required = true)]
     pub clone_id: String,
+
+    /// A comment for the snapshot
     #[clap(short = 'm', long, required = true)]
     pub snapshot_comment: String,
 }
 
-
-
 #[derive(Args, Debug)]
 pub struct CheckoutBookmarkArgs {
+    /// The ID of the deployment
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
+
+    /// The ID of the clone
     #[clap(short = 'c', long, required = true)]
     pub clone_id: String,
+
+    /// The ID of the snapshot
     #[clap(short = 's', long, required = true)]
     pub snapshot_id: String,
+
+    /// Whether to discard changes
     #[clap(short = 'd', long, required = true)]
     pub discard_changes: String,
+
+    /// Whether to checkout the bookmark after creation
     #[clap(short = 'k', long)]
     pub checkout: bool,
+
+    /// Whether the bookmark is ephemeral
     #[clap(short = 'e', long)]
     pub ephemeral: bool,
 }
