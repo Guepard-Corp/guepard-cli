@@ -4,3 +4,4 @@ pub mod branch_service;
 pub mod compute_service;
 pub mod usage_service;
 pub mod show_service;
+pub mod link_service;
