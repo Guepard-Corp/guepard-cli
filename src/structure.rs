@@ -36,7 +36,11 @@ pub enum SubCommand {
     /// Show details about branches, bookmarks, etc.
     #[clap(subcommand)]
     Show(ShowCommand),
+
+    /// Start login and get authentication URL
+    Link, 
 }
+
 
 #[derive(Subcommand, Debug)]
 pub enum ShowCommand {
