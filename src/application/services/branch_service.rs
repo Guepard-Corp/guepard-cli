@@ -1,12 +1,8 @@
-/// For API interactions.
 use crate::application::dto::branch_dto::{BranchRequest, BranchResponse, ListBranchesResponse};
+use crate::config::config::{self, Config};
 use crate::domain::errors::branch_error::BranchError;
-
-
-use crate::config::config::Config;
-
 use reqwest::Client;
-/// Creates a new branch from a snapshot
+
 pub async fn create_branch(
     deployment_id: &str,
     clone_id: &str,
@@ -14,15 +10,15 @@ pub async fn create_branch(
     request: BranchRequest,
     config: &Config,
 ) -> Result<BranchResponse, BranchError> {
-
-
+    let jwt_token = config::load_jwt_token()
+        .map_err(|e| BranchError::SessionError(e.to_string()))?;
     let client = Client::new();
     let response = client
         .post(format!(
             "{}/deploy/{}/{}/{}/branch",
-            config.api_url,deployment_id, clone_id, snapshot_id
+            config.api_url, deployment_id, clone_id, snapshot_id
         ))
-        .header("Authorization", format!("Bearer {}", config.api_token))
+        .header("Authorization", format!("Bearer {}", jwt_token))
         .json(&request)
         .send()
         .await
@@ -34,16 +30,17 @@ pub async fn create_branch(
             .await
             .map_err(|e| BranchError::ParseError(e.to_string()))
     } else {
-        Err(BranchError::from_response(response).await) // Updated to use server message
+        Err(BranchError::from_response(response).await)
     }
 }
 
-/// Lists all clones/branches for a deployment
 pub async fn list_branches(deployment_id: &str, config: &Config) -> Result<Vec<ListBranchesResponse>, BranchError> {
+    let jwt_token = config::load_jwt_token()
+        .map_err(|e| BranchError::SessionError(e.to_string()))?;
     let client = Client::new();
     let response = client
-        .get(format!("{}/deploy/{}/clone", config.api_url,deployment_id))
-        .header("Authorization", format!("Bearer {}", config.api_token))
+        .get(format!("{}/deploy/{}/clone", config.api_url, deployment_id))
+        .header("Authorization", format!("Bearer {}", jwt_token))
         .send()
         .await
         .map_err(BranchError::RequestFailed)?;
@@ -54,24 +51,24 @@ pub async fn list_branches(deployment_id: &str, config: &Config) -> Result<Vec<L
             .await
             .map_err(|e| BranchError::ParseError(e.to_string()))
     } else {
-        Err(BranchError::from_response(response).await) 
+        Err(BranchError::from_response(response).await)
     }
 }
 
-/// Checks out a branch
 pub async fn checkout_branch(
     deployment_id: &str,
     clone_id: &str,
     config: &Config,
 ) -> Result<BranchResponse, BranchError> {
-    
+    let jwt_token = config::load_jwt_token()
+        .map_err(|e| BranchError::SessionError(e.to_string()))?;
     let client = Client::new();
     let response = client
         .post(format!(
             "{}/deploy/{}/{}/checkout",
             config.api_url, deployment_id, clone_id
         ))
-        .header("Authorization", format!("Bearer {}", config.api_token))
+        .header("Authorization", format!("Bearer {}", jwt_token))
         .send()
         .await
         .map_err(BranchError::RequestFailed)?;
@@ -82,7 +79,6 @@ pub async fn checkout_branch(
             .await
             .map_err(|e| BranchError::ParseError(e.to_string()))
     } else {
-        Err(BranchError::from_response(response).await) // Updated error handling
+        Err(BranchError::from_response(response).await)
     }
 }
-

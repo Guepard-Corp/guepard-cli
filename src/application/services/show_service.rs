@@ -4,11 +4,14 @@ use crate::application::services::branch_service;
 use crate::application::services::bookmark_service;
 use crate::application::services::compute_service;
 use crate::application::services::deploy_service;
-use crate::config::config::Config;
+use crate::config::config::{self, Config};
 use anyhow::Result;
+
 pub async fn get_active_branch_and_bookmark(deployment_id: &str, config: &Config) -> Result<(String, String)> {
+    let jwt_token = config::load_jwt_token()
+        .map_err(|e| anyhow::anyhow!("Session error: {}", e.to_string()))?;
     let deployment = deploy_service::get_deployment(deployment_id, config).await?;
-    let compute_id = deployment.clone_id; // the deployment's clone_id is the compute_id 
+    let compute_id = deployment.clone_id;
     let compute = compute_service::list_compute(deployment_id, &compute_id, config).await?;
     Ok((compute.attached_branch, compute.snapshot_id))
 }
