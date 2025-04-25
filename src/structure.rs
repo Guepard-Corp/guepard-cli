@@ -39,8 +39,18 @@ pub enum SubCommand {
 
     /// Start login and get authentication URL
     Link, 
+
+    /// Complete login with verification code
+    Login(LoginArgs),
 }
 
+
+#[derive(Args, Debug)]
+pub struct LoginArgs {
+    /// The verification code from the login URL
+    #[clap(value_parser, required = true)]
+    pub code: String,
+}
 
 #[derive(Subcommand, Debug)]
 pub enum ShowCommand {

@@ -5,3 +5,4 @@ pub mod compute_error;
 pub mod usage_error;
 pub mod link_error;
 pub mod config_error;
+pub mod login_error;
