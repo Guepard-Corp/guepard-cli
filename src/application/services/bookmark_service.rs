@@ -1,15 +1,17 @@
 use crate::application::dto::bookmark_dto::{GetBookmarkResponse, CreateBookmarkRequest, CreateBookmarkResponse, CheckoutBookmarkResponse};
-use crate::config::config::Config;
+use crate::application::dto::branch_dto::BranchRequest;
+use crate::config::config::{self, Config};
 use crate::domain::errors::bookmark_error::BookmarkError;
-use crate::application::dto::branch_dto::BranchRequest; 
 use anyhow::Result;
 use reqwest::Client;
 
 pub async fn list_all_bookmarks(deployment_id: &str, config: &Config) -> Result<Vec<GetBookmarkResponse>, BookmarkError> {
+    let jwt_token = config::load_jwt_token()
+        .map_err(|e| BookmarkError::SessionError(e.to_string()))?;
     let client = Client::new();
     let response = client
         .get(format!("{}/deploy/{}/snap", config.api_url, deployment_id))
-        .header("Authorization", format!("Bearer {}", config.api_token))
+        .header("Authorization", format!("Bearer {}", jwt_token))
         .send()
         .await
         .map_err(BookmarkError::RequestFailed)?;
@@ -24,10 +26,12 @@ pub async fn list_all_bookmarks(deployment_id: &str, config: &Config) -> Result<
 }
 
 pub async fn list_bookmark(deployment_id: &str, clone_id: &str, config: &Config) -> Result<Vec<GetBookmarkResponse>, BookmarkError> {
+    let jwt_token = config::load_jwt_token()
+        .map_err(|e| BookmarkError::SessionError(e.to_string()))?;
     let client = Client::new();
     let response = client
         .get(format!("{}/deploy/{}/{}/snap", config.api_url, deployment_id, clone_id))
-        .header("Authorization", format!("Bearer {}", config.api_token))
+        .header("Authorization", format!("Bearer {}", jwt_token))
         .send()
         .await
         .map_err(BookmarkError::RequestFailed)?;
@@ -47,10 +51,12 @@ pub async fn create_bookmark(
     request: CreateBookmarkRequest,
     config: &Config,
 ) -> Result<CreateBookmarkResponse, BookmarkError> {
+    let jwt_token = config::load_jwt_token()
+        .map_err(|e| BookmarkError::SessionError(e.to_string()))?;
     let client = Client::new();
     let response = client
         .put(format!("{}/deploy/{}/{}/snap", config.api_url, deployment_id, clone_id))
-        .header("Authorization", format!("Bearer {}", config.api_token))
+        .header("Authorization", format!("Bearer {}", jwt_token))
         .json(&request)
         .send()
         .await
@@ -71,14 +77,16 @@ pub async fn checkout_bookmark(
     snapshot_id: &str,
     request: BranchRequest,
     config: &Config,
-) -> Result<CheckoutBookmarkResponse, BookmarkError> { 
+) -> Result<CheckoutBookmarkResponse, BookmarkError> {
+    let jwt_token = config::load_jwt_token()
+        .map_err(|e| BookmarkError::SessionError(e.to_string()))?;
     let client = Client::new();
     let response = client
         .post(format!(
             "{}/deploy/{}/{}/{}/branch",
             config.api_url, deployment_id, clone_id, snapshot_id
         ))
-        .header("Authorization", format!("Bearer {}", config.api_token))
+        .header("Authorization", format!("Bearer {}", jwt_token))
         .json(&request)
         .send()
         .await
