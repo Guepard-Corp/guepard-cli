@@ -8,7 +8,7 @@ pub async fn execute(config: &Config, verification_code: &str) -> Result<()> {
     println!(
         "{} {}",
         "Login successful.".green(),
-        "Happy coding! 🐆".red()
+        "Happy coding! 🐆".yellow().bold()
     );
     Ok(())
 }

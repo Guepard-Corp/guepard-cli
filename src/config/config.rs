@@ -52,7 +52,7 @@ pub fn save_session_id(session_id: &str) -> Result<(), ConfigError> {
         jwt_token: None,
     };
 
-    let mut file = File::create(&path)
+    let file = File::create(&path)
         .map_err(|e| ConfigError::IoError(format!("Failed to create session file: {}", e)))?;
     serde_json::to_writer(&file, &data)
         .map_err(|e| ConfigError::IoError(format!("Failed to write session file: {}", e)))?;
@@ -83,7 +83,7 @@ pub fn save_jwt_token(jwt_token: &str) -> Result<(), ConfigError> {
 
     data.jwt_token = Some(jwt_token.to_string());
 
-    let mut file = OpenOptions::new()
+    let  file = OpenOptions::new()
         .write(true)
         .truncate(true)
         .open(&path)
