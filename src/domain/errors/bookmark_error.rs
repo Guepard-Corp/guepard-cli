@@ -29,6 +29,9 @@ pub enum BookmarkError {
 
     #[error("Unexpected error: {0}")]
     Unexpected(String),
+
+    #[error("Session error: {0}")]
+    SessionError(String),
 }
 
 impl BookmarkError {

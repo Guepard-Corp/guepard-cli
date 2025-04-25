@@ -1,15 +1,17 @@
 use crate::application::dto::compute_dto::{ListComputeResponse, LogsResponse, StatusErrorResponse};
-use crate::config::config::Config;
+use crate::config::config::{self, Config};
 use crate::domain::errors::compute_error::ComputeError;
 
 use anyhow::Result;
 use reqwest::{Client, StatusCode};
 
 pub async fn list_compute(deployment_id: &str, compute_id: &str, config: &Config) -> Result<ListComputeResponse, ComputeError> {
+    let jwt_token = config::load_jwt_token()
+        .map_err(|e| ComputeError::SessionError(e.to_string()))?;
     let client = Client::new();
     let response = client
         .get(format!("{}/deploy/{}/{}", config.api_url, deployment_id, compute_id))
-        .header("Authorization", format!("Bearer {}", config.api_token))
+        .header("Authorization", format!("Bearer {}", jwt_token))
         .send()
         .await
         .map_err(ComputeError::RequestFailed)?;
@@ -27,10 +29,12 @@ pub async fn list_compute(deployment_id: &str, compute_id: &str, config: &Config
 }
 
 pub async fn start_compute(deployment_id: &str, compute_id: &str, config: &Config) -> Result<(), ComputeError> {
+    let jwt_token = config::load_jwt_token()
+        .map_err(|e| ComputeError::SessionError(e.to_string()))?;
     let client = Client::new();
     let response = client
         .get(format!("{}/deploy/{}/{}/start", config.api_url, deployment_id, compute_id))
-        .header("Authorization", format!("Bearer {}", config.api_token))
+        .header("Authorization", format!("Bearer {}", jwt_token))
         .send()
         .await
         .map_err(ComputeError::RequestFailed)?;
@@ -45,10 +49,12 @@ pub async fn start_compute(deployment_id: &str, compute_id: &str, config: &Confi
 }
 
 pub async fn stop_compute(deployment_id: &str, compute_id: &str, config: &Config) -> Result<(), ComputeError> {
+    let jwt_token = config::load_jwt_token()
+        .map_err(|e| ComputeError::SessionError(e.to_string()))?;
     let client = Client::new();
     let response = client
         .get(format!("{}/deploy/{}/{}/stop", config.api_url, deployment_id, compute_id))
-        .header("Authorization", format!("Bearer {}", config.api_token))
+        .header("Authorization", format!("Bearer {}", jwt_token))
         .send()
         .await
         .map_err(ComputeError::RequestFailed)?;
@@ -63,10 +69,12 @@ pub async fn stop_compute(deployment_id: &str, compute_id: &str, config: &Config
 }
 
 pub async fn get_logs(deployment_id: &str, compute_id: &str, config: &Config) -> Result<LogsResponse, ComputeError> {
+    let jwt_token = config::load_jwt_token()
+        .map_err(|e| ComputeError::SessionError(e.to_string()))?;
     let client = Client::new();
     let response = client
         .get(format!("{}/deploy/{}/{}/logs", config.api_url, deployment_id, compute_id))
-        .header("Authorization", format!("Bearer {}", config.api_token))
+        .header("Authorization", format!("Bearer {}", jwt_token))
         .send()
         .await
         .map_err(ComputeError::RequestFailed)?;
@@ -88,10 +96,12 @@ pub async fn get_logs(deployment_id: &str, compute_id: &str, config: &Config) ->
 }
 
 pub async fn get_status(deployment_id: &str, compute_id: &str, config: &Config) -> Result<(), ComputeError> {
+    let jwt_token = config::load_jwt_token()
+        .map_err(|e| ComputeError::SessionError(e.to_string()))?;
     let client = Client::new();
     let response = client
         .get(format!("{}/deploy/{}/{}/status", config.api_url, deployment_id, compute_id))
-        .header("Authorization", format!("Bearer {}", config.api_token))
+        .header("Authorization", format!("Bearer {}", jwt_token))
         .send()
         .await
         .map_err(ComputeError::RequestFailed)?;
@@ -111,4 +121,3 @@ pub async fn get_status(deployment_id: &str, compute_id: &str, config: &Config) 
         }
     }
 }
-

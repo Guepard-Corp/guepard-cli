@@ -1,5 +1,4 @@
 use thiserror::Error;
-
 #[derive(Error, Debug)]
 pub enum ComputeError {
     #[error("Request failed: {0}")]
@@ -16,4 +15,7 @@ pub enum ComputeError {
 
     #[error("Unexpected error: {0}")]
     Unexpected(String),
+
+    #[error("Session error: {0}")]
+    SessionError(String),
 }
