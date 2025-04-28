@@ -42,6 +42,8 @@ pub enum SubCommand {
 
     /// Complete login with verification code
     Login(LoginArgs),
+    /// Log out and clear all credentials
+    Logout,
 }
 
 
