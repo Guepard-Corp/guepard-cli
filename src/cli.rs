@@ -1,7 +1,7 @@
 use clap::Parser;
-use guepard_cli::application::commands::{bookmark, branch, deploy, compute, usage, show, link,login};
+use guepard_cli::application::commands::{bookmark, branch, deploy, compute, usage, show, link,login,logout};
 use guepard_cli::config::config::{load_config, Config};
-use guepard_cli::domain::errors::{bookmark_error::BookmarkError, branch_error::BranchError, compute_error::ComputeError, deploy_error::DeployError, link_error::LinkError, usage_error::UsageError};
+use guepard_cli::domain::errors::{bookmark_error::BookmarkError, branch_error::BranchError, compute_error::ComputeError, deploy_error::DeployError, link_error::LinkError, usage_error::UsageError,logout_error::LogoutError};
 use guepard_cli::structure::{BookmarkCommand, DeployCommand, SubCommand, CLI, BranchCommand, ComputeCommand, ShowCommand};
 
 #[tokio::main]
@@ -37,7 +37,7 @@ async fn main() {
         } else if let Some(usage_error) = err.downcast_ref::<UsageError>() {
             eprintln!("❌ Usage Error: {}", usage_error);
             exit_code = 6;
-        } else {
+        }else {
             eprintln!("{}", err);
             exit_code = 1;
         }
@@ -80,6 +80,6 @@ async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
         },
         SubCommand::Link => link::execute(config).await.map_err(Into::into),    
         SubCommand::Login(args) => login::execute(config, &args.code).await,
-
+        SubCommand::Logout => logout::logout(config).await,
     }
 }

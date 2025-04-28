@@ -10,4 +10,7 @@ pub enum ConfigError {
 
     #[error("IO error: {0}")]
     IoError(String),
+
+    #[error("Keyring error: {0}")]
+    KeyringError(String),
 }
