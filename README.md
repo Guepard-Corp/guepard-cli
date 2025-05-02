@@ -1,3 +1,7 @@
+Here's the complete updated `README.md` content with the login commands (`link` and `login`) added under a new section titled **🔐 Authentication Commands**, consistent with the existing style:
+
+---
+
 # 🐆 Guepard CLI Documentation
 
 `gprd` is a command-line tool to manage your Guepard environment. This CLI allows you to efficiently handle deployments, branches, bookmarks, compute instances, and usage quotas for your data management tasks.
@@ -44,6 +48,32 @@ gprd <SUBCOMMAND>
 
 ---
 
+## 🔐 Authentication Commands
+
+### 🔗 Get Login Link
+
+Generates a login link containing a session ID.
+
+```bash
+gprd link
+```
+
+This command initiates the login process by returning a URL with a `session_id`. Open this URL in your browser to continue authentication.
+
+---
+
+### 🔑 Complete Login
+
+Completes the login flow by submitting the verification code.
+
+```bash
+gprd login
+```
+
+After opening the login link and authenticating in the browser, you'll receive a 6-digit code. Run `gprd login` and enter the code when prompted. A confirmation message will appear upon successful login.
+
+---
+
 ## 📦 Deployment Management Commands
 
 ### ➕ Create Deployment
@@ -63,13 +93,13 @@ gprd deploy create
 
 **Options:**
 
-- `-p, --database-provider` : Database provider (e.g., PostgreSQL, MySQL)
-- `-v, --database-version`  : Database version
-- `-r, --region`            : Region for deployment
-- `-i, --instance-type`     : Instance type
-- `-d, --datacenter`        : Datacenter location
-- `-n, --repository-name`   : Repository name
-- `-w, --database-password` : Database password
+* `-p, --database-provider` : Database provider (e.g., PostgreSQL, MySQL)
+* `-v, --database-version`  : Database version
+* `-r, --region`            : Region for deployment
+* `-i, --instance-type`     : Instance type
+* `-d, --datacenter`        : Datacenter location
+* `-n, --repository-name`   : Repository name
+* `-w, --database-password` : Database password
 
 ---
 
@@ -85,8 +115,8 @@ gprd deploy update
 
 **Options:**
 
-- `-x, --deployment-id`   : ID of the deployment to update
-- `-n, --repository-name` : New repository name
+* `-x, --deployment-id`   : ID of the deployment to update
+* `-n, --repository-name` : New repository name
 
 ---
 
@@ -110,7 +140,7 @@ gprd deploy get -x <DEPLOYMENT_ID>
 
 **Options:**
 
-- `-x, --deployment-id` : ID of the deployment to fetch
+* `-x, --deployment-id` : ID of the deployment to fetch
 
 ---
 
@@ -131,12 +161,12 @@ gprd branch create
 
 **Options:**
 
-- `-x, --deployment-id` : Deployment ID
-- `-c, --clone-id`      : Clone ID to branch from
-- `-s, --snapshot-id`   : Snapshot ID to base the branch on
-- `-d, --discard-changes` : Changes to discard (e.g., "true")
-- `-k, --checkout`      : Check out the branch after creation (optional)
-- `-e, --ephemeral`     : Mark the branch as ephemeral (optional)
+* `-x, --deployment-id` : Deployment ID
+* `-c, --clone-id`      : Clone ID to branch from
+* `-s, --snapshot-id`   : Snapshot ID to base the branch on
+* `-d, --discard-changes` : Changes to discard (e.g., "true")
+* `-k, --checkout`      : Check out the branch after creation (optional)
+* `-e, --ephemeral`     : Mark the branch as ephemeral (optional)
 
 ---
 
@@ -318,7 +348,6 @@ The CLI requires the following environment variables for API connectivity. You c
 
 ```dotenv
 PUBLIC_API=<API_URL>      # Base URL of the Guepard API (e.g., https://api.guepard.io)
-API_TOKEN=<YOUR_TOKEN>    # Your Guepard API token
 ```
 
 ### Example `.env` file:
@@ -334,10 +363,11 @@ These variables are loaded automatically via dotenv if present.
 
 ## 🎨 Output Formatting
 
-- ✅ **Success**: Green "✅" prefix with cyan IDs (e.g., `[deployment_id]`)
-- ℹ️ **Info**: Blue "ℹ️" prefix for empty results
-- ⚠️ **Warnings**: Yellow "⚠️" prefix (e.g., unhealthy compute)
-- ❌ **Errors**: Red "❌" prefix (requires error handling files for full details)
+* ✅ **Success**: Green "✅" prefix with cyan IDs (e.g., `[deployment_id]`)
+* ℹ️ **Info**: Blue "ℹ️" prefix for empty results
+* ⚠️ **Warnings**: Yellow "⚠️" prefix (e.g., unhealthy compute)
+* ❌ **Errors**: Red "❌" prefix (requires error handling files for full details)
 
 ---
 
+Would you like me to update this in your `canvas` document too?
