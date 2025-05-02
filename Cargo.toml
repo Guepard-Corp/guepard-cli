@@ -51,8 +51,8 @@ section = "utility"
 priority = "optional"
 assets = [
     # binary
-    ["target/release/gfs", "usr/bin/", "755"],
+    ["target/release/gprd", "usr/bin/", "755"],
     # assets - point to the correct relative path to the scripts directory
-    ["./scripts/**/*", "etc/guepard/", "755"],
-    ["./debian/environment", "etc/guepard/gfs/environment", "755"],
+    #["./scripts/**/*", "etc/guepard/", "755"],
+    #["./debian/environment", "etc/guepard/gfs/environment", "755"],
 ]
