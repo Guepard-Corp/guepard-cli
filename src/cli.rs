@@ -1,7 +1,7 @@
 use clap::Parser;
 use guepard_cli::application::commands::{bookmark, branch, deploy, compute, usage, show, link,login,logout};
 use guepard_cli::config::config::{load_config, Config};
-use guepard_cli::domain::errors::{bookmark_error::BookmarkError, branch_error::BranchError, compute_error::ComputeError, deploy_error::DeployError, link_error::LinkError, usage_error::UsageError,logout_error::LogoutError};
+use guepard_cli::domain::errors::{bookmark_error::BookmarkError, branch_error::BranchError, compute_error::ComputeError, deploy_error::DeployError, link_error::LinkError, usage_error::UsageError};
 use guepard_cli::structure::{BookmarkCommand, DeployCommand, SubCommand, CLI, BranchCommand, ComputeCommand, ShowCommand};
 
 #[tokio::main]
