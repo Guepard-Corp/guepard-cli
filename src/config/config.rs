@@ -6,6 +6,8 @@ use std::env;
 use std::fs::{self, File};
 use log::{debug, error};
 use crate::domain::errors::config_error::ConfigError;
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 
 #[derive(Debug, Clone)]
 pub struct Config {
