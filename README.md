@@ -74,6 +74,20 @@ After opening the login link and authenticating in the browser, you'll receive a
 
 ---
 
+### 🗝️🔓 Logout
+
+Deletes stored credentials from the user's device, effectively logging out of the CLI.
+
+```bash
+gprd logout
+```
+
+This command ensures that all locally stored authentication tokens are removed, preventing unauthorized access. Use this command when switching accounts or securing your environment.
+
+
+
+---
+
 ## 📦 Deployment Management Commands
 
 ### ➕ Create Deployment
