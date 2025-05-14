@@ -23,7 +23,7 @@ pub fn load_config() -> Result<Config, ConfigError> {
     dotenv().ok();
 
     let api_url = env::var("PUBLIC_API")
-        .map_err(|_| ConfigError::MissingEnv("Missing PUBLIC_API in .env file".to_string()))?;
+        .unwrap_or_else(|_| "https://app.guepard.run".to_string());
     let api_token = env::var("API_TOKEN")
         .map_err(|_| ConfigError::MissingEnv("Missing API_TOKEN in .env file".to_string()))?;
 
@@ -97,7 +97,7 @@ pub fn load_session_id() -> Result<String, ConfigError> {
     if Utc::now().signed_duration_since(created).num_minutes() > 10 {
         fs::remove_file(&path)
             .map_err(|e| ConfigError::IoError(format!("Failed to remove expired session: {}", e)))?;
-        delete_jwt_token().ok(); 
+        delete_jwt_token().ok();
         return Err(ConfigError::SessionError(
             "Session ID expired. Run `guepard link` to start a new login.".to_string(),
         ));
@@ -135,7 +135,6 @@ pub fn delete_jwt_token() -> Result<(), ConfigError> {
         }
     }
 }
-
 
 pub fn delete_session() -> Result<(), ConfigError> {
     debug!("Starting session deletion");
