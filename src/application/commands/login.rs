@@ -10,5 +10,16 @@ pub async fn execute(config: &Config, verification_code: &str) -> Result<()> {
         "Login successful.".green(),
         "Happy coding! 🐆".yellow().bold()
     );
+    println!(
+        "You can now use the Guepard CLI to interact with your Guepard account.🐆"
+    );
+    println!(
+        "{}",
+        "To get started, run: `gprd help`".yellow()
+    );
+    println!(
+        "{}",
+        "To log out, use the `logout` command.".red()
+    );
     Ok(())
 }
