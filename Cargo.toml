@@ -20,7 +20,7 @@ tokio = { version = "1.36.0", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.109"
 lazy_static = "1.4.0"
-dotenvy = "0.15.7"
+dotenvy = "0.15.7" # This will be useful for reading the .env file
 pest = "2.7.5"
 pest_derive = "2.7.5"
 anyhow = "1.0.56"
@@ -32,7 +32,7 @@ clap = { version = "4.5.7", features = ["derive"] }
 log = "0.4.20"
 env_logger = "0.11.5"
 # Added for using env variables
-dotenv = "0.15.0"
+dotenv = "0.15.0" # You have both dotenv and dotenvy, dotenvy is generally preferred for modern use. Consider standardizing.
 thiserror = "2.0.11"
 tabled = "0.15"  # For tabular output
 colored = "2"    # For colored text
@@ -46,13 +46,14 @@ mockall = "0.13.0"
 [package.metadata.deb]
 copyright = "Guepard (c) 2025"
 maintainer = "Guepard Engineering <engineering@guepard.run>"
-depends = ""
+depends = "" # Consider adding "libc6" as a common base dependency
 section = "utility"
 priority = "optional"
 assets = [
     # binary
     ["target/release/gprd", "usr/bin/", "755"],
+    # environment file
+    ["./debian/etc/guepard/environment", "etc/guepard/", "644"],
     # assets - point to the correct relative path to the scripts directory
-    #["./scripts/**/*", "etc/guepard/", "755"],
-    #["./debian/environment", "etc/guepard/gfs/environment", "755"],
+    # ["./scripts/**/*", "etc/guepard/", "755"], # Uncomment and adjust if you have other scripts
 ]
