@@ -12,7 +12,7 @@ use std::os::unix::fs::PermissionsExt;
 #[derive(Debug, Clone)]
 pub struct Config {
     pub api_url: String,
-    pub api_token: String,
+    // pub api_token: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -25,11 +25,11 @@ pub fn load_config() -> Result<Config, ConfigError> {
     dotenv().ok();
 
     let api_url = env::var("PUBLIC_API")
-        .unwrap_or_else(|_| "https://app.guepard.run".to_string());
-    let api_token = env::var("API_TOKEN")
-        .map_err(|_| ConfigError::MissingEnv("Missing API_TOKEN in .env file".to_string()))?;
+        .map_err(|_| ConfigError::MissingEnv("Missing PUBLIC_API in .env file".to_string()))?;
+    // let api_token = env::var("API_TOKEN")
+    //     .map_err(|_| ConfigError::MissingEnv("Missing API_TOKEN in .env file".to_string()))?;
 
-    Ok(Config { api_url, api_token })
+    Ok(Config { api_url,})
 }
 
 pub fn save_session_id(session_id: &str) -> Result<(), ConfigError> {
