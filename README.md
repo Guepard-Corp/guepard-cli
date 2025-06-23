@@ -384,4 +384,3 @@ These variables are loaded automatically via dotenv if present.
 
 ---
 
-Would you like me to update this in your `canvas` document too?
