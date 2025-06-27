@@ -10,30 +10,36 @@ on:
 # Environment variables available to all jobs and steps in the workflow.
 env:
   CARGO_TERM_COLOR: always # Ensures cargo commands output colorized text.
-  APP_NAME: gprd # The name of your application binary, as defined in Cargo.toml.
 
 jobs:
   # This job builds the application for different target platforms.
   build:
-    name: Build for ${{ matrix.os }}
+    name: Build for ${{ matrix.target }}
     runs-on: ${{ matrix.os }} # The job will run on the OS specified in the matrix.
     strategy:
+      fail-fast: false # Allow all jobs to complete even if one fails.
       matrix:
-        # Defines the different operating systems to run the build on.
-        os: [ubuntu-latest, macos-latest, windows-latest]
         include:
-          # Configuration for ubuntu-latest (Linux).
+          # AMD64 (x86_64) Builds
           - os: ubuntu-latest
-            artifact_name: ${{ env.APP_NAME }}-linux-amd64.deb
             target: x86_64-unknown-linux-gnu
-          # Configuration for macos-latest.
+            artifact_name: guepard-cli-linux-amd64.deb
           - os: macos-latest
-            artifact_name: ${{ env.APP_NAME }}-macos-amd64.tar.gz
             target: x86_64-apple-darwin
-          # Configuration for windows-latest.
+            artifact_name: guepard-cli-macos-amd64.tar.gz
           - os: windows-latest
-            artifact_name: ${{ env.APP_NAME }}-windows-amd64.zip
             target: x86_64-pc-windows-msvc
+            artifact_name: guepard-cli-windows-amd64.zip
+          # ARM64 (aarch64) Builds
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            artifact_name: guepard-cli-linux-arm64.deb
+          - os: macos-14 # Native ARM runner for Apple Silicon
+            target: aarch64-apple-darwin
+            artifact_name: guepard-cli-macos-arm64.tar.gz
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
+            artifact_name: guepard-cli-windows-arm64.zip
 
     steps:
       # Step 1: Check out the repository's code.
@@ -48,56 +54,68 @@ jobs:
           target: ${{ matrix.target }} # Specify the target architecture.
           override: true # Override the default toolchain.
 
-      # Step 3: Install system dependencies for Linux.
-      # This is crucial for crates like 'keyring' and 'reqwest'.
-      - name: Install Linux dependencies
+      # Step 3: Install system dependencies for Linux builds (both native and cross-compile).
+      - name: Install Linux dependencies and cross-compiler
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libdbus-1-dev libssl-dev pkg-config
+          sudo apt-get install -y libdbus-1-dev libssl-dev pkg-config gcc-aarch64-linux-gnu
 
-      # Step 4: Build the application in release mode.
-      - name: Build application
-        run: cargo build --release --target ${{ matrix.target }}
-        # Set OpenSSL env vars for Linux to ensure build consistency.
+      # Step 4: Build the application for each specific OS and architecture.
+      - name: Build (Linux AMD64)
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
         env:
           OPENSSL_DIR: /usr
           OPENSSL_LIB_DIR: /usr/lib/x86_64-linux-gnu
           OPENSSL_INCLUDE_DIR: /usr/include
+        run: cargo build --release --target ${{ matrix.target }}
 
-      # Step 5: Package the release artifacts. This step is different for each OS.
-      # For Linux, we install cargo-deb and create a .deb package.
-      - name: Package (Linux)
-        if: runner.os == 'Linux'
+      - name: Build (Linux ARM64)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+        run: cargo build --release --target ${{ matrix.target }}
+      
+      - name: Build (macOS & Windows)
+        if: runner.os == 'macOS' || runner.os == 'Windows'
+        run: cargo build --release --target ${{ matrix.target }}
+        
+      # Step 5: Package the release artifacts for each specific OS and architecture.
+      - name: Package (Linux AMD64)
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        env:
+          OPENSSL_DIR: /usr
+          OPENSSL_LIB_DIR: /usr/lib/x86_64-linux-gnu
+          OPENSSL_INCLUDE_DIR: /usr/include
         run: |
           cargo install cargo-deb
           cargo deb --target ${{ matrix.target }}
-        # Set OpenSSL env vars for Linux to ensure build consistency.
+
+      - name: Package (Linux ARM64)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
         env:
-          OPENSSL_DIR: /usr
-          OPENSSL_LIB_DIR: /usr/lib/x86_64-linux-gnu
-          OPENSSL_INCLUDE_DIR: /usr/include
-      
-      # For macOS, we use tar to create a compressed archive.
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+        run: |
+          cargo install cargo-deb
+          cargo deb --target ${{ matrix.target }}
+
       - name: Package (macOS)
         if: runner.os == 'macOS'
         run: |
           mkdir -p artifacts
-          cp target/${{ matrix.target }}/release/${{ env.APP_NAME }} artifacts/
+          cp target/${{ matrix.target }}/release/gprd artifacts/
           cp README.md artifacts/
           tar -czf ${{ matrix.artifact_name }} -C artifacts .
       
-      # For Windows, we use PowerShell to create a zip file.
       - name: Package (Windows)
         if: runner.os == 'Windows'
         run: |
           mkdir artifacts
-          copy target\${{ matrix.target }}\release\${{ env.APP_NAME }}.exe artifacts\
+          copy target\${{ matrix.target }}\release\gprd.exe artifacts\
           copy README.md artifacts\
           Compress-Archive -Path artifacts\* -DestinationPath ${{ matrix.artifact_name }}
 
       # Step 6: Upload the packaged artifact.
-      # The path is different for the .deb file.
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
