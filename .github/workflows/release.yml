@@ -10,7 +10,6 @@ on:
 # Environment variables available to all jobs and steps in the workflow.
 env:
   CARGO_TERM_COLOR: always # Ensures cargo commands output colorized text.
-  APP_NAME: gprd # The name of your application binary, as defined in Cargo.toml.
 
 jobs:
   # This job builds the application for different target platforms.
@@ -104,7 +103,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           mkdir -p artifacts
-          cp target/${{ matrix.target }}/release/${{ env.APP_NAME }} artifacts/
+          cp target/${{ matrix.target }}/release/gprd artifacts/
           cp README.md artifacts/
           tar -czf ${{ matrix.artifact_name }} -C artifacts .
       
@@ -112,7 +111,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           mkdir artifacts
-          copy target\${{ matrix.target }}\release\${{ env.APP_NAME }}.exe artifacts\
+          copy target\${{ matrix.target }}\release\gprd.exe artifacts\
           copy README.md artifacts\
           Compress-Archive -Path artifacts\* -DestinationPath ${{ matrix.artifact_name }}
 
