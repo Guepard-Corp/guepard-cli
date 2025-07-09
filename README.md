@@ -237,7 +237,7 @@ Creates a new bookmark for a clone.
 ```bash
 gprd bookmark create 
   -x <DEPLOYMENT_ID> 
-  -c <CLONE_ID> 
+  -b <BRANCH_ID> 
   -m <COMMENT>
 ```
 

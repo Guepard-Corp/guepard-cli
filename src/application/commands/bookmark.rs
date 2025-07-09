@@ -62,13 +62,14 @@ pub async fn create(args: &CreateBookmarkArgs, config: &Config) -> Result<()> {
     let request = CreateBookmarkRequest {
         snapshot_comment: args.snapshot_comment.clone(),
     };
-    let bookmark = bookmark_service::create_bookmark(&args.deployment_id, &args.clone_id, request, config).await?;
+    let bookmark = bookmark_service::create_bookmark(&args.deployment_id, &args.branch_id, request, config).await?;
     println!(
-        "{} Created bookmark [{}] '{}' ({}) for deployment [{}], clone [{}]: {}",
+        "{} Created bookmark [{}] '{}' ({}, type: {}) for deployment [{}], branch [{}]: {}",
         "✅".green(),
         bookmark.id.cyan(),
         bookmark.name,
         bookmark.status,
+        bookmark.snapshot_type,
         bookmark.deployment_id,
         bookmark.dataset_id,
         bookmark.snapshot_comment

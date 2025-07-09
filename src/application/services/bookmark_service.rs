@@ -47,7 +47,7 @@ pub async fn list_bookmark(deployment_id: &str, clone_id: &str, config: &Config)
 
 pub async fn create_bookmark(
     deployment_id: &str,
-    clone_id: &str,
+    branch_id: &str,
     request: CreateBookmarkRequest,
     config: &Config,
 ) -> Result<CreateBookmarkResponse, BookmarkError> {
@@ -55,7 +55,7 @@ pub async fn create_bookmark(
         .map_err(|e| BookmarkError::SessionError(e.to_string()))?;
     let client = Client::new();
     let response = client
-        .put(format!("{}/deploy/{}/{}/snap", config.api_url, deployment_id, clone_id))
+        .post(format!("{}/deploy/{}/{}/snap", config.api_url, deployment_id, branch_id))
         .header("Authorization", format!("Bearer {}", jwt_token))
         .json(&request)
         .send()

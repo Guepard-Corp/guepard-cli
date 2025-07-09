@@ -236,13 +236,13 @@ pub struct GetBookmarkArgs {
 
 #[derive(Args, Debug)]
 pub struct CreateBookmarkArgs {
-    /// The ID of the deployment
+ /// The ID of the deployment
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
 
-    /// The ID of the clone
-    #[clap(short = 'c', long, required = true)]
-    pub clone_id: String,
+    /// The ID of the branch
+    #[clap(short = 'b', long, required = true)]
+    pub branch_id: String,
 
     /// A comment for the snapshot
     #[clap(short = 'm', long, required = true)]

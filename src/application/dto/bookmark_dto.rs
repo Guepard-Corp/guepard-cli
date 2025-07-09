@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(Debug, Deserialize)]
 pub struct GetBookmarkResponse {
@@ -22,7 +23,7 @@ pub struct CreateBookmarkResponse {
     pub status: String,
     pub snapshot_type: String,
     pub snapshot_comment: String,
-    pub snapshot_schema: BookmarkSchema,
+    pub snapshot_schema: Value, 
     pub customer_id: String,
     pub dataset_id: String, // clone_id = branch_id
     pub deployment_id: String, // repository_id
@@ -33,6 +34,7 @@ pub struct CreateBookmarkResponse {
     pub created_date: String,
     pub last_modified_by: Option<String>,
     pub last_modified_date: Option<String>,
+    pub snapshot_db_roles_id: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
