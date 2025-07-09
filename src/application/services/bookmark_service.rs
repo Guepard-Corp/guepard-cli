@@ -25,12 +25,13 @@ pub async fn list_all_bookmarks(deployment_id: &str, config: &Config) -> Result<
     }
 }
 
-pub async fn list_bookmark(deployment_id: &str, clone_id: &str, config: &Config) -> Result<Vec<GetBookmarkResponse>, BookmarkError> {
+
+pub async fn list_bookmark(deployment_id: &str, branch_id: &str, config: &Config) -> Result<Vec<GetBookmarkResponse>, BookmarkError> {
     let jwt_token = config::load_jwt_token()
         .map_err(|e| BookmarkError::SessionError(e.to_string()))?;
     let client = Client::new();
     let response = client
-        .get(format!("{}/deploy/{}/{}/snap", config.api_url, deployment_id, clone_id))
+        .get(format!("{}/deploy/{}/{}/snap", config.api_url, deployment_id, branch_id))
         .header("Authorization", format!("Bearer {}", jwt_token))
         .send()
         .await

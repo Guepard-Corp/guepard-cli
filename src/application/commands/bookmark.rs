@@ -14,8 +14,8 @@ struct BookmarkRow {
     name: String,
     #[tabled(rename = "Status")]
     status: String,
-    #[tabled(rename = "Clone ID")]
-    clone_id: String,
+    #[tabled(rename = "Branch ID")]
+    branch_id: String,
     #[tabled(rename = "Comment")]
     comment: String,
 }
@@ -31,7 +31,7 @@ pub async fn list_all(deployment_id: &str, config: &Config) -> Result<()> {
         id: b.id,
         name: b.name,
         status: b.status,
-        clone_id: b.clone_id,
+        branch_id: b.dataset_id,
         comment: if b.snapshot_comment.len() > 30 { format!("{}...", &b.snapshot_comment[..27]) } else { b.snapshot_comment },
     }).collect();
 
@@ -40,16 +40,17 @@ pub async fn list_all(deployment_id: &str, config: &Config) -> Result<()> {
     Ok(())
 }
 
-pub async fn list(deployment_id: &str, clone_id: &str, config: &Config) -> Result<()> {
-    let bookmarks = bookmark_service::list_bookmark(deployment_id, clone_id, config).await?;
+pub async fn list(deployment_id: &str, branch_id: &str, config: &Config) -> Result<()> {
+    let bookmarks = bookmark_service::list_bookmark(deployment_id, branch_id, config).await?;
     if bookmarks.is_empty() {
-        println!("{} No bookmarks found for clone ID: {} in deployment ID: {}", "ℹ️".blue(), clone_id, deployment_id);        return Ok(());
+        println!("{} No bookmarks found for branch ID: {} in deployment ID: {}", "ℹ️".blue(), branch_id, deployment_id);
+        return Ok(());
     }
     let rows: Vec<BookmarkRow> = bookmarks.into_iter().map(|b| BookmarkRow {
         id: b.id,
         name: b.name,
         status: b.status,
-        clone_id: b.clone_id,
+        branch_id: b.dataset_id,
         comment: if b.snapshot_comment.len() > 30 { format!("{}...", &b.snapshot_comment[..27]) } else { b.snapshot_comment },
     }).collect();
 

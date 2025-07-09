@@ -97,7 +97,7 @@ pub enum BookmarkCommand {
     /// List all bookmarks for a deployment
     ListAll(GetDeployArgs),
 
-    /// List bookmarks for a specific clone
+    /// List bookmarks for a specific branch
     List(GetBookmarkArgs),
 
     /// Checkout a bookmark
@@ -229,9 +229,9 @@ pub struct GetBookmarkArgs {
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
 
-    /// The ID of the clone
-    #[clap(short = 'c', long, required = true)]
-    pub clone_id: String,
+    /// The ID of the branch
+    #[clap(short = 'b', long, required = true)]
+    pub branch_id: String,
 }
 
 #[derive(Args, Debug)]

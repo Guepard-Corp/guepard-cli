@@ -220,12 +220,12 @@ gprd bookmark list-all -x <DEPLOYMENT_ID>
 
 ### 📋 List Bookmarks
 
-Lists bookmarks for a specific clone in a deployment.
+Lists bookmarks for a specific branch in a deployment.
 
 ```bash
 gprd bookmark list 
   -x <DEPLOYMENT_ID> 
-  -c <CLONE_ID>
+  -b <BRANCH_ID>
 ```
 
 ---

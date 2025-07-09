@@ -6,16 +6,15 @@ pub struct GetBookmarkResponse {
     pub id: String, // bookmark_id = snapshot_id
     pub name: String,  // bookmark_name = snapshot_name
     pub status: String,
-    pub clone_id: String, // clone_id = branch_id
+    pub dataset_id: String, // branch_id
     pub parent_id: Option<String>,
     pub created_by: String,
     pub created_date: String,
     pub snapshot_type: String,
     pub is_ephemeral: bool,
     pub snapshot_comment: String,
-    pub schema: BookmarkSchema,
+    pub snapshot_schema: Value, 
 }
-
 #[derive(Debug, Deserialize)]
 pub struct CreateBookmarkResponse {
     pub id: String, // bookmark_id = snapshot_id
