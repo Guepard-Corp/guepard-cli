@@ -156,21 +156,37 @@ pub struct CreateDeployArgs {
     #[clap(short = 'r', long, required = true)]
     pub region: String,
 
+    /// The datacenter for the deployment
+    #[clap(short = 'd', long, required = true)]
+    pub datacenter: String,
+
     /// The instance type for the deployment
     #[clap(short = 'i', long, required = true)]
     pub instance_type: String,
 
-    /// The datacenter for the deployment
-    #[clap(short = 'd', long, required = true)]
-    pub datacenter: String,
+    /// The type of deployment (e.g., REPOSITORY,SHADOW,F2)
+    #[clap(short = 't', long, required = true)]
+    pub deployment_type: String,
 
     /// The name of the repository
     #[clap(short = 'n', long, required = true)]
     pub repository_name: String,
 
+    /// The username for the database
+    #[clap(short = 'u', long, required = true)]
+    pub database_username: String,
+
     /// The password for the database
     #[clap(short = 'w', long, required = true)]
     pub database_password: String,
+
+    /// The performance profile ID (optional)
+    #[clap(long)]
+    pub performance_profile_id: Option<String>,
+
+    /// The node ID ,(optional, A shared Node will be assigned to the user )
+    #[clap(long)]
+    pub node_id: Option<String>,
 }
 
 /// Arguments for updating an existing deployment

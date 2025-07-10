@@ -96,24 +96,39 @@ Creates a new deployment.
 
 ```bash
 gprd deploy create 
-  -p <DB_PROVIDER> 
-  -v <DB_VERSION> 
+  -p <DATABASE_PROVIDER> 
+  -v <DATABASE_VERSION> 
   -r <REGION> 
-  -i <INSTANCE_TYPE> 
   -d <DATACENTER> 
-  -n <REPO_NAME> 
-  -w <DB_PASSWORD>
+  -i <INSTANCE_TYPE> 
+  -t <DEPLOYMENT_TYPE> 
+  -n <REPOSITORY_NAME> 
+  -u <DATABASE_USERNAME> 
+  -w <DATABASE_PASSWORD> 
+  [--performance-profile-id <PERFORMANCE_PROFILE_ID>] 
+  [--node-id <NODE_ID>]
 ```
 
 **Options:**
 
-* `-p, --database-provider` : Database provider (e.g., PostgreSQL, MySQL)
-* `-v, --database-version`  : Database version
-* `-r, --region`            : Region for deployment
-* `-i, --instance-type`     : Instance type
-* `-d, --datacenter`        : Datacenter location
-* `-n, --repository-name`   : Repository name
-* `-w, --database-password` : Database password
+* `-p, --database-provider`        : Database provider (e.g., PostgreSQL, MySQL)
+* `-v, --database-version`         : Database version (e.g., 17)
+* `-r, --region`                   : Region for the deployment (e.g., us-west-aws)
+* `-d, --datacenter`               : Datacenter for the deployment (e.g., us-west-aws)
+* `-i, --instance-type`            : Instance type (e.g., free)
+* `-t, --deployment-type`          : Deployment type (e.g., REPOSITORY)
+* `-n, --repository-name`          : Name of the repository
+* `-u, --database-username`        : Database username
+* `-w, --database-password`        : Database password
+* `--performance-profile-id`       : Performance profile ID (optional)
+* `--node-id`                      : Node ID (optional)
+
+**Output:**  
+Displays the deployment ID, name, status, repository name, database provider, region, and username.
+
+**Example:**
+
+✅ Created deployment [18cdfa3d-7614-4784-963a-f91011efe81a] 'fierce-ocean-vq0l4t' (Status: INIT) with repo [db-no-node], provider [PostgreSQL], region [global], username [guepard]
 
 ---
 

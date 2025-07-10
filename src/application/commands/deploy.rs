@@ -21,23 +21,31 @@ struct DeployRow {
 }
 pub async fn create(args: &CreateDeployArgs, config: &Config) -> Result<()> {
     let request = CreateDeploymentRequest {
+        repository_name: args.repository_name.clone(),
         database_provider: args.database_provider.clone(),
         database_version: args.database_version.clone(),
+        deployment_type: args.deployment_type.clone(),
         region: args.region.clone(),
-        instance_type: args.instance_type.clone(),
         datacenter: args.datacenter.clone(),
-        repository_name: args.repository_name.clone(),
+        instance_type: args.instance_type.clone(),
+        database_username: args.database_username.clone(),
         database_password: args.database_password.clone(),
+        performance_profile_id: args.performance_profile_id.clone(),
+        node_id: args.node_id.clone(),
     };
-    deploy_service::create_deployment(request, config).await?;
+    let deployment = deploy_service::create_deployment(request, config).await?;
     println!(
-        "{} Created deployment with provider [{}] in [{}]",
+        "{} Created deployment [{}] '{}' (Status: {}) with repo [{}], provider [{}], region [{}], username [{}]",
         "✅".green(),
-        args.database_provider,
-        args.region
+        deployment.id.cyan(),
+        deployment.name,
+        deployment.status,
+        deployment.repository_name,
+        deployment.database_provider,
+        deployment.region,
+        deployment.database_username
     );
     Ok(())
-    
 }
 
 pub async fn update(args: &UpdateDeployArgs, config: &Config) -> Result<()> {
