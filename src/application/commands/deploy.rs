@@ -63,8 +63,10 @@ pub async fn update(args: &UpdateDeployArgs, config: &Config) -> Result<()> {
     Ok(())
 }
 
+
+
 pub async fn list(config: &Config) -> Result<()> {
-    let deployments = deploy_service::list_deployments(config).await?; 
+    let deployments = deploy_service::list_deployments(config).await?;
     if deployments.is_empty() {
         println!("{} No deployments found", "ℹ️".blue());
         return Ok(());
@@ -82,17 +84,17 @@ pub async fn list(config: &Config) -> Result<()> {
     Ok(())
 }
 
-pub async fn get(deployment_id: &str,config: &Config) -> Result<()> {
+pub async fn get(deployment_id: &str, config: &Config) -> Result<()> {
     let deployment: crate::application::dto::deploy_dto::GetDeploymentResponse = deploy_service::get_deployment(deployment_id, config).await?;
     println!(
-        "{} Deployment [{}]: '{}', Status: [{}], Repo: [{}], Region: [{}], Active Compute: [{}]",
+        "{} Deployment [{}]: '{}', Status: [{}], Repo: [{}], Provider: [{}], Region: [{}]",
         "✅".green(),
         deployment.id.cyan(),
         deployment.name,
         deployment.status,
         deployment.repository_name,
+        deployment.database_provider,
         deployment.region,
-        deployment.clone_id
     );
     Ok(())
 }

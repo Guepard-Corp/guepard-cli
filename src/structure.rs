@@ -33,9 +33,9 @@ pub enum SubCommand {
     /// Show usage information
     Usage,
 
-    /// Show details about branches, bookmarks, etc.
-    #[clap(subcommand)]
-    Show(ShowCommand),
+    // /// Show details about branches, bookmarks, etc.
+    // #[clap(subcommand)]
+    // Show(ShowCommand),
 
     /// Start login and get authentication URL
     Link, 

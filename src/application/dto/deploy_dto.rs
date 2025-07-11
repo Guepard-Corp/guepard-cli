@@ -1,4 +1,6 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CreateDeploymentRequest {
     pub repository_name: String,
@@ -50,38 +52,47 @@ pub struct CreateDeploymentResponse {
 pub struct UpdateDeploymentRequest {
     pub repository_name: String,
 }
+
 #[derive(Debug, Deserialize)]
 pub struct ListDeploymentsResponse {
-    pub id: String, // Deployment ID
-    pub name: String, // Compute name
+    pub id: String,
+    pub name: String,
     pub status: String,
     pub repository_name: String,
     pub fqdn: String,
     pub database_provider: String,
     pub database_version: String,
     pub region: String,
-    pub instance_type: String,
+    pub datacenter: String,
+    pub deployment_type: String,
+    pub database_username: Option<String>,
+    // pub instance_type: String,
     pub created_by: String,
     pub created_date: String,
     pub customer_id: String,
+    pub branch_id: Option<String>,
+    pub gp_node: Value, // Flexible JSON for gp_node
 }
+
 #[derive(Debug, Deserialize)]
 pub struct GetDeploymentResponse {
     pub id: String,
-    pub name: String, // Compute name
+    pub name: String,
     pub status: String,
     pub repository_name: String,
-    pub clone_id: String, // represents the   Active compute_id
-    pub snapshot_id: String,
+    pub branch_id: Option<String>,
+    pub snapshot_id: Option<String>,
     pub fqdn: String,
     pub database_provider: String,
     pub database_version: String,
     pub region: String,
-    pub instance_type: String,
+    pub datacenter: String,
+    pub deployment_type: String,
+    pub database_username:  Option<String>,
+    pub database_password:  Option<String>,
+    // pub instance_type: String,
     pub created_by: String,
     pub created_date: String,
     pub customer_id: String,
-    pub database_password: String,
+    pub gp_node: Value, // Flexible JSON for gp_node
 }
-// THE APIS WILL BE UPDATED , The Compute name is the same as the deployment name ( deplotment_name= repository_name)
-// Note : in the response of GetDeploymentResponse, the clone_id is the same as the active compute_id , the attributes in the api will change and the dtos will be updated
