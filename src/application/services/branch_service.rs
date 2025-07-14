@@ -5,7 +5,7 @@ use reqwest::Client;
 
 pub async fn create_branch(
     deployment_id: &str,
-    clone_id: &str,
+    branch_id: &str,
     snapshot_id: &str,
     request: BranchRequest,
     config: &Config,
@@ -16,7 +16,7 @@ pub async fn create_branch(
     let response = client
         .post(format!(
             "{}/deploy/{}/{}/{}/branch",
-            config.api_url, deployment_id, clone_id, snapshot_id
+            config.api_url, deployment_id, branch_id, snapshot_id
         ))
         .header("Authorization", format!("Bearer {}", jwt_token))
         .json(&request)
@@ -33,7 +33,6 @@ pub async fn create_branch(
         Err(BranchError::from_response(response).await)
     }
 }
-
 pub async fn list_branches(deployment_id: &str, config: &Config) -> Result<Vec<ListBranchesResponse>, BranchError> {
     let jwt_token = config::load_jwt_token()
         .map_err(|e| BranchError::SessionError(e.to_string()))?;

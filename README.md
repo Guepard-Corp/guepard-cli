@@ -175,27 +175,35 @@ gprd deploy get -x <DEPLOYMENT_ID>
 
 ## 🌿 Branch Management Commands
 
-### ➕ Create Branch
+### 🌱 Create Branch
 
-Creates a new branch from a snapshot.
+Creates a new branch from a snapshot in a deployment.
 
 ```bash
 gprd branch create 
   -x <DEPLOYMENT_ID> 
-  -c <CLONE_ID> 
+  -b <BRANCH_ID> 
   -s <SNAPSHOT_ID> 
-  -d <DISCARD_CHANGES> 
-  [-k] [-e]
+  [--discard-changes] 
+  [--checkout] 
+  [--ephemeral]
 ```
 
 **Options:**
 
-* `-x, --deployment-id` : Deployment ID
-* `-c, --clone-id`      : Clone ID to branch from
-* `-s, --snapshot-id`   : Snapshot ID to base the branch on
-* `-d, --discard-changes` : Changes to discard (e.g., "true")
-* `-k, --checkout`      : Check out the branch after creation (optional)
-* `-e, --ephemeral`     : Mark the branch as ephemeral (optional)
+* `-x, --deployment-id`   : Deployment ID
+* `-b, --branch-id`       : Source branch ID (used as branch name)
+* `-s, --snapshot-id`     : Snapshot ID
+* `--discard-changes`     : Discard changes in the source branch (default: false)
+* `--checkout`            : Checkout the branch after creation (default: false)
+* `--ephemeral`           : Create an ephemeral branch (default: false)
+
+**Output:**  
+Confirms the branch creation with branch ID, name, status, snapshot ID, and deployment ID.
+
+**Example:**
+
+✅ Created branch [ca395480-ee92-441f-9773-560f768b96f7] 'from main branch 01' (INIT) from snapshot [5452c8a5-ca29-4c4e-91f9-8513209ae32e] in deployment [15c6cb1d-9ab2-440f-9e91-10b51306637f]
 
 ---
 

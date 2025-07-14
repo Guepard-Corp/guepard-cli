@@ -20,31 +20,30 @@ struct BranchRow {
 
 pub async fn create(args: &CreateBranchArgs, config: &Config) -> Result<()> {
     let request = BranchRequest {
-        discard_changes: Some(args.discard_changes.clone()),
+        branch_name: args.branch_id.clone(), // Use branch_id as branch_name for simplicity
+        discard_changes: args.discard_changes,
         checkout: args.checkout,
         ephemeral: args.ephemeral,
     };
     let branch = branch_service::create_branch(
         &args.deployment_id,
-        &args.clone_id,
+        &args.branch_id,
         &args.snapshot_id,
         request,
-        config, 
+        config,
     )
     .await?;
-println!(
-    "{} Created branch [{}] '{}' ({}) from snapshot [{}] in deployment [{}]",
-    "✅".green(),
-    branch.id.cyan(),
-    branch.name,
-    branch.status,
-    branch.snapshot_id,
-    branch.deployment_id
-);
-Ok(())
+    println!(
+        "{} Created branch [{}] '{}' ({}) from snapshot [{}] in deployment [{}]",
+        "✅".green(),
+        branch.id.cyan(),
+        branch.branch_name,
+        branch.job_status,
+        branch.snapshot_id,
+        branch.deployment_id
+    );
+    Ok(())
 }
-
-
 
 pub async fn list(deployment_id: &str, config: &Config) -> Result<()> {
     let branches = branch_service::list_branches(deployment_id, config).await?;
@@ -80,8 +79,8 @@ pub async fn checkout(args: &CheckoutBranchArgs, config: &Config) -> Result<()> 
         "{} Checked out branch [{}] '{}' ({}) from snapshot [{}] in deployment [{}]",
         "✅".green(),
         branch.id.cyan(),
-        branch.name,
-        branch.status,
+        branch.branch_name,
+        branch.job_status,
         branch.snapshot_id,
         branch.deployment_id
     );

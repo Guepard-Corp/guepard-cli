@@ -201,24 +201,24 @@ pub struct CreateBranchArgs {
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
 
-    /// The ID of the clone
-    #[clap(short = 'c', long, required = true)]
-    pub clone_id: String,
+    /// The ID of the source branch
+    #[clap(short = 'b', long, required = true)]
+    pub branch_id: String,
 
     /// The ID of the snapshot
     #[clap(short = 's', long, required = true)]
     pub snapshot_id: String,
 
-    /// Whether to discard changes
-    #[clap(short = 'd', long, required = true)]
-    pub discard_changes: String,
+    /// Discard changes in the source branch
+    #[clap(long, default_value = "false")]
+    pub discard_changes: bool,
 
-    /// Whether to checkout the branch after creation
-    #[clap(short = 'k', long)]
+    /// Checkout the branch after creation
+    #[clap(long, default_value = "false")]
     pub checkout: bool,
 
-    /// Whether the branch is ephemeral
-    #[clap(short = 'e', long)]
+    /// Create an ephemeral branch
+    #[clap(long, default_value = "false")]
     pub ephemeral: bool,
 }
 
