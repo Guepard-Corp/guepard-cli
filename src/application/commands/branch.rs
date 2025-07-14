@@ -8,16 +8,14 @@ use colored::Colorize;
 
 #[derive(Tabled)]
 struct BranchRow {
-    #[tabled(rename = "ID")]
+    #[tabled(rename = "Branch ID")]
     id: String,
     #[tabled(rename = "Name")]
-    name: String,
+    label_name: String,
     #[tabled(rename = "Status")]
-    status: String,
+    job_status: String,
     #[tabled(rename = "Snapshot ID")]
     snapshot_id: String,
-    #[tabled(rename = "Clone ID")]
-    clone_id: String,
 }
 
 pub async fn create(args: &CreateBranchArgs, config: &Config) -> Result<()> {
@@ -46,12 +44,14 @@ println!(
 Ok(())
 }
 
+
+
 pub async fn list(deployment_id: &str, config: &Config) -> Result<()> {
     let branches = branch_service::list_branches(deployment_id, config).await?;
     if branches.is_empty() {
         println!("{} No branches found for deployment ID: {}", "ℹ️".blue(), deployment_id);
+        return Ok(());
     }
-
 
     let filtered_branches: Vec<_> = branches.into_iter()
         .filter(|b| !b.is_ephemeral) // Filter out ephemeral branches
@@ -64,10 +64,9 @@ pub async fn list(deployment_id: &str, config: &Config) -> Result<()> {
 
     let rows: Vec<BranchRow> = filtered_branches.into_iter().map(|b| BranchRow {
         id: b.id,
-        name: b.name,
-        status: b.status,
+        label_name: b.label_name,
+        job_status: b.job_status,
         snapshot_id: b.snapshot_id.unwrap_or("None".to_string()),
-        clone_id: b.clone_id,
     }).collect();
 
     println!("{} Retrieved {} non-ephemeral branches:", "✅".green(), rows.len());

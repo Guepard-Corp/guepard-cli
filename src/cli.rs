@@ -1,8 +1,8 @@
 use clap::Parser;
-use guepard_cli::application::commands::{bookmark, branch, deploy, compute, usage, show, link,login,logout};
+use guepard_cli::application::commands::{bookmark, branch, deploy, compute, usage, link,login,logout};
 use guepard_cli::config::config::{load_config, Config};
 use guepard_cli::domain::errors::{bookmark_error::BookmarkError, branch_error::BranchError, compute_error::ComputeError, deploy_error::DeployError, link_error::LinkError, usage_error::UsageError};
-use guepard_cli::structure::{BookmarkCommand, DeployCommand, SubCommand, CLI, BranchCommand, ComputeCommand, ShowCommand};
+use guepard_cli::structure::{BookmarkCommand, DeployCommand, SubCommand, CLI, BranchCommand, ComputeCommand};
 
 #[tokio::main]
 async fn main() {
@@ -70,7 +70,6 @@ async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
             ComputeCommand::List(args) => compute::list(args, config).await,
             ComputeCommand::Start(args) => compute::start(args, config).await,
             ComputeCommand::Stop(args) => compute::stop(args, config).await,
-            ComputeCommand::Logs(args) => compute::logs(args, config).await,
             ComputeCommand::Status(args) => compute::status(args, config).await,
         },
         SubCommand::Usage => usage::usage(config).await,

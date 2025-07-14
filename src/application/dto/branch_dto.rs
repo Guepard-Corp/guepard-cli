@@ -27,20 +27,19 @@ pub struct BranchResponse {
     pub created_date: String,
 }
 
-/// matches the GET /clone response.
 #[derive(Debug, Deserialize)]
 pub struct ListBranchesResponse {
-    pub id: String, // deployment id 
-    pub name: String,
-    pub status: String,
-    pub snapshot_id: Option<String>,
+    pub id: String, // branch ID 
+    pub account_id: String,
     pub deployment_id: String,
-    pub environment_type: Option<String>,
-    pub database_provider: String,
+    pub label_name: String, 
+    pub job_status: String,
+    pub snapshot_id: Option<String>, // source bookmark
     pub is_ephemeral: bool,
     pub is_masked: bool,
     pub is_purged: bool,
     pub created_by: String,
-    pub created_date: String,
-    pub clone_id: String,
+    pub created_at: Option<String>,
+    pub updated_by: Option<String>,
+    pub updated_at: Option<String>,
 }

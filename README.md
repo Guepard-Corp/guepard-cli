@@ -199,12 +199,30 @@ gprd branch create
 
 ---
 
-### 📋 List Branches
+### 🌿 List Branches
 
 Lists all non-ephemeral branches for a deployment.
 
 ```bash
 gprd branch list -x <DEPLOYMENT_ID>
+```
+
+**Options:**
+
+* `-x, --deployment-id` : Deployment ID
+
+**Output:**  
+Displays a table with branch ID, name, status, and snapshot ID. Ephemeral branches are excluded.
+
+**Example:**
+
+✅ Retrieved 1 non-ephemeral branches:
+```
+┌──────────────────────────────────────┬──────────────┬─────────┬──────────────────────────────────────┐
+│ Branch ID                            │ Name         │ Status  │ Snapshot ID                          │
+├──────────────────────────────────────┼──────────────┼─────────┼──────────────────────────────────────┤
+│ 599cff72-247e-4baf-bac9-73e86d4d86b4 │ main         │ CREATED │ 69049b72-9ef0-4e2e-9ff3-4b94adeac994 │
+└──────────────────────────────────────┴──────────────┴─────────┴──────────────────────────────────────┘
 ```
 
 ---
@@ -277,49 +295,63 @@ gprd bookmark checkout
 
 ### 📋 List Compute
 
-Fetches details of a compute instance.
+Lists compute details for a deployment.
 
 ```bash
-gprd compute list 
-  -x <DEPLOYMENT_ID> 
-  -c <COMPUTE_ID>
+gprd compute list -x <DEPLOYMENT_ID>
 ```
 
----
+**Options:**
+
+* `-x, --deployment-id` : Deployment ID
+
+**Output:**  
+Displays the compute name, branch ID, and connection string.
+
+**Example:**
+
+✅ Compute 'sad-sound-n0j1kq', Branch: [599cff72-247e-4baf-bac9-73e86d4d86b4], Connection String : [postgresql://guepard:guepard@sad-sound-n0j1kq.us-west-aws.db.dev.guepard.run:22885/postgres?sslmode=require]
 
 ### ▶️ Start Compute
 
-Starts a compute instance.
+Starts a compute instance for a deployment.
 
 ```bash
-gprd compute start 
-  -x <DEPLOYMENT_ID> 
-  -c <COMPUTE_ID>
+gprd compute start -x <DEPLOYMENT_ID>
 ```
+
+**Options:**
+
+* `-x, --deployment-id` : Deployment ID
+
+**Output:**  
+Confirms that the job compute  for the deployment is received by the nomad server.
+
+**Example:**
+
+✅ Started compute for deployment [15c6cb1d-9ab2-440f-9e91-10b51306637f]
 
 ---
 
-### ⏹️ Stop Compute
+### 🛑 Stop Compute
 
-Stops a compute instance.
-
-```bash
-gprd compute stop 
-  -x <DEPLOYMENT_ID> 
-  -c <COMPUTE_ID>
-```
-
----
-
-### 📜 Get Compute Logs
-
-Fetches logs for a compute instance.
+Stops a compute instance for a deployment.
 
 ```bash
-gprd compute logs 
-  -x <DEPLOYMENT_ID> 
-  -c <COMPUTE_ID>
+gprd compute stop -x <DEPLOYMENT_ID>
 ```
+
+**Options:**
+
+* `-x, --deployment-id` : Deployment ID
+
+**Output:**  
+Confirms that the compute instance for the deployment has stopped.
+
+**Example:**
+
+✅ Stopped compute for deployment [15c6cb1d-9ab2-440f-9e91-10b51306637f]
+
 
 ---
 
@@ -330,7 +362,6 @@ Checks the health status of a compute instance.
 ```bash
 gprd compute status 
   -x <DEPLOYMENT_ID> 
-  -c <COMPUTE_ID>
 ```
 
 ---
@@ -347,27 +378,7 @@ gprd usage
 
 ---
 
-## 👀 Show Commands
 
-### 🌿 Show Branches
-
-Lists branches with the active one marked.
-
-```bash
-gprd show branches -x <DEPLOYMENT_ID>
-```
-
----
-
-### 🔖 Show Bookmarks
-
-Lists bookmarks with the active one marked.
-
-```bash
-gprd show bookmarks -x <DEPLOYMENT_ID>
-```
-
----
 
 ## ⚙️ Environment Variables
 

@@ -39,7 +39,7 @@ pub async fn list_branches(deployment_id: &str, config: &Config) -> Result<Vec<L
         .map_err(|e| BranchError::SessionError(e.to_string()))?;
     let client = Client::new();
     let response = client
-        .get(format!("{}/deploy/{}/clone", config.api_url, deployment_id))
+        .get(format!("{}/deploy/{}/branch", config.api_url, deployment_id))
         .header("Authorization", format!("Bearer {}", jwt_token))
         .send()
         .await

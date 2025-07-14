@@ -68,10 +68,6 @@ pub struct GetComputeArgs {
     /// The ID of the deployment
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
-
-    /// The ID of the compute instance
-    #[clap(short = 'c', long, required = true)]
-    pub compute_id: String,
 }
 
 #[derive(Subcommand, Debug)]
@@ -85,8 +81,6 @@ pub enum ComputeCommand {
     /// Stop a compute instance
     Stop(GetComputeArgs),
 
-    /// View logs for a compute instance
-    Logs(GetComputeArgs),
 
     /// Check the status of a compute instance
     Status(GetComputeArgs),
