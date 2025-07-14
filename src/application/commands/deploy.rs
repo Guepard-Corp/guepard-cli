@@ -55,7 +55,7 @@ pub async fn update(args: &UpdateDeployArgs, config: &Config) -> Result<()> {
 
     deploy_service::update_deployment(&args.deployment_id, request, config).await?; 
     println!(
-        "{} Updated deployment [{}] to repo [{}]",
+        "{} Updated deployment  [{}] to the name : [{}]",
         "✅".green(),
         args.deployment_id.cyan(),
         args.repository_name
