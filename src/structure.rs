@@ -228,9 +228,9 @@ pub struct CheckoutBranchArgs {
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
 
-    /// The ID of the clone
-    #[clap(short = 'c', long, required = true)]
-    pub clone_id: String,
+    /// The ID of the branch to checkout
+    #[clap(short = 'b', long, required = true)]
+    pub branch_id: String,
 }
 
 #[derive(Args, Debug)]

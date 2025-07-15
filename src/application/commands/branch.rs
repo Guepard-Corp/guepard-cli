@@ -74,15 +74,12 @@ pub async fn list(deployment_id: &str, config: &Config) -> Result<()> {
 }
 
 pub async fn checkout(args: &CheckoutBranchArgs, config: &Config) -> Result<()> {
-    let branch = branch_service::checkout_branch(&args.deployment_id, &args.clone_id, config).await?;
+    branch_service::checkout_branch(&args.deployment_id, &args.branch_id, config).await?;
     println!(
-        "{} Checked out branch [{}] '{}' ({}) from snapshot [{}] in deployment [{}]",
+        "{} Checked out branch [{}] in deployment [{}]",
         "✅".green(),
-        branch.id.cyan(),
-        branch.branch_name,
-        branch.job_status,
-        branch.snapshot_id,
-        branch.deployment_id
+        args.branch_id.cyan(),
+        args.deployment_id
     );
     Ok(())
 }

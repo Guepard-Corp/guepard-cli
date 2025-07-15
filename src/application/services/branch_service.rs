@@ -56,16 +56,16 @@ pub async fn list_branches(deployment_id: &str, config: &Config) -> Result<Vec<L
 
 pub async fn checkout_branch(
     deployment_id: &str,
-    clone_id: &str,
+    branch_id: &str,
     config: &Config,
-) -> Result<BranchResponse, BranchError> {
+) -> Result<(), BranchError> {
     let jwt_token = config::load_jwt_token()
         .map_err(|e| BranchError::SessionError(e.to_string()))?;
     let client = Client::new();
     let response = client
         .post(format!(
             "{}/deploy/{}/{}/checkout",
-            config.api_url, deployment_id, clone_id
+            config.api_url, deployment_id, branch_id
         ))
         .header("Authorization", format!("Bearer {}", jwt_token))
         .send()
@@ -73,10 +73,7 @@ pub async fn checkout_branch(
         .map_err(BranchError::RequestFailed)?;
 
     if response.status().is_success() {
-        response
-            .json::<BranchResponse>()
-            .await
-            .map_err(|e| BranchError::ParseError(e.to_string()))
+        Ok(())
     } else {
         Err(BranchError::from_response(response).await)
     }

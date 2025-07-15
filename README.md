@@ -235,17 +235,25 @@ Displays a table with branch ID, name, status, and snapshot ID. Ephemeral branch
 
 ---
 
-### ✅ Checkout Branch
+### 🔄 Checkout Branch
 
-Checks out an existing branch.
+Checks out a branch in a deployment.
 
 ```bash
-gprd branch checkout 
-  -x <DEPLOYMENT_ID> 
-  -c <CLONE_ID>
+gprd branch checkout -x <DEPLOYMENT_ID> -b <BRANCH_ID>
 ```
 
----
+**Options:**
+
+* `-x, --deployment-id` : Deployment ID
+* `-b, --branch-id`     : Branch ID
+
+**Output:**  
+Confirms that the branch has been checked out in the deployment.
+
+**Example:**
+
+✅ Checked out branch [599cff72-247e-4baf-bac9-73e86d4d86b4] in deployment [15c6cb1d-9ab2-440f-9e91-10b51306637f]
 
 ## 🔖 Bookmark Management Commands
 
