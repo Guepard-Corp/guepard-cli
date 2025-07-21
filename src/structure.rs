@@ -54,14 +54,7 @@ pub struct LoginArgs {
     pub code: String,
 }
 
-#[derive(Subcommand, Debug)]
-pub enum ShowCommand {
-    /// List all branches for a deployment
-    Branches(GetDeployArgs),
 
-    /// List all bookmarks for a deployment
-    Bookmarks(GetDeployArgs),
-}
 
 #[derive(Args, Debug)]
 pub struct GetComputeArgs {

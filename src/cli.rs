@@ -73,10 +73,7 @@ async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
             ComputeCommand::Status(args) => compute::status(args, config).await,
         },
         SubCommand::Usage => usage::usage(config).await,
-        // SubCommand::Show(cmd) => match cmd {
-        //     ShowCommand::Branches(args) => show::show_branches(args, config).await,
-        //     ShowCommand::Bookmarks(args) => show::show_bookmarks(args, config).await,
-        // },
+
         SubCommand::Link => link::execute(config).await.map_err(Into::into),    
         SubCommand::Login(args) => login::execute(config, &args.code).await,
         SubCommand::Logout => logout::logout(config).await,
