@@ -14,7 +14,7 @@ struct DeployRow {
     name: String,
     #[tabled(rename = "Status")]
     status: String,
-    #[tabled(rename = "Repository")]
+    #[tabled(rename = " Creation Date")]
     repository_name: String,
     #[tabled(rename = "Region")]
     region: String,
@@ -87,7 +87,7 @@ pub async fn list(config: &Config) -> Result<()> {
 pub async fn get(deployment_id: &str, config: &Config) -> Result<()> {
     let deployment: crate::application::dto::deploy_dto::GetDeploymentResponse = deploy_service::get_deployment(deployment_id, config).await?;
     println!(
-        "{} Deployment [{}]: '{}', Status: [{}], Repo: [{}], Provider: [{}], Region: [{}]",
+        "{} Deployment [{}]: '{}', Status: [{}], Creation Date: [{}], Provider: [{}], Region: [{}]",
         "✅".green(),
         deployment.id.cyan(),
         deployment.name,
