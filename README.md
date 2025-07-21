@@ -292,18 +292,37 @@ gprd bookmark create
 
 ---
 
-### ✅ Checkout Bookmark
+### 📌 Checkout Bookmark
 
-Checks out a bookmark as a new branch.
+Checks out a bookmark to a branch in a deployment.
 
 ```bash
 gprd bookmark checkout 
   -x <DEPLOYMENT_ID> 
-  -c <CLONE_ID> 
+  -b <BRANCH_ID> 
   -s <SNAPSHOT_ID> 
-  -d <DISCARD_CHANGES> 
-  [-k] [-e]
+  [--discard-changes] 
+  [--checkout] 
+  [--ephemeral] 
+  [--performance-profile-name <NAME>]
 ```
+
+**Options:**
+
+* `-x, --deployment-id`           : Deployment ID
+* `-b, --branch-id`               : Branch ID
+* `-s, --snapshot-id`             : Snapshot ID
+* `--discard-changes`             : Discard changes in the source branch (default: false)
+* `--checkout`                    : Checkout the bookmark (default: true)
+* `--ephemeral`                   : Create an ephemeral branch (default: false)
+* `--performance-profile-name`    : Performance profile name (optional)
+
+**Output:**  
+Confirms the bookmark checkout with branch ID, snapshot ID, and deployment ID.
+
+**Example:**
+
+✅ Checked out bookmark to branch [e143ddc9-6784-4277-a1bd-f9f3b32c718f] from snapshot [013af881-00c6-421a-a178-a89fabf656f1] in deployment [947a3f5e-5ef8-45d9-959c-937a731afc85]
 
 ---
 

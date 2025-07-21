@@ -2,7 +2,7 @@ use crate::application::dto::bookmark_dto::{CreateBookmarkRequest};
 use crate::config::config::Config;
 use crate::structure::{CreateBookmarkArgs, CheckoutBookmarkArgs};
 use anyhow::Result;
-use crate::application::dto::branch_dto::BranchRequest;
+use crate::application::dto::bookmark_dto::CheckoutBookmarkRequest;
 use crate::application::services::bookmark_service;
 use tabled::{Table, Tabled, settings::Style};
 use colored::Colorize;
@@ -79,23 +79,26 @@ pub async fn create(args: &CreateBookmarkArgs, config: &Config) -> Result<()> {
 }
 
 pub async fn checkout(args: &CheckoutBookmarkArgs, config: &Config) -> Result<()> {
-    let request = BranchRequest {
-        discard_changes: Some(args.discard_changes.clone()),
+    let request = CheckoutBookmarkRequest {
+        discard_changes: args.discard_changes,
         checkout: args.checkout,
         ephemeral: args.ephemeral,
+        performance_profile_name: args.performance_profile_name.clone(),
     };
     let bookmark = bookmark_service::checkout_bookmark(
-        &args.deployment_id, &args.clone_id, &args.snapshot_id, request, config
-    ).await?;
+        &args.deployment_id,
+        &args.branch_id,
+        &args.snapshot_id,
+        request,
+        config,
+    )
+    .await?;
     println!(
-        "{} Checked out bookmark [{}] '{}' ({}) on snapshot [{}] with [{}], user: [{}]",
+        "{} Checked out bookmark to branch [{}] from snapshot [{}] in deployment [{}]",
         "✅".green(),
         bookmark.id.cyan(),
-        bookmark.name,
-        bookmark.status,
         bookmark.snapshot_id,
-        bookmark.database_provider,
-        bookmark.database_username
+        bookmark.deployment_id
     );
     Ok(())
 }

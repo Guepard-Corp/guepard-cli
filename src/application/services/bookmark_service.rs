@@ -1,5 +1,5 @@
 use crate::application::dto::bookmark_dto::{GetBookmarkResponse, CreateBookmarkRequest, CreateBookmarkResponse, CheckoutBookmarkResponse};
-use crate::application::dto::branch_dto::BranchRequest;
+use crate::application::dto::bookmark_dto::CheckoutBookmarkRequest;
 use crate::config::config::{self, Config};
 use crate::domain::errors::bookmark_error::BookmarkError;
 use anyhow::Result;
@@ -74,9 +74,9 @@ pub async fn create_bookmark(
 
 pub async fn checkout_bookmark(
     deployment_id: &str,
-    clone_id: &str,
+    branch_id: &str,
     snapshot_id: &str,
-    request: BranchRequest,
+    request: CheckoutBookmarkRequest,
     config: &Config,
 ) -> Result<CheckoutBookmarkResponse, BookmarkError> {
     let jwt_token = config::load_jwt_token()
@@ -85,7 +85,7 @@ pub async fn checkout_bookmark(
     let response = client
         .post(format!(
             "{}/deploy/{}/{}/{}/branch",
-            config.api_url, deployment_id, clone_id, snapshot_id
+            config.api_url, deployment_id, branch_id, snapshot_id
         ))
         .header("Authorization", format!("Bearer {}", jwt_token))
         .json(&request)
@@ -94,7 +94,8 @@ pub async fn checkout_bookmark(
         .map_err(BookmarkError::RequestFailed)?;
 
     if response.status().is_success() {
-        response.json::<CheckoutBookmarkResponse>()
+        response
+            .json::<CheckoutBookmarkResponse>()
             .await
             .map_err(|e| BookmarkError::ParseError(e.to_string()))
     } else {

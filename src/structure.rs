@@ -265,23 +265,27 @@ pub struct CheckoutBookmarkArgs {
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
 
-    /// The ID of the clone
-    #[clap(short = 'c', long, required = true)]
-    pub clone_id: String,
+    /// The ID of the branch
+    #[clap(short = 'b', long, required = true)]
+    pub branch_id: String,
 
     /// The ID of the snapshot
     #[clap(short = 's', long, required = true)]
     pub snapshot_id: String,
 
-    /// Whether to discard changes
-    #[clap(short = 'd', long, required = true)]
-    pub discard_changes: String,
+    /// Discard changes in the source branch
+    #[clap(long, default_value = "false")]
+    pub discard_changes: bool,
 
-    /// Whether to checkout the bookmark after creation
-    #[clap(short = 'k', long)]
+    /// Checkout the bookmark after creation
+    #[clap(long, default_value = "true")]
     pub checkout: bool,
 
-    /// Whether the bookmark is ephemeral
-    #[clap(short = 'e', long)]
+    /// Create an ephemeral branch
+    #[clap(long, default_value = "false")]
     pub ephemeral: bool,
+
+    /// Performance profile name
+    #[clap(long)]
+    pub performance_profile_name: Option<String>,
 }
