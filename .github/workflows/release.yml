@@ -8,30 +8,6 @@ on:
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            artifact_name: linux-amd64
-            archive_format: tar.gz
-          - os: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
-            artifact_name: linux-arm64
-            archive_format: tar.gz
-          - os: macos-latest
-            target: x86_64-apple-darwin
-            artifact_name: macos-amd64
-            archive_format: tar.gz
-          - os: macos-latest
-            target: aarch64-apple-darwin
-            artifact_name: macos-arm64
-            archive_format: tar.gz
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            artifact_name: windows-amd64
-            archive_format: zip
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -40,53 +16,69 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          target: ${{ matrix.target }}
+          targets: x86_64-unknown-linux-gnu,aarch64-unknown-linux-gnu,x86_64-apple-darwin,aarch64-apple-darwin,x86_64-pc-windows-msvc
           override: true
 
-      - name: Install system dependencies (Linux)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libssl-dev libdbus-1-dev pkg-config
 
-      - name: Build
+      - name: Build Linux AMD64
         run: |
-          cargo build --release --target ${{ matrix.target }}
+          cargo build --release --target x86_64-unknown-linux-gnu
+          mkdir -p dist/linux-amd64
+          cp target/x86_64-unknown-linux-gnu/release/guepard dist/linux-amd64/
+          tar -czf dist/guepard-cli-${{ github.ref_name }}-linux-amd64.tar.gz -C dist linux-amd64/
 
-      - name: Create archive
+      - name: Build Linux ARM64
         run: |
-          mkdir -p dist/${{ matrix.artifact_name }}
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            cp target/${{ matrix.target }}/release/guepard.exe dist/${{ matrix.artifact_name }}/
-            cd dist
-            zip -r guepard-cli-${{ github.ref_name }}-${{ matrix.artifact_name }}.zip ${{ matrix.artifact_name }}/
-          else
-            cp target/${{ matrix.target }}/release/guepard dist/${{ matrix.artifact_name }}/
-            cd dist
-            tar -czf guepard-cli-${{ github.ref_name }}-${{ matrix.artifact_name }}.tar.gz ${{ matrix.artifact_name }}/
-          fi
+          cargo build --release --target aarch64-unknown-linux-gnu
+          mkdir -p dist/linux-arm64
+          cp target/aarch64-unknown-linux-gnu/release/guepard dist/linux-arm64/
+          tar -czf dist/guepard-cli-${{ github.ref_name }}-linux-arm64.tar.gz -C dist linux-arm64/
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: guepard-cli-${{ matrix.artifact_name }}
-          path: dist/guepard-cli-${{ github.ref_name }}-${{ matrix.artifact_name }}.*
+      - name: Build macOS AMD64
+        run: |
+          cargo build --release --target x86_64-apple-darwin
+          mkdir -p dist/macos-amd64
+          cp target/x86_64-apple-darwin/release/guepard dist/macos-amd64/
+          tar -czf dist/guepard-cli-${{ github.ref_name }}-macos-amd64.tar.gz -C dist macos-amd64/
 
-  create-release:
-    needs: build-and-release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Build macOS ARM64
+        run: |
+          cargo build --release --target aarch64-apple-darwin
+          mkdir -p dist/macos-arm64
+          cp target/aarch64-apple-darwin/release/guepard dist/macos-arm64/
+          tar -czf dist/guepard-cli-${{ github.ref_name }}-macos-arm64.tar.gz -C dist macos-arm64/
 
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ./artifacts
+      - name: Build Windows AMD64
+        run: |
+          cargo build --release --target x86_64-pc-windows-msvc
+          mkdir -p dist/windows-amd64
+          cp target/x86_64-pc-windows-msvc/release/guepard.exe dist/windows-amd64/
+          cd dist
+          zip -r guepard-cli-${{ github.ref_name }}-windows-amd64.zip windows-amd64/
+
+      - name: Calculate SHA256 checksums
+        run: |
+          cd dist
+          echo "MACOS_ARM64_SHA256=$(shasum -a 256 guepard-cli-${{ github.ref_name }}-macos-arm64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
+          echo "MACOS_AMD64_SHA256=$(shasum -a 256 guepard-cli-${{ github.ref_name }}-macos-amd64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
+          echo "LINUX_ARM64_SHA256=$(shasum -a 256 guepard-cli-${{ github.ref_name }}-linux-arm64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
+          echo "LINUX_AMD64_SHA256=$(shasum -a 256 guepard-cli-${{ github.ref_name }}-linux-amd64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
+          echo "WINDOWS_AMD64_SHA256=$(shasum -a 256 guepard-cli-${{ github.ref_name }}-windows-amd64.zip | cut -d' ' -f1)" >> $GITHUB_ENV
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
+          files: |
+            dist/guepard-cli-${{ github.ref_name }}-linux-amd64.tar.gz
+            dist/guepard-cli-${{ github.ref_name }}-linux-arm64.tar.gz
+            dist/guepard-cli-${{ github.ref_name }}-macos-amd64.tar.gz
+            dist/guepard-cli-${{ github.ref_name }}-macos-arm64.tar.gz
+            dist/guepard-cli-${{ github.ref_name }}-windows-amd64.zip
+          tag_name: ${{ github.ref_name }}
           name: Guepard CLI ${{ github.ref_name }}
           body: |
             ## Guepard CLI ${{ github.ref_name }}
@@ -115,23 +107,24 @@ jobs:
             - Linux (ARM64 + AMD64)
             - Windows (AMD64)
 
+            ### SHA256 Checksums
+            - macOS ARM64: `${{ env.MACOS_ARM64_SHA256 }}`
+            - macOS AMD64: `${{ env.MACOS_AMD64_SHA256 }}`
+            - Linux ARM64: `${{ env.LINUX_ARM64_SHA256 }}`
+            - Linux AMD64: `${{ env.LINUX_AMD64_SHA256 }}`
+            - Windows AMD64: `${{ env.WINDOWS_AMD64_SHA256 }}`
+
             ### What's New
             - Multi-platform support
             - Git-like filesystem for databases
             - Familiar command interface
-          files: |
-            artifacts/guepard-cli-linux-amd64/guepard-cli-*.tar.gz
-            artifacts/guepard-cli-linux-arm64/guepard-cli-*.tar.gz
-            artifacts/guepard-cli-macos-amd64/guepard-cli-*.tar.gz
-            artifacts/guepard-cli-macos-arm64/guepard-cli-*.tar.gz
-            artifacts/guepard-cli-windows-amd64/guepard-cli-*.zip
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   update-homebrew:
-    needs: create-release
+    needs: build-and-release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout homebrew tap
@@ -140,30 +133,6 @@ jobs:
           repository: Guepard-Corp/homebrew-guepard-cli
           token: ${{ secrets.GITHUB_TOKEN }}
           path: homebrew-tap
-
-      - name: Download release assets
-        run: |
-          mkdir -p release-assets
-          cd release-assets
-          
-          # Download macOS ARM64
-          curl -L -o macos-arm64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/${{ github.ref_name }}/guepard-cli-${{ github.ref_name }}-macos-arm64.tar.gz"
-          
-          # Download macOS AMD64
-          curl -L -o macos-amd64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/${{ github.ref_name }}/guepard-cli-${{ github.ref_name }}-macos-amd64.tar.gz"
-          
-          # Download Linux ARM64
-          curl -L -o linux-arm64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/${{ github.ref_name }}/guepard-cli-${{ github.ref_name }}-linux-arm64.tar.gz"
-          
-          # Download Linux AMD64
-          curl -L -o linux-amd64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/${{ github.ref_name }}/guepard-cli-${{ github.ref_name }}-linux-amd64.tar.gz"
-
-      - name: Calculate SHA256 checksums
-        run: |
-          echo "MACOS_ARM64_SHA256=$(shasum -a 256 release-assets/macos-arm64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
-          echo "MACOS_AMD64_SHA256=$(shasum -a 256 release-assets/macos-amd64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
-          echo "LINUX_ARM64_SHA256=$(shasum -a 256 release-assets/linux-arm64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
-          echo "LINUX_AMD64_SHA256=$(shasum -a 256 release-assets/linux-amd64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
 
       - name: Update Homebrew formula
         run: |
@@ -174,28 +143,28 @@ jobs:
             homepage "https://www.guepard.run"
             url "https://github.com/Guepard-Corp/guepard-cli/releases/download/\${VERSION}/guepard-cli-\${VERSION}-macos-arm64.tar.gz"
             version "\${VERSION}"
-            sha256 "$MACOS_ARM64_SHA256"
+            sha256 "${{ env.MACOS_ARM64_SHA256 }}"
             license "Guepard (c) 2025"
 
             on_macos do
               on_arm do
                 url "https://github.com/Guepard-Corp/guepard-cli/releases/download/\${VERSION}/guepard-cli-\${VERSION}-macos-arm64.tar.gz"
-                sha256 "$MACOS_ARM64_SHA256"
+                sha256 "${{ env.MACOS_ARM64_SHA256 }}"
               end
               on_intel do
                 url "https://github.com/Guepard-Corp/guepard-cli/releases/download/\${VERSION}/guepard-cli-\${VERSION}-macos-amd64.tar.gz"
-                sha256 "$MACOS_AMD64_SHA256"
+                sha256 "${{ env.MACOS_AMD64_SHA256 }}"
               end
             end
 
             on_linux do
               on_arm do
                 url "https://github.com/Guepard-Corp/guepard-cli/releases/download/\${VERSION}/guepard-cli-\${VERSION}-linux-arm64.tar.gz"
-                sha256 "$LINUX_ARM64_SHA256"
+                sha256 "${{ env.LINUX_ARM64_SHA256 }}"
               end
               on_intel do
                 url "https://github.com/Guepard-Corp/guepard-cli/releases/download/\${VERSION}/guepard-cli-\${VERSION}-linux-amd64.tar.gz"
-                sha256 "$LINUX_AMD64_SHA256"
+                sha256 "${{ env.LINUX_AMD64_SHA256 }}"
               end
             end
 
@@ -216,206 +185,4 @@ jobs:
           git config --local user.name "GitHub Action"
           git add Formula/guepard.rb
           git commit -m "Update guepard to ${{ github.ref_name }}"
-          git push
-
-  update-snap:
-    needs: create-release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download Linux AMD64 release
-        run: |
-          curl -L -o linux-amd64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/${{ github.ref_name }}/guepard-cli-${{ github.ref_name }}-linux-amd64.tar.gz"
-
-      - name: Calculate SHA256 checksum
-        run: |
-          echo "LINUX_AMD64_SHA256=$(shasum -a 256 linux-amd64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
-
-      - name: Update snapcraft.yaml
-        run: |
-          VERSION="${{ github.ref_name }}"
-          cat > snap/snapcraft.yaml << EOF
-          name: guepard
-          base: core22
-          version: '\${VERSION}'
-          summary: Guepard CLI - Git-like filesystem for databases
-          description: |
-            Guepard CLI provides a Git-like filesystem for databases, offering version control 
-            and management capabilities for database schemas and data. It supports familiar 
-            commands like init, commit, branch, checkout, and more.
-            
-            Features:
-            - Git-like interface with familiar commands
-            - Multi-platform support (Linux, macOS, Windows)
-            - Database management and deployment
-            - Cross-platform consistency
-
-          grade: stable
-          confinement: strict
-
-          parts:
-            guepard:
-              plugin: dump
-              source: https://github.com/Guepard-Corp/guepard-cli/releases/download/\${VERSION}/guepard-cli-\${VERSION}-linux-amd64.tar.gz
-              source-checksum: sha256/$LINUX_AMD64_SHA256
-              organize:
-                guepard: bin/guepard
-
-          apps:
-            guepard:
-              command: bin/guepard
-              plugs:
-                - home
-                - network
-                - removable-media
-
-          slots:
-            guepard:
-              command: bin/guepard
-              interface: content
-              read:
-                - \$SNAP_USER_DATA
-              write:
-                - \$SNAP_USER_DATA
-          EOF
-
-      - name: Commit snapcraft.yaml update
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add snap/snapcraft.yaml
-          git commit -m "Update snapcraft.yaml to ${{ github.ref_name }}"
-          git push
-
-  update-chocolatey:
-    needs: create-release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download Windows release
-        run: |
-          curl -L -o windows-amd64.zip "https://github.com/Guepard-Corp/guepard-cli/releases/download/${{ github.ref_name }}/guepard-cli-${{ github.ref_name }}-windows-amd64.zip"
-
-      - name: Calculate SHA256 checksum
-        run: |
-          echo "WINDOWS_AMD64_SHA256=$(shasum -a 256 windows-amd64.zip | cut -d' ' -f1)" >> $GITHUB_ENV
-
-      - name: Update Chocolatey package
-        run: |
-          VERSION="${{ github.ref_name }}"
-          
-          # Update nuspec file
-          cat > chocolatey/guepard.nuspec << EOF
-          <?xml version="1.0" encoding="utf-8"?>
-          <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
-            <metadata>
-              <id>guepard</id>
-              <version>\${VERSION}</version>
-              <title>Guepard CLI</title>
-              <authors>Guepard Engineering</authors>
-              <owners>Guepard Engineering</owners>
-              <projectUrl>https://www.guepard.run</projectUrl>
-              <packageSourceUrl>https://github.com/Guepard-Corp/guepard-cli</packageSourceUrl>
-              <docsUrl>https://docs.guepard.run</docsUrl>
-              <bugTrackerUrl>https://github.com/Guepard-Corp/guepard-cli/issues</bugTrackerUrl>
-              <tags>database filesystem cli git versioning</tags>
-              <summary>Guepard CLI - Git-like filesystem for databases</summary>
-              <description>
-          Guepard CLI provides a Git-like filesystem for databases, offering version control 
-          and management capabilities for database schemas and data. It supports familiar 
-          commands like init, commit, branch, checkout, and more.
-
-          Features:
-          - Git-like interface with familiar commands
-          - Multi-platform support (Linux, macOS, Windows)
-          - Database management and deployment
-          - Cross-platform consistency
-
-          Installation:
-          After installation, you can use 'guepard' command from any terminal.
-
-          Usage:
-            guepard init .                    # Initialize a new Guepard repository
-            guepard deploy --database_provider=MySQL --database_version=8
-            guepard commit -m "Initial version"
-            guepard branch                    # List branches
-            guepard checkout develop          # Switch to a branch
-            guepard log                       # View commit history
-            guepard compute status            # Manage compute instances
-              </description>
-              <releaseNotes>
-          Version \${VERSION}:
-          - Updated to version \${VERSION} with improved stability and performance
-          - Bug fixes and enhancements
-          - Multi-platform support maintained
-              </releaseNotes>
-              <copyright>Guepard (c) 2025</copyright>
-              <licenseUrl>https://www.guepard.run/license</licenseUrl>
-              <requireLicenseAcceptance>false</requireLicenseAcceptance>
-            </metadata>
-            <files>
-              <file src="tools\**" target="tools" />
-            </files>
-          </package>
-          EOF
-
-          # Update PowerShell install script
-          cat > chocolatey/tools/chocolateyInstall.ps1 << EOF
-          # Guepard CLI Chocolatey Package Installation Script
-
-          \$ErrorActionPreference = 'Stop'
-
-          \$packageName = 'guepard'
-          \$url = 'https://github.com/Guepard-Corp/guepard-cli/releases/download/\${VERSION}/guepard-cli-\${VERSION}-windows-amd64.zip'
-          \$checksum = '$WINDOWS_AMD64_SHA256'
-          \$checksumType = 'sha256'
-
-          # Download and extract
-          \$tempDir = Join-Path \$env:TEMP \$packageName
-          if (Test-Path \$tempDir) {
-              Remove-Item \$tempDir -Recurse -Force
-          }
-          New-Item -ItemType Directory -Path \$tempDir | Out-Null
-
-          \$zipFile = Join-Path \$tempDir "\$packageName.zip"
-          Invoke-WebRequest -Uri \$url -OutFile \$zipFile
-
-          # Verify checksum
-          \$fileHash = (Get-FileHash \$zipFile -Algorithm \$checksumType).Hash
-          if (\$fileHash -ne \$checksum) {
-              throw "Checksum verification failed. Expected: \$checksum, Got: \$fileHash"
-          }
-
-          # Extract
-          Expand-Archive -Path \$zipFile -DestinationPath \$tempDir -Force
-
-          # Install
-          \$binDir = Join-Path \$env:ChocolateyInstall 'bin'
-          if (!(Test-Path \$binDir)) {
-              New-Item -ItemType Directory -Path \$binDir | Out-Null
-          }
-
-          \$exePath = Join-Path \$tempDir "windows-amd64\guepard.exe"
-          if (Test-Path \$exePath) {
-              Copy-Item \$exePath \$binDir -Force
-          } else {
-              throw "Executable not found at expected location: \$exePath"
-          }
-
-          # Cleanup
-          Remove-Item \$tempDir -Recurse -Force
-
-          Write-Host "Guepard CLI installed successfully!"
-          EOF
-
-      - name: Commit Chocolatey package updates
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add chocolatey/
-          git commit -m "Update Chocolatey package to ${{ github.ref_name }}"
           git push
