@@ -4,8 +4,7 @@ use serde::{Deserialize};
 pub struct ListComputeResponse {
     pub id: String, // deployment_id
     pub repository_name: String, // deployment_name 
-    pub clone_id: String,  // Compute ID
-    pub snapshot_id: String, // Bookmark (snapshot) ID
+    pub snapshot_id: String, // Snapshot ID
     pub name: String, // Compute name
     pub fqdn: String,
     pub connection_string: String,
@@ -26,4 +25,10 @@ pub struct LogsResponse {
 #[derive(Debug, Deserialize)]
 pub struct StatusErrorResponse {
     pub message: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ComputeStatusResponse {
+    pub status: String,
+    pub message: Option<String>,
 }

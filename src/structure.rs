@@ -14,53 +14,198 @@ pub struct CLI {
 
 #[derive(Subcommand, Debug)]
 pub enum SubCommand {
-    /// Deployment-related commands
-    #[clap(subcommand)]
-    Deploy(DeployCommand),
-
-    /// Branch-related commands
-    #[clap(subcommand)]
-    Branch(BranchCommand),
-
-    /// Bookmark-related commands
-    #[clap(subcommand)]
-    Bookmark(BookmarkCommand),
-
-    /// Compute-related commands
+    /// Initialize a new Guepard environment
+    Init(InitArgs),
+    
+    /// Deploy database instances
+    Deploy(DeployArgs),
+    
+    /// Create snapshots (bookmarks)
+    Commit(CommitArgs),
+    
+    /// List and manage branches
+    Branch(BranchArgs),
+    
+    /// Show commit history
+    Log,
+    
+    /// Find .gfs directory
+    RevParse,
+    
+    /// Switch branches or checkout snapshots
+    Checkout(CheckoutArgs),
+    
+    /// Compute instance management
     #[clap(subcommand)]
     Compute(ComputeCommand),
-
-    /// Show usage information
-    Usage,
-
-    /// Show details about branches, bookmarks, etc.
+    
+    /// Show details about deployments, branches, etc.
     #[clap(subcommand)]
     Show(ShowCommand),
-
+    
+    /// Show usage information
+    Usage,
+    
     /// Start login and get authentication URL
-    Link, 
-
+    Link,
+    
     /// Complete login with verification code
     Login(LoginArgs),
+    
     /// Log out and clear all credentials
     Logout,
 }
 
+// Git-like command arguments
+#[derive(Args, Debug)]
+pub struct InitArgs {
+    /// The path where to initialize the Guepard environment
+    #[clap(value_parser, default_value = ".")]
+    pub path: String,
+}
+
+#[derive(Args, Debug)]
+pub struct DeployArgs {
+    /// The database provider (e.g., PostgreSQL, MySQL)
+    #[clap(short = 'p', long, required = true)]
+    pub database_provider: String,
+    
+    /// The version of the database
+    #[clap(short = 'v', long, required = true)]
+    pub database_version: String,
+    
+    /// The region where the deployment will be created
+    #[clap(short = 'r', long, required = true)]
+    pub region: String,
+    
+    /// The instance type for the deployment
+    #[clap(short = 'i', long, required = true)]
+    pub instance_type: String,
+    
+    /// The datacenter for the deployment
+    #[clap(short = 'd', long, required = true)]
+    pub datacenter: String,
+    
+    /// The name of the repository
+    #[clap(short = 'n', long)]
+    pub repository_name: Option<String>,
+    
+    /// The password for the database
+    #[clap(short = 'w', long, required = true)]
+    pub database_password: String,
+    
+    /// The ID of the deployment (for updates)
+    #[clap(short = 'x', long)]
+    pub deployment_id: Option<String>,
+    
+    /// The username for the database
+    #[clap(short = 'u', long)]
+    pub user: Option<String>,
+}
+
+#[derive(Args, Debug)]
+pub struct CommitArgs {
+    /// The commit message
+    #[clap(short = 'm', long, required = true)]
+    pub message: String,
+    
+    /// The deployment ID
+    #[clap(short = 'x', long, required = true)]
+    pub deployment_id: String,
+    
+    /// The clone ID
+    #[clap(short = 'c', long, required = true)]
+    pub clone_id: String,
+}
+
+#[derive(Args, Debug)]
+pub struct BranchArgs {
+    /// The name of the branch to create (optional - if not provided, lists branches)
+    #[clap(value_parser)]
+    pub name: Option<String>,
+    
+    /// The ID of the deployment
+    #[clap(short = 'x', long)]
+    pub deployment_id: Option<String>,
+    
+    /// The ID of the snapshot
+    #[clap(short = 's', long)]
+    pub snapshot_id: Option<String>,
+    
+    /// Whether to discard changes
+    #[clap(short = 'd', long)]
+    pub discard_changes: Option<String>,
+    
+    /// Whether to checkout the branch after creation
+    #[clap(short = 'k', long)]
+    pub checkout: bool,
+    
+    /// Whether the branch is ephemeral
+    #[clap(short = 'e', long)]
+    pub ephemeral: bool,
+}
+
+#[derive(Args, Debug)]
+pub struct CheckoutArgs {
+    /// The branch name or commit hash to checkout
+    #[clap(value_parser, required = true)]
+    pub target: String,
+    
+    /// The ID of the deployment
+    #[clap(short = 'x', long)]
+    pub deployment_id: Option<String>,
+    
+    /// The ID of the branch
+    #[clap(short = 'c', long)]
+    pub clone_id: Option<String>,
+    
+    /// The ID of the snapshot
+    #[clap(short = 's', long)]
+    pub snapshot_id: Option<String>,
+    
+    /// Whether to discard changes
+    #[clap(short = 'd', long)]
+    pub discard_changes: Option<String>,
+    
+    /// Whether to checkout
+    #[clap(short = 'k', long)]
+    pub checkout: bool,
+    
+    /// Whether ephemeral
+    #[clap(short = 'e', long)]
+    pub ephemeral: bool,
+}
 
 #[derive(Args, Debug)]
 pub struct LoginArgs {
     /// The verification code from the login URL
-    #[clap(value_parser, required = true)]
+    #[clap(short = 'c', long, required = true)]
     pub code: String,
+}
+
+// Original API command structures (preserved)
+#[derive(Subcommand, Debug)]
+pub enum ComputeCommand {
+    /// Show the current status of the database compute instance
+    Status(GetComputeArgs),
+    /// Start the database compute instance
+    Start(GetComputeArgs),
+    /// Stop the database compute instance
+    Stop(GetComputeArgs),
+    /// Restart the database compute instance
+    Restart(GetComputeArgs),
+    /// List all compute instances for a deployment
+    List(GetComputeArgs),
+    /// View logs for a compute instance
+    Logs(GetComputeArgs),
 }
 
 #[derive(Subcommand, Debug)]
 pub enum ShowCommand {
-    /// List all branches for a deployment
+    /// Show branch details
     Branches(GetDeployArgs),
-
-    /// List all bookmarks for a deployment
-    Bookmarks(GetDeployArgs),
+    /// Show commit details (snapshots)
+    Commits(GetDeployArgs),
 }
 
 #[derive(Args, Debug)]
@@ -68,78 +213,48 @@ pub struct GetComputeArgs {
     /// The ID of the deployment
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
-
-    /// The ID of the compute instance
-    #[clap(short = 'c', long, required = true)]
-    pub compute_id: String,
 }
 
-#[derive(Subcommand, Debug)]
-pub enum ComputeCommand {
-    /// List all compute instances for a deployment
-    List(GetComputeArgs),
-
-    /// Start a compute instance
-    Start(GetComputeArgs),
-
-    /// Stop a compute instance
-    Stop(GetComputeArgs),
-
-    /// View logs for a compute instance
-    Logs(GetComputeArgs),
-
-    /// Check the status of a compute instance
-    Status(GetComputeArgs),
-}
-
-#[derive(Subcommand, Debug)]
-pub enum BookmarkCommand {
-    /// List all bookmarks for a deployment
-    ListAll(GetDeployArgs),
-
-    /// List bookmarks for a specific clone
-    List(GetBookmarkArgs),
-
-    /// Checkout a bookmark
-    Checkout(CheckoutBookmarkArgs),
-
-    /// Create a new bookmark
-    Create(CreateBookmarkArgs),
-}
-
-#[derive(Subcommand, Debug)]
-pub enum BranchCommand {
-    /// Create a new branch
-    Create(CreateBranchArgs),
-
-    /// List all branches for a deployment
-    List(GetDeployArgs),
-
-    /// Checkout a branch
-    Checkout(CheckoutBranchArgs),
-}
-
-#[derive(Subcommand, Debug)]
-pub enum DeployCommand {
-    /// Create a new deployment
-    Create(CreateDeployArgs),
-
-    /// Update an existing deployment
-    Update(UpdateDeployArgs),
-
-    /// List all deployments
-    List,
-
-    /// Fetch details of a specific deployment
-    Get(GetDeployArgs),
-}
-
-/// Arguments for fetching a specific deployment
 #[derive(Args, Debug)]
 pub struct GetDeployArgs {
-    /// The ID of the deployment to fetch
+    /// The ID of the deployment
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
+}
+
+// Additional structs for original API compatibility
+#[derive(Args, Debug)]
+pub struct CreateBranchArgs {
+    /// The ID of the deployment
+    #[clap(short = 'x', long, required = true)]
+    pub deployment_id: String,
+
+    /// The ID of the snapshot
+    #[clap(short = 's', long, required = true)]
+    pub snapshot_id: String,
+
+    /// Whether to discard changes
+    #[clap(short = 'd', long, required = true)]
+    pub discard_changes: String,
+
+    /// Whether to checkout the branch after creation
+    #[clap(short = 'k', long)]
+    pub checkout: bool,
+
+    /// Whether the branch is ephemeral
+    #[clap(short = 'e', long)]
+    pub ephemeral: bool,
+}
+
+#[derive(Args, Debug)]
+pub struct CheckoutBranchArgs {
+    /// The ID of the deployment
+    #[clap(short = 'x', long, required = true)]
+    pub deployment_id: String,
+
+    /// The ID of the branch
+    #[clap(short = 'c', long, required = true)]
+    pub branch_id: String,
 }
 
 #[derive(Args, Debug)]
@@ -173,105 +288,13 @@ pub struct CreateDeployArgs {
     pub database_password: String,
 }
 
-/// Arguments for updating an existing deployment
 #[derive(Args, Debug)]
 pub struct UpdateDeployArgs {
-    /// The ID of the deployment to update
+    /// The ID of the deployment
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
 
     /// The name of the repository
     #[clap(short = 'n', long, required = true)]
     pub repository_name: String,
-}
-
-#[derive(Args, Debug)]
-pub struct CreateBranchArgs {
-    /// The ID of the deployment
-    #[clap(short = 'x', long, required = true)]
-    pub deployment_id: String,
-
-    /// The ID of the clone
-    #[clap(short = 'c', long, required = true)]
-    pub clone_id: String,
-
-    /// The ID of the snapshot
-    #[clap(short = 's', long, required = true)]
-    pub snapshot_id: String,
-
-    /// Whether to discard changes
-    #[clap(short = 'd', long, required = true)]
-    pub discard_changes: String,
-
-    /// Whether to checkout the branch after creation
-    #[clap(short = 'k', long)]
-    pub checkout: bool,
-
-    /// Whether the branch is ephemeral
-    #[clap(short = 'e', long)]
-    pub ephemeral: bool,
-}
-
-#[derive(Args, Debug)]
-pub struct CheckoutBranchArgs {
-    /// The ID of the deployment
-    #[clap(short = 'x', long, required = true)]
-    pub deployment_id: String,
-
-    /// The ID of the clone
-    #[clap(short = 'c', long, required = true)]
-    pub clone_id: String,
-}
-
-#[derive(Args, Debug)]
-pub struct GetBookmarkArgs {
-    /// The ID of the deployment
-    #[clap(short = 'x', long, required = true)]
-    pub deployment_id: String,
-
-    /// The ID of the clone
-    #[clap(short = 'c', long, required = true)]
-    pub clone_id: String,
-}
-
-#[derive(Args, Debug)]
-pub struct CreateBookmarkArgs {
-    /// The ID of the deployment
-    #[clap(short = 'x', long, required = true)]
-    pub deployment_id: String,
-
-    /// The ID of the clone
-    #[clap(short = 'c', long, required = true)]
-    pub clone_id: String,
-
-    /// A comment for the snapshot
-    #[clap(short = 'm', long, required = true)]
-    pub snapshot_comment: String,
-}
-
-#[derive(Args, Debug)]
-pub struct CheckoutBookmarkArgs {
-    /// The ID of the deployment
-    #[clap(short = 'x', long, required = true)]
-    pub deployment_id: String,
-
-    /// The ID of the clone
-    #[clap(short = 'c', long, required = true)]
-    pub clone_id: String,
-
-    /// The ID of the snapshot
-    #[clap(short = 's', long, required = true)]
-    pub snapshot_id: String,
-
-    /// Whether to discard changes
-    #[clap(short = 'd', long, required = true)]
-    pub discard_changes: String,
-
-    /// Whether to checkout the bookmark after creation
-    #[clap(short = 'k', long)]
-    pub checkout: bool,
-
-    /// Whether the bookmark is ephemeral
-    #[clap(short = 'e', long)]
-    pub ephemeral: bool,
 }

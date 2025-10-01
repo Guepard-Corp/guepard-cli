@@ -1,11 +1,11 @@
-use crate::application::dto::bookmark_dto::{GetBookmarkResponse, CreateBookmarkRequest, CreateBookmarkResponse, CheckoutBookmarkResponse};
-use crate::application::dto::branch_dto::BranchRequest;
+use crate::application::dto::commit::{GetCommitResponse, CreateCommitRequest, CreateCommitResponse, CheckoutCommitResponse};
+use crate::application::dto::branch::BranchRequest;
 use crate::config::config::{self, Config};
 use crate::domain::errors::bookmark_error::BookmarkError;
 use anyhow::Result;
 use reqwest::Client;
 
-pub async fn list_all_bookmarks(deployment_id: &str, config: &Config) -> Result<Vec<GetBookmarkResponse>, BookmarkError> {
+pub async fn list_all_commits(deployment_id: &str, config: &Config) -> Result<Vec<GetCommitResponse>, BookmarkError> {
     let jwt_token = config::load_jwt_token()
         .map_err(|e| BookmarkError::SessionError(e.to_string()))?;
     let client = Client::new();
@@ -17,7 +17,7 @@ pub async fn list_all_bookmarks(deployment_id: &str, config: &Config) -> Result<
         .map_err(BookmarkError::RequestFailed)?;
 
     if response.status().is_success() {
-        response.json::<Vec<GetBookmarkResponse>>()
+        response.json::<Vec<GetCommitResponse>>()
             .await
             .map_err(|e| BookmarkError::ParseError(e.to_string()))
     } else {
@@ -25,7 +25,7 @@ pub async fn list_all_bookmarks(deployment_id: &str, config: &Config) -> Result<
     }
 }
 
-pub async fn list_bookmark(deployment_id: &str, clone_id: &str, config: &Config) -> Result<Vec<GetBookmarkResponse>, BookmarkError> {
+pub async fn list_bookmark(deployment_id: &str, clone_id: &str, config: &Config) -> Result<Vec<GetCommitResponse>, BookmarkError> {
     let jwt_token = config::load_jwt_token()
         .map_err(|e| BookmarkError::SessionError(e.to_string()))?;
     let client = Client::new();
@@ -37,7 +37,7 @@ pub async fn list_bookmark(deployment_id: &str, clone_id: &str, config: &Config)
         .map_err(BookmarkError::RequestFailed)?;
 
     if response.status().is_success() {
-        response.json::<Vec<GetBookmarkResponse>>()
+        response.json::<Vec<GetCommitResponse>>()
             .await
             .map_err(|e| BookmarkError::ParseError(e.to_string()))
     } else {
@@ -45,12 +45,12 @@ pub async fn list_bookmark(deployment_id: &str, clone_id: &str, config: &Config)
     }
 }
 
-pub async fn create_bookmark(
+pub async fn create_commit(
     deployment_id: &str,
     clone_id: &str,
-    request: CreateBookmarkRequest,
+    request: CreateCommitRequest,
     config: &Config,
-) -> Result<CreateBookmarkResponse, BookmarkError> {
+) -> Result<CreateCommitResponse, BookmarkError> {
     let jwt_token = config::load_jwt_token()
         .map_err(|e| BookmarkError::SessionError(e.to_string()))?;
     let client = Client::new();
@@ -63,7 +63,7 @@ pub async fn create_bookmark(
         .map_err(BookmarkError::RequestFailed)?;
 
     if response.status().is_success() {
-        response.json::<CreateBookmarkResponse>()
+        response.json::<CreateCommitResponse>()
             .await
             .map_err(|e| BookmarkError::ParseError(e.to_string()))
     } else {
@@ -77,7 +77,7 @@ pub async fn checkout_bookmark(
     snapshot_id: &str,
     request: BranchRequest,
     config: &Config,
-) -> Result<CheckoutBookmarkResponse, BookmarkError> {
+) -> Result<CheckoutCommitResponse, BookmarkError> {
     let jwt_token = config::load_jwt_token()
         .map_err(|e| BookmarkError::SessionError(e.to_string()))?;
     let client = Client::new();
@@ -93,7 +93,7 @@ pub async fn checkout_bookmark(
         .map_err(BookmarkError::RequestFailed)?;
 
     if response.status().is_success() {
-        response.json::<CheckoutBookmarkResponse>()
+        response.json::<CheckoutCommitResponse>()
             .await
             .map_err(|e| BookmarkError::ParseError(e.to_string()))
     } else {

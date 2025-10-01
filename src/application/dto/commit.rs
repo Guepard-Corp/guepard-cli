@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
-pub struct GetBookmarkResponse {
+pub struct GetCommitResponse {
     pub id: String, // bookmark_id = snapshot_id
     pub name: String,  // bookmark_name = snapshot_name
     pub status: String,
@@ -16,7 +16,7 @@ pub struct GetBookmarkResponse {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct CreateBookmarkResponse {
+pub struct CreateCommitResponse {
     pub id: String, // bookmark_id = snapshot_id
     pub name: String,
     pub status: String,
@@ -36,7 +36,7 @@ pub struct CreateBookmarkResponse {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct CheckoutBookmarkResponse {
+pub struct CheckoutCommitResponse {
     pub id: String,
     pub name: String,
     pub status: String,
@@ -66,6 +66,6 @@ pub struct Database {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct CreateBookmarkRequest {
+pub struct CreateCommitRequest {
     pub snapshot_comment: String,
 }

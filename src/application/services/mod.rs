@@ -1,8 +1,8 @@
-pub mod bookmark_service;
-pub mod deploy_service;
-pub mod branch_service;
-pub mod compute_service;
-pub mod usage_service;
-pub mod show_service;
-pub mod link_service;
-pub mod login_service;
+pub mod commit;
+pub mod deploy;
+pub mod branch;
+pub mod compute;
+pub mod usage;
+pub mod show;
+pub mod link;
+pub mod login;

@@ -1,6 +1,6 @@
 use crate::config::config::{self, Config};
 use crate::domain::errors::login_error::LoginError;
-use crate::application::dto::login_dto::{CompleteLoginRequest, CompleteLoginResponse};
+use crate::application::dto::login::{CompleteLoginRequest, CompleteLoginResponse};
 use anyhow::Context;
 use reqwest::Client;
 

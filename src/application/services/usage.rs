@@ -1,4 +1,4 @@
-use crate::application::dto::usage_dto::UsageResponse;
+use crate::application::dto::usage::UsageResponse;
 use crate::config::config::{self, Config};
 use crate::domain::errors::usage_error::UsageError;
 use anyhow::Result;

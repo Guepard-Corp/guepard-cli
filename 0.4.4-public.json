@@ -1,0 +1,3163 @@
+{
+	"info": {
+		"_postman_id": "3839699-f349644f-ce77-407e-b3b8-bab1cfa2505d",
+		"name": "🐆 Guepard Platform - API Overview Documentation - 0.4.4-public",
+		"description": "### Guepard - The Future of Data Branching Environments 🚀\n\nGuepard is **revolutionizing** how companies store, manage, and access data with a **next-gen Serverless and Virtualized Data Environment**. By eliminating **data duplication**, accelerating **provisioning ⚡**, and automating **operations 🤖**, Guepard enables businesses to create **on-demand, isolated, and scalable** data environments across multiple database providers.\n\n#### 🔥 Why Choose Guepard?\n\n✅ **Instant Virtual Environments** – Spin up **disposable data environments** for development, testing, and AI workloads in seconds.\n\n🔄 **Data Branching & Versioning** – Clone, snapshot, and synchronize databases **without performance bottlenecks**.\n\n☁️ **On-Prem & Cloud Flexibility** – Deploy seamlessly across **private infrastructure**, cloud providers, or hybrid setups.\n\n💾 **Resource Optimization** – Reduce **storage costs** and **processing overhead** by eliminating redundant data operations.\n\nThe **Guepard API** allows developers, DevOps engineers, and data teams to **automate, integrate, and scale** their database workflows.\n\n---\n\n## **📌 Getting Started with the API**\n\n### 🔑 **Authentication**\n\nGuepard’s API requires authentication via **API Keys (wip)** or **JWT tokens**.\n\nTo authenticate requests, include the following header:\n\n```\nhttpCopyEditAuthorization: Bearer YOUR_API_KEY\n\n ```\n\n---\n\n## **🔗 API Capabilities**\n\nGuepard’s API provides endpoints to **provision, manage, and control** data environments. Key functionalities include:\n\n### 📍 **1\\. Environment & Database Management**\n\n- **Provision a new database instance**\n    \n- **Clone an existing database for testing or development**\n    \n- **List, update, and delete databases**\n    \n- **Pause/resume databases to optimize resources**\n    \n\n### 🔄 **2\\. Data Branching & Versioning**\n\n- **Create isolated database branches** for different environments (dev, test, staging, production)\n    \n- **Snapshot and rollback** to previous versions\n    \n- **Synchronize data across multiple Guepard instances**\n    \n\n### 🛠 **3\\. Infrastructure & Integrations**\n\n- **Monitor consumption & performance**\n    \n- **Manage encryption, access controls, and compliance**\n    \n- **CI/CD compatibility** to integrate Guepard into DevOps workflows\n    \n\nGuepard is built for **enterprises 🏢, AI-driven platforms 🤖, and DevOps teams 💻** looking for a **faster, smarter, and more efficient** way to work with data. **Unleash the power of instant data environments today!** 🚀\n\n---\n\n## Overview\n\nThe Guepard API simplifies the process of getting data in and out of the Guepard Core System (GCS). Using user-friendly resource-oriented URLs and clear status codes, the API communicates success or failure of requests, always returning data in JSON format. This guide makes it easy to grasp by demonstrating how to use Postman, a user-friendly tool, for essential API actions like `GET`, `POST`, `PUT`, and `DELETE` within the Guepard system.\n\n## Prerequisites\n\n- Activate your Guepard API and get your application keys (wip), actually using JWT.\n    \n- you have basic knowledge of API structure and JSON formatting.\n    \n- A free Postman account.\n    \n\n## Setup\n\n### Import the Guepard Collection into Postman\n\n- Download Postman Application\n    \n- Login to your Postman account\n    \n- Create or use a workspace\n    \n- import Guepard Collection into your workspace\n    \n\nVersion - 0.4.4-public",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "🏗️ Deployments",
+			"item": [
+				{
+					"name": "List Deployments",
+					"id": "3839699-76a87574-83d2-4756-ab56-4616bcb0044b",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/deploy",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"deploy"
+							]
+						},
+						"description": "This endpoint is used to retrieve a list of databases deployed.\n\n#### Request\n\nNo request body is required for this request.\n\n#### Response\n\nThe response for this request can be represented as a JSON schema:\n\n``` json\n{\n  \"type\": \"array\",\n  \"items\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"id\": { \"type\": \"string\" },\n      \"name\": { \"type\": \"string\" },\n      \"status\": { \"type\": \"string\" },\n      \"repository_name\": { \"type\": \"string\" },\n      \"fqdn\": { \"type\": \"string\" },\n      \"database_provider\": { \"type\": \"string\" },\n      \"database_version\": { \"type\": \"string\" },\n      \"region\": { \"type\": \"string\" },\n      \"instance_type\": { \"type\": \"string\" },\n      \"created_by\": { \"type\": \"string\" },\n      \"created_date\": { \"type\": \"string\" },\n      \"customer_id\": { \"type\": \"string\" }\n    }\n  }\n}\n\n ```"
+					},
+					"response": [
+						{
+							"id": "3839699-de4bcea9-109c-438f-87bb-433c57cce543",
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer "
+									}
+								],
+								"url": {
+									"raw": "https://api.guepard.com/deploy",
+									"protocol": "https",
+									"host": [
+										"api",
+										"guepard",
+										"com"
+									],
+									"path": [
+										"deploy"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "[\n  {\n    \"id\": \"deploy-123\",\n    \"name\": \"my-database\",\n    \"repository_name\": \"my-repo\",\n    \"status\": \"active\",\n    \"deployment_type\": \"REPOSITORY\",\n    \"database_provider\": \"PostgreSQL\",\n    \"database_version\": \"17\",\n    \"fqdn\": \"my-database.guepard.com\",\n    \"port\": 5432,\n    \"connection_string\": \"postgresql://user:pass@my-database.guepard.com:5432/db\",\n    \"region\": \"us-east-1\",\n    \"datacenter\": \"dc1\",\n    \"created_date\": \"2024-01-15T10:30:00Z\",\n    \"created_by\": \"user-123\"\n  },\n  {\n    \"id\": \"deploy-456\",\n    \"name\": \"staging-db\",\n    \"repository_name\": \"staging-repo\",\n    \"status\": \"stopped\",\n    \"deployment_type\": \"F2\",\n    \"database_provider\": \"PostgreSQL\",\n    \"database_version\": \"16\",\n    \"fqdn\": \"staging-db.guepard.com\",\n    \"port\": 5432,\n    \"connection_string\": \"postgresql://user:pass@staging-db.guepard.com:5432/db\",\n    \"region\": \"us-west-2\",\n    \"datacenter\": \"dc2\",\n    \"created_date\": \"2024-01-10T08:15:00Z\",\n    \"created_by\": \"user-456\"\n  }\n]"
+						},
+						{
+							"id": "3839699-014c013e-3b88-4bb7-bd88-93d1d6149e06",
+							"name": "Error Response - Unauthorized",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer invalid-token"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Invalid or expired token\",\n  \"error_code\": \"UNAUTHORIZED\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Deployment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a478ae42-cd66-4f05-b0e1-0ea8bd29fa88",
+								"exec": [
+									"pm.environment.set(\"deployment_id\", pm.response.json().id);",
+									"pm.environment.set(\"branch_id\", pm.response.json().branch_id);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "3839699-8f6f4d86-5883-4d89-bebf-b5da166eb5a8",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"repository_name\": \"guepard_demo-1\",\n    \"database_provider\": \"PostgreSQL\",\n    \"database_version\": \"16\",\n    \"deployment_type\": \"REPOSITORY\", // Choose between REPOSITORY or F2\n    \"region\": \"us-west-aws\", // DO NOT CHANGE\n    \"datacenter\": \"us-west-aws\", // DO NOT CHANGE\n    \"database_username\": \"guepard\",\n    \"database_password\": \"guepard\",\n    \"performance_profile_id\": \"{{performance_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/deploy",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"deploy"
+							]
+						},
+						"description": "### Deploy a Database in Guepard\n\nThis endpoint allows you to deploy a database instance with the specified configuration.\n\nDeploying an instance will create a new repository containing a compute and a storage for your database\n\n#### Request Body\n\n- `database_provider` (string): The database provider (e.g. PostgresSQL).\n    \n- `database_version` (string): The version of the database (e.g. 16).\n    \n- `region` (string): The region for deployment (e.g. us).\n    \n- `instance_type` (string): The type of instance (e.g. free).\n    \n- `datacenter` (string): The datacenter for deployment (e.g. us-west-aws).\n    \n- `repository_name` (string): The name of the repository.\n    \n- `database_password` (string): The password for the database.\n    \n\n#### Response\n\nThe response is in JSON format and includes the following fields:\n\n- `id` (string): The ID of the deployed instance.\n    \n- `name` (string): The name of the deployed instance.\n    \n- `status` (string): The status of the deployment.\n    \n- `repository_name` (string): The name of the repository.\n    \n- `clone_id` (string): The ID of the cloned instance.\n    \n- `snapshot_id` (string): The ID of the snapshot.\n    \n- `fqdn` (string): The fully qualified domain name of the deployed instance.\n    \n- `database_provider` (string): The provider of the database.\n    \n- `database_version` (string): The version of the database.\n    \n- `region` (string): The region of deployment.\n    \n- `datacenter` (string): The datacenter of deployment.\n    \n- `instance_type` (string): The type of the database instance, it depends from the plan.\n    \n- `created_by` (string): The ID of the user who created the instance.\n    \n- `created_date` (string): The date and time of creation.\n    \n- `customer_id` (string): The ID of the customer.\n    \n- `database_password` (string): The password for the database.\n    \n\n#### Example Response\n\n``` json\n{\n    \"id\": \"6470a580-98d6-42c0-aafa-9b7ce4769eea\",\n    \"name\": \"ancient-river-190c7b5edfcgawl-main\",\n    \"status\": \"deployed\",\n    \"repository_name\": \"GuepardDemoDB\",\n    \"clone_id\": \"e1153450-f8d4-48d2-becb-e49749795c8b\",\n    \"snapshot_id\": \"781e0b17-1438-4f8e-b5f5-8e00821bbf77\",\n    \"fqdn\": \"ancient-river-190c7b5edfcgawl-main.lab.guepard.run\",\n    \"database_provider\": \"PostgreSQL\",\n    \"database_version\": \"16\",\n    \"region\": \"us-east\",\n    \"datacenter\": \"us-west-aws\",\n    \"instance_type\": \"free\",\n    \"created_by\": \"user123\",\n    \"created_date\": \"2022-01-01T12:00:00Z\",\n    \"customer_id\": \"customer456\",\n    \"database_password\": \"********\"\n}\n\n ```"
+					},
+					"response": [
+						{
+							"id": "3839699-f82f21cc-34b8-42c0-81da-f1e543565f05",
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer "
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"repository_name\": \"guepard_demo-1\",\n    \"database_provider\": \"PostgreSQL\",\n    \"database_version\": \"16\",\n    \"deployment_type\": \"REPOSITORY\",\n    \"region\": \"us-west-aws\",\n    \"datacenter\": \"us-west-aws\",\n    \"database_username\": \"guepard\",\n    \"database_password\": \"guepard\",\n    \"performance_profile_id\": \"e54710e1-73dd-4628-a51d-93d1aab5226c\"\n}"
+								},
+								"url": {
+									"raw": "https://api.guepard.com/deploy",
+									"protocol": "https",
+									"host": [
+										"api",
+										"guepard",
+										"com"
+									],
+									"path": [
+										"deploy"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n    \"id\": \"75d46ca1-2a92-4e70-8665-0b2a4214e75a\",\n    \"name\": \"quiet-moon-gqjp4j\",\n    \"status\": \"INIT\",\n    \"customer_id\": \"f7ae431f-fcde-409e-9765-6ff7f312f976\",\n    \"clone_id\": null,\n    \"snapshot_id\": \"533b0879-158e-4239-b61d-e03c2fd42e42\",\n    \"snapshot_parent\": null,\n    \"pipeline_id\": null,\n    \"current_clone\": null,\n    \"deployment_parent\": null,\n    \"deployment_type\": \"REPOSITORY\",\n    \"repository_name\": \"guepard_demo-1\",\n    \"fqdn\": \"quiet-moon-gqjp4j.us-west-aws.db.guepard.run\",\n    \"database_provider\": \"PostgreSQL\",\n    \"database_version\": \"16\",\n    \"database_username\": \"guepard\",\n    \"database_password\": \"guepard\",\n    \"created_by\": \"f7ae431f-fcde-409e-9765-6ff7f312f976\",\n    \"created_date\": \"2025-09-20T12:50:39.403171+00:00\",\n    \"last_modified_by\": null,\n    \"last_modified_date\": null,\n    \"node_id\": \"e1b33620-ea91-437f-9b8e-6334040a7423\",\n    \"db_role_id\": \"94452f47-3407-49bd-8838-df42a08f74fc\",\n    \"branch_id\": \"6f5cc10e-01b9-4dc8-90dc-9909042a23b7\",\n    \"region\": \"global\",\n    \"datacenter\": \"us-west-aws\"\n}"
+						},
+						{
+							"id": "3839699-20e961b8-eda8-466d-b61b-6c82474868c7",
+							"name": "Error Response - Quota Exceeded",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"my-new-database\",\n  \"repository_name\": \"my-repository\",\n  \"database_provider\": \"PostgreSQL\",\n  \"database_version\": \"17\",\n  \"deployment_type\": \"REPOSITORY\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/deploy",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy"
+									]
+								}
+							},
+							"status": "Payment Required",
+							"code": 402,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Quota exceeded\",\n  \"error_code\": \"QUOTA_EXCEEDED\"\n}"
+						},
+						{
+							"id": "3839699-f7c2690d-8f3f-48d9-95bc-8996ff2c9567",
+							"name": "Error Response - Bad Request",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"\",\n  \"repository_name\": \"my-repository\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/deploy",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Name is required\",\n  \"error_code\": \"VALIDATION_ERROR\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Deployment",
+					"id": "3839699-0f75e46e-5f34-4d98-b2a4-2aa2e5d1dd79",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/deploy/{{deployment_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"deploy",
+								"{{deployment_id}}"
+							]
+						},
+						"description": "### Get Database's Details\n\nThis endpoint retrieves details of a specific deployment identified by the `deployment_id`.\n\n#### Request\n\n- Method: GET\n    \n- URL: `{{guepard_api}}/deploy/{{deployment_id}}`\n    \n\n#### Response\n\nThe response will be in JSON format with the following fields:\n\n- `id` (string): The unique identifier of the deployment.\n    \n- `name` (string): The name of the deployment.\n    \n- `status` (string): The current status of the deployment.\n    \n- `repository_name` (string): The name of the repository associated with the deployment.\n    \n- `clone_id` (string): The clone identifier.\n    \n- `snapshot_id` (string): The snapshot identifier.\n    \n- `fqdn` (string): The fully qualified domain name.\n    \n- `database_provider` (string): The provider of the database.\n    \n- `database_version` (string): The version of the database.\n    \n- `region` (string): The region of the deployment.\n    \n- `datacenter` (string): The datacenter of the deployment.\n    \n- `instance_type` (string): The type of the instance.\n    \n- `created_by` (string): The user who created the deployment.\n    \n- `created_date` (string): The date of creation.\n    \n- `customer_id` (string): The customer identifier.\n    \n- `database_password` (string): The password for the database.\n    \n\n#### Example Response\n\n``` json\n{\n    \"id\": \"\",\n    \"clone_id\": \"\",\n    \"snapshot_id\": \"\",\n    \"name\": \"\",\n    \"fqdn\": \"\",\n    \"connection_string\": \"\",\n    \"database_provider\": \"\",\n    \"database_version\": \"\",\n    \"region\": \"\",\n    \"instance_type\": \"\"\n}\n\n ```"
+					},
+					"response": [
+						{
+							"id": "3839699-6a2b9195-973e-4d73-b252-fe9491b601f7",
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer "
+									}
+								],
+								"url": {
+									"raw": "https://api.guepard.com/deploy/deploy-123",
+									"protocol": "https",
+									"host": [
+										"api",
+										"guepard",
+										"com"
+									],
+									"path": [
+										"deploy",
+										"deploy-123"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"id\": \"deploy-123\",\n  \"name\": \"my-database\",\n  \"repository_name\": \"my-repo\",\n  \"fqdn\": \"my-database.guepard.com\",\n  \"connection_string\": \"postgresql://user:pass@my-database.guepard.com:5432/db\",\n  \"database_provider\": \"PostgreSQL\",\n  \"database_version\": \"17\",\n  \"database_username\": \"admin\",\n  \"database_password\": \"secure-password\",\n  \"region\": \"us-east-1\",\n  \"datacenter\": \"dc1\",\n  \"created_date\": \"2024-01-15T10:30:00Z\",\n  \"created_by\": \"user-123\",\n  \"status\": \"active\",\n  \"deployment_type\": \"REPOSITORY\",\n  \"deployment_parent\": \"parent-deploy-123\",\n  \"snapshot_parent\": \"snapshot-456\",\n  \"node_id\": \"node-789\"\n}"
+						},
+						{
+							"id": "3839699-ac945330-6322-43c2-98e1-dd2574c95d4a",
+							"name": "Error Response - Not Found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/nonexistent-deploy",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"nonexistent-deploy"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Deployment not found\",\n  \"error_code\": \"NOT_FOUND\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Deployment",
+					"id": "3839699-23740468-57bd-473d-9b16-c915497f3b2d",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"repository_name\": \"new-deployment-name\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/deploy/{{deployment_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"deploy",
+								"{{deployment_id}}"
+							]
+						},
+						"description": "### Update Deployment Configuration\n\nThis endpoint allows you to update the configuration of an existing deployment.\n\n#### Request\n\n- Method: PUT\n- URL: `{{guepard_api}}/deploy/{{deployment_id}}`\n- Headers: Authorization with Bearer token\n\n#### Request Body\n\n- `repository_name` (string, optional): New name for the repository\n- `instance_type` (string, optional): New instance type (if supported)\n- `region` (string, optional): New region (if supported)\n- `database_password` (string, optional): New database password\n- `tags` (object, optional): Key-value pairs for tagging\n- `description` (string, optional): Description of the deployment\n\n#### Response\n\nUpon successful update, the endpoint returns the updated deployment information:\n\n- `id` (string): The deployment ID\n- `name` (string): The deployment name\n- `status` (string): Current status of the deployment\n- `repository_name` (string): Updated repository name\n- `instance_type` (string): Updated instance type\n- `region` (string): Updated region\n- `updated_at` (string): Timestamp of the update\n- `updated_by` (string): User who made the update\n\n#### Example Request\n\n``` json\n{\n  \"repository_name\": \"MyUpdatedDatabase\",\n  \"description\": \"Updated database for production use\",\n  \"tags\": {\n    \"environment\": \"production\",\n    \"team\": \"backend\"\n  }\n}\n```\n\n#### Example Response\n\n``` json\n{\n  \"id\": \"deployment_123\",\n  \"name\": \"updated-db-name\",\n  \"status\": \"UPDATED\",\n  \"repository_name\": \"MyUpdatedDatabase\",\n  \"instance_type\": \"free\",\n  \"region\": \"us\",\n  \"updated_at\": \"2024-01-15T10:30:00Z\",\n  \"updated_by\": \"user_123\"\n}\n```\n\n#### Error Responses\n\n- **400 Bad Request**: Invalid configuration parameters\n- **401 Unauthorized**: Invalid or expired access token\n- **403 Forbidden**: User not authorized to update this deployment\n- **404 Not Found**: Deployment not found\n- **422 Unprocessable Entity**: Invalid configuration values\n\n#### Notes\n\n- Some configuration changes may require the deployment to be restarted\n- Password changes take effect immediately\n- Repository name changes are reflected in the FQDN\n- Not all configuration options can be changed after deployment"
+					},
+					"response": [
+						{
+							"id": "3839699-3cea22db-e7b3-4e02-aa92-1db1ab9e0896",
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer "
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"updated-database-name\",\n  \"performance_profile_id\": \"profile-456\"\n}"
+								},
+								"url": {
+									"raw": "https://api.guepard.run/deploy/deploy-123",
+									"protocol": "https",
+									"host": [
+										"api",
+										"guepard",
+										"run"
+									],
+									"path": [
+										"deploy",
+										"deploy-123"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"id\": \"deploy-123\",\n  \"name\": \"updated-database-name\",\n  \"repository_name\": \"my-repo\",\n  \"status\": \"active\",\n  \"deployment_type\": \"REPOSITORY\",\n  \"database_provider\": \"PostgreSQL\",\n  \"database_version\": \"17\",\n  \"fqdn\": \"updated-database-name.guepard.com\",\n  \"port\": 5432,\n  \"connection_string\": \"postgresql://user:pass@updated-database-name.guepard.com:5432/db\",\n  \"region\": \"us-east-1\",\n  \"datacenter\": \"dc1\",\n  \"created_date\": \"2024-01-15T10:30:00Z\",\n  \"created_by\": \"user-123\",\n  \"performance_profile_id\": \"profile-456\",\n  \"updated_date\": \"2024-01-16T14:20:00Z\"\n}"
+						},
+						{
+							"id": "3839699-b0816684-00cd-455f-bd3d-9cc70d22a871",
+							"name": "Error Response - Not Found",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"updated-database-name\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/deploy/nonexistent-deploy",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"nonexistent-deploy"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Deployment not found\",\n  \"error_code\": \"NOT_FOUND\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Deployment",
+					"id": "3839699-ec957ee3-083d-40bb-a79e-fef9ece74e48",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/deploy/{{deployment_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"deploy",
+								"{{deployment_id}}"
+							]
+						},
+						"description": "### Delete Deployment and All Associated Resources\n\nThis endpoint permanently deletes a deployment and all its associated resources including branches, snapshots, and data.\n\n#### Request\n\n- Method: DELETE\n- URL: `{{guepard_api}}/deploy/{{deployment_id}}`\n- Headers: Authorization with Bearer token\n\n#### Request Body\n\n- `confirm_deletion` (boolean, required): Confirmation that you want to delete the deployment\n- `delete_snapshots` (boolean, optional): Whether to delete all associated snapshots (default: true)\n- `delete_branches` (boolean, optional): Whether to delete all associated branches (default: true)\n- `force_delete` (boolean, optional): Force deletion even if there are active connections (default: false)\n\n#### Response\n\nUpon successful deletion, the endpoint returns:\n\n- `success` (boolean): Whether the deletion was successful\n- `deployment_id` (string): The ID of the deleted deployment\n- `deleted_resources` (object): Summary of deleted resources\n- `deletion_time` (string): Timestamp when deletion was completed\n- `message` (string): Success message\n\n#### Example Request\n\n``` json\n{\n  \"confirm_deletion\": true,\n  \"delete_snapshots\": true,\n  \"delete_branches\": true,\n  \"force_delete\": false\n}\n```\n\n#### Example Response\n\n``` json\n{\n  \"success\": true,\n  \"deployment_id\": \"deployment_123\",\n  \"deleted_resources\": {\n    \"snapshots\": 5,\n    \"branches\": 3,\n    \"storage_volumes\": 1,\n    \"compute_instances\": 1\n  },\n  \"deletion_time\": \"2024-01-15T10:30:00Z\",\n  \"message\": \"Deployment and all associated resources deleted successfully\"\n}\n```\n\n#### Error Responses\n\n- **400 Bad Request**: Missing confirmation or invalid parameters\n- **401 Unauthorized**: Invalid or expired access token\n- **403 Forbidden**: User not authorized to delete this deployment\n- **404 Not Found**: Deployment not found\n- **409 Conflict**: Deployment has active connections and force_delete is false\n- **422 Unprocessable Entity**: Deployment cannot be deleted in current state\n\n#### ⚠️ Warning\n\n- **This action is irreversible**\n- All data, branches, and snapshots will be permanently lost\n- Make sure to backup any important data before deletion\n- Consider using snapshots to preserve data before deletion\n\n#### Notes\n\n- The deletion process may take several minutes to complete\n- All associated resources are deleted in the background\n- You will receive a confirmation when deletion is complete\n- Use `force_delete: true` only if you're sure there are no active connections"
+					},
+					"response": [
+						{
+							"id": "3839699-cdba299d-cef3-499a-b6b7-a3bc1b63d835",
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer "
+									}
+								],
+								"url": {
+									"raw": "https://api.guepard.run/deploy/deploy-123",
+									"protocol": "https",
+									"host": [
+										"api",
+										"guepard",
+										"run"
+									],
+									"path": [
+										"deploy",
+										"deploy-123"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Deployment deleted successfully\",\n  \"deployment_id\": \"deploy-123\"\n}"
+						},
+						{
+							"id": "3839699-dd1f9dcb-f785-4ff4-a9fb-78b6dfb00956",
+							"name": "Error Response - Not Found",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/nonexistent-deploy",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"nonexistent-deploy"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Deployment not found\",\n  \"error_code\": \"NOT_FOUND\"\n}"
+						}
+					]
+				}
+			],
+			"id": "3839699-c162a6b8-9428-454b-9cf5-5c584e79bd21",
+			"description": "Deployment management - create, read, update, delete database deployments"
+		},
+		{
+			"name": "📸 Snapshots",
+			"item": [
+				{
+					"name": "List Snapshots for Deployment",
+					"id": "3839699-6f46aa39-afc1-4b67-bb17-097cb5e76488",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/deploy/{{deployment_id}}/snap",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"deploy",
+								"{{deployment_id}}",
+								"snap"
+							]
+						},
+						"description": "### Get All Snapshots for a Deployment\n\nThis endpoint retrieves all snapshots associated with a specific deployment.\n\n#### Request\n\n- Method: GET\n- URL: `{{guepard_api}}/deploy/{{deployment_id}}/snap`\n- Headers: Authorization with Bearer token\n\n#### Response\n\nUpon successful execution, the endpoint returns an array of snapshot objects:\n\n- `id` (string): The unique identifier of the snapshot\n- `name` (string): The name of the snapshot\n- `status` (string): The current status of the snapshot\n- `clone_id` (string): The ID of the clone associated with the snapshot\n- `parent_id` (string): The ID of the parent snapshot (if any)\n- `created_by` (string): The user who created the snapshot\n- `created_date` (string): The date when the snapshot was created\n- `snapshot_type` (string): The type of snapshot (MANUAL, AUTO, INIT)\n- `is_ephemeral` (boolean): Whether the snapshot is ephemeral\n- `snapshot_comment` (string): Comment associated with the snapshot\n- `schema` (object): The schema details of the snapshot\n\n#### Example Response\n\n``` json\n[\n  {\n    \"id\": \"snapshot_123\",\n    \"name\": \"initial-snapshot\",\n    \"status\": \"CREATED\",\n    \"clone_id\": \"clone_456\",\n    \"parent_id\": null,\n    \"created_by\": \"user_123\",\n    \"created_date\": \"2024-01-15T10:30:00Z\",\n    \"snapshot_type\": \"MANUAL\",\n    \"is_ephemeral\": false,\n    \"snapshot_comment\": \"Initial database state\",\n    \"schema\": {\n      \"databases\": [\n        {\n          \"id\": \"db_1\",\n          \"name\": \"postgres\",\n          \"tables\": [\n            {\n              \"name\": \"users\",\n              \"columns\": [\"id\", \"email\", \"name\"]\n            }\n          ]\n        }\n      ]\n    }\n  },\n  {\n    \"id\": \"snapshot_124\",\n    \"name\": \"feature-snapshot\",\n    \"status\": \"CREATED\",\n    \"clone_id\": \"clone_457\",\n    \"parent_id\": \"snapshot_123\",\n    \"created_by\": \"user_456\",\n    \"created_date\": \"2024-01-15T11:00:00Z\",\n    \"snapshot_type\": \"AUTO\",\n    \"is_ephemeral\": true,\n    \"snapshot_comment\": \"Auto snapshot after feature implementation\",\n    \"schema\": {\n      \"databases\": [\n        {\n          \"id\": \"db_1\",\n          \"name\": \"postgres\",\n          \"tables\": [\n            {\n              \"name\": \"users\",\n              \"columns\": [\"id\", \"email\", \"name\", \"created_at\"]\n            },\n            {\n              \"name\": \"orders\",\n              \"columns\": [\"id\", \"user_id\", \"amount\"]\n            }\n          ]\n        }\n      ]\n    }\n  }\n]\n```\n\n#### Error Responses\n\n- **401 Unauthorized**: Invalid or expired access token\n- **403 Forbidden**: User not authorized to access this deployment\n- **404 Not Found**: Deployment not found\n\n#### Use Cases\n\n- List all snapshots for a deployment\n- Monitor snapshot status and health\n- Track snapshot creation and usage\n- Implement snapshot management UI\n- Audit snapshot activities\n\n#### Notes\n\n- Snapshots are returned in chronological order (newest first)\n- Ephemeral snapshots may be automatically cleaned up\n- Schema information shows the database structure at the time of snapshot\n- Parent-child relationships show the snapshot lineage"
+					},
+					"response": [
+						{
+							"id": "3839699-e49b871c-632c-440f-af2d-684d68c91c90",
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/deploy-123/snap",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"deploy-123",
+										"snap"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "[\n    {\n        \"id\": \"aae7f493-38a0-4365-a536-e0bbd2b21ae7\",\n        \"name\": \"aae7f493\",\n        \"status\": \"CREATED\",\n        \"snapshot_type\": \"MANUAL\",\n        \"snapshot_comment\": \"Initial Bookmark\",\n        \"snapshot_schema\": {\n            \"info\": \"Schema is not available yet. It will be updated after schema extraction.\"\n        },\n        \"customer_id\": \"f7ae431f-fcde-409e-9765-6ff7f312f976\",\n        \"dataset_id\": \"da7aa19e-fe31-4eb6-8f16-2f56b7d8c2a8\",\n        \"deployment_id\": \"f04afd60-bbcc-4880-9147-29944d098e31\",\n        \"parent_id\": null,\n        \"is_ephemeral\": false,\n        \"is_golden\": false,\n        \"created_by\": \"f7ae431f-fcde-409e-9765-6ff7f312f976\",\n        \"created_date\": \"2025-09-20T13:06:22.488379+00:00\",\n        \"last_modified_by\": null,\n        \"last_modified_date\": null,\n        \"snapshot_db_roles_id\": [\n            \"c8c4b56b-8641-4475-93fb-d6e255c0427f\"\n        ]\n    },\n    {\n        \"id\": \"a3f15f14-f25d-412e-8663-d885a33da464\",\n        \"name\": \"a3f15f14\",\n        \"status\": \"CREATED\",\n        \"snapshot_type\": \"MANUAL\",\n        \"snapshot_comment\": \"snapshot from api\",\n        \"snapshot_schema\": {\n            \"info\": \"Schema is not available yet. It will be updated after schema extraction.\"\n        },\n        \"customer_id\": \"f7ae431f-fcde-409e-9765-6ff7f312f976\",\n        \"dataset_id\": \"da7aa19e-fe31-4eb6-8f16-2f56b7d8c2a8\",\n        \"deployment_id\": \"f04afd60-bbcc-4880-9147-29944d098e31\",\n        \"parent_id\": \"aae7f493-38a0-4365-a536-e0bbd2b21ae7\",\n        \"is_ephemeral\": false,\n        \"is_golden\": false,\n        \"created_by\": \"f7ae431f-fcde-409e-9765-6ff7f312f976\",\n        \"created_date\": \"2025-09-20T13:08:23.2953+00:00\",\n        \"last_modified_by\": null,\n        \"last_modified_date\": null,\n        \"snapshot_db_roles_id\": [\n            \"c8c4b56b-8641-4475-93fb-d6e255c0427f\"\n        ]\n    },\n    {\n        \"id\": \"64809317-d6dd-49ab-84ed-109ea067c83a\",\n        \"name\": \"64809317\",\n        \"status\": \"CREATED\",\n        \"snapshot_type\": \"MANUAL\",\n        \"snapshot_comment\": \"snapshot from api\",\n        \"snapshot_schema\": {\n            \"info\": \"Schema is not available yet. It will be updated after schema extraction.\"\n        },\n        \"customer_id\": \"f7ae431f-fcde-409e-9765-6ff7f312f976\",\n        \"dataset_id\": \"da7aa19e-fe31-4eb6-8f16-2f56b7d8c2a8\",\n        \"deployment_id\": \"f04afd60-bbcc-4880-9147-29944d098e31\",\n        \"parent_id\": \"a3f15f14-f25d-412e-8663-d885a33da464\",\n        \"is_ephemeral\": false,\n        \"is_golden\": false,\n        \"created_by\": \"f7ae431f-fcde-409e-9765-6ff7f312f976\",\n        \"created_date\": \"2025-09-20T13:08:50.556487+00:00\",\n        \"last_modified_by\": null,\n        \"last_modified_date\": null,\n        \"snapshot_db_roles_id\": [\n            \"c8c4b56b-8641-4475-93fb-d6e255c0427f\"\n        ]\n    }\n]"
+						},
+						{
+							"id": "3839699-a7a7e74f-b38a-4064-9362-5126a12e59da",
+							"name": "Error Response - Not Found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/nonexistent-deploy/snap",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"nonexistent-deploy",
+										"snap"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Deployment not found\",\n  \"error_code\": \"NOT_FOUND\"\n}"
+						}
+					]
+				},
+				{
+					"name": "List Snapshots for Branch",
+					"id": "3839699-9ffb0491-1bf6-4e38-b17f-ac96a0045f39",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/deploy/{{deployment_id}}/{{branch_id}}/snap",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"deploy",
+								"{{deployment_id}}",
+								"{{branch_id}}",
+								"snap"
+							]
+						},
+						"description": "### Get All Snapshots for a Specific Branch\n\nThis endpoint retrieves all snapshots associated with a specific branch within a deployment.\n\n#### Request\n\n- Method: GET\n- URL: `{{guepard_api}}/deploy/{{deployment_id}}/{{branch_id}}/snap`\n- Headers: Authorization with Bearer token\n\n#### Response\n\nUpon successful execution, the endpoint returns an array of snapshot objects specific to the branch:\n\n- `id` (string): The unique identifier of the snapshot\n- `name` (string): The name of the snapshot\n- `status` (string): The current status of the snapshot\n- `clone_id` (string): The ID of the clone associated with the snapshot\n- `parent_id` (string): The ID of the parent snapshot (if any)\n- `created_by` (string): The user who created the snapshot\n- `created_date` (string): The date when the snapshot was created\n- `snapshot_type` (string): The type of snapshot (MANUAL, AUTO, INIT)\n- `is_ephemeral` (boolean): Whether the snapshot is ephemeral\n- `snapshot_comment` (string): Comment associated with the snapshot\n- `schema` (object): The schema details of the snapshot\n- `branch_id` (string): The ID of the branch this snapshot belongs to\n\n#### Example Response\n\n``` json\n[\n  {\n    \"id\": \"snapshot_123\",\n    \"name\": \"branch-initial\",\n    \"status\": \"CREATED\",\n    \"clone_id\": \"clone_456\",\n    \"parent_id\": null,\n    \"created_by\": \"user_123\",\n    \"created_date\": \"2024-01-15T10:30:00Z\",\n    \"snapshot_type\": \"INIT\",\n    \"is_ephemeral\": false,\n    \"snapshot_comment\": \"Initial branch state\",\n    \"schema\": {\n      \"databases\": [\n        {\n          \"id\": \"db_1\",\n          \"name\": \"postgres\",\n          \"tables\": [\n            {\n              \"name\": \"users\",\n              \"columns\": [\"id\", \"email\", \"name\"]\n            }\n          ]\n        }\n      ]\n    },\n    \"branch_id\": \"branch_789\"\n  },\n  {\n    \"id\": \"snapshot_124\",\n    \"name\": \"feature-update\",\n    \"status\": \"CREATED\",\n    \"clone_id\": \"clone_457\",\n    \"parent_id\": \"snapshot_123\",\n    \"created_by\": \"user_456\",\n    \"created_date\": \"2024-01-15T11:00:00Z\",\n    \"snapshot_type\": \"MANUAL\",\n    \"is_ephemeral\": false,\n    \"snapshot_comment\": \"After implementing new feature\",\n    \"schema\": {\n      \"databases\": [\n        {\n          \"id\": \"db_1\",\n          \"name\": \"postgres\",\n          \"tables\": [\n            {\n              \"name\": \"users\",\n              \"columns\": [\"id\", \"email\", \"name\", \"created_at\"]\n            },\n            {\n              \"name\": \"orders\",\n              \"columns\": [\"id\", \"user_id\", \"amount\"]\n            }\n          ]\n        }\n      ]\n    },\n    \"branch_id\": \"branch_789\"\n  }\n]\n```\n\n#### Error Responses\n\n- **401 Unauthorized**: Invalid or expired access token\n- **403 Forbidden**: User not authorized to access this branch\n- **404 Not Found**: Branch or deployment not found\n\n#### Use Cases\n\n- List all snapshots for a specific branch\n- Track branch development history\n- Implement branch-specific snapshot management\n- Monitor branch snapshot usage\n- Debug branch-specific issues\n\n#### Notes\n\n- Snapshots are returned in chronological order (newest first)\n- Only snapshots belonging to the specified branch are returned\n- Schema information shows the database structure at the time of snapshot\n- Parent-child relationships show the snapshot lineage within the branch"
+					},
+					"response": [
+						{
+							"id": "3839699-51f2bac9-0c9e-4159-968d-c9fd340a8ace",
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/deploy-123/branch-456/snap",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"deploy-123",
+										"branch-456",
+										"snap"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "[\n    {\n        \"id\": \"aae7f493-38a0-4365-a536-e0bbd2b21ae7\",\n        \"name\": \"aae7f493\",\n        \"status\": \"CREATED\",\n        \"snapshot_type\": \"MANUAL\",\n        \"snapshot_comment\": \"Initial Bookmark\",\n        \"snapshot_schema\": {\n            \"info\": \"Schema is not available yet. It will be updated after schema extraction.\"\n        },\n        \"customer_id\": \"f7ae431f-fcde-409e-9765-6ff7f312f976\",\n        \"dataset_id\": \"da7aa19e-fe31-4eb6-8f16-2f56b7d8c2a8\",\n        \"deployment_id\": \"f04afd60-bbcc-4880-9147-29944d098e31\",\n        \"parent_id\": null,\n        \"is_ephemeral\": false,\n        \"is_golden\": false,\n        \"created_by\": \"f7ae431f-fcde-409e-9765-6ff7f312f976\",\n        \"created_date\": \"2025-09-20T13:06:22.488379+00:00\",\n        \"last_modified_by\": null,\n        \"last_modified_date\": null,\n        \"snapshot_db_roles_id\": [\n            \"c8c4b56b-8641-4475-93fb-d6e255c0427f\"\n        ]\n    },\n    {\n        \"id\": \"a3f15f14-f25d-412e-8663-d885a33da464\",\n        \"name\": \"a3f15f14\",\n        \"status\": \"CREATED\",\n        \"snapshot_type\": \"MANUAL\",\n        \"snapshot_comment\": \"snapshot from api\",\n        \"snapshot_schema\": {\n            \"info\": \"Schema is not available yet. It will be updated after schema extraction.\"\n        },\n        \"customer_id\": \"f7ae431f-fcde-409e-9765-6ff7f312f976\",\n        \"dataset_id\": \"da7aa19e-fe31-4eb6-8f16-2f56b7d8c2a8\",\n        \"deployment_id\": \"f04afd60-bbcc-4880-9147-29944d098e31\",\n        \"parent_id\": \"aae7f493-38a0-4365-a536-e0bbd2b21ae7\",\n        \"is_ephemeral\": false,\n        \"is_golden\": false,\n        \"created_by\": \"f7ae431f-fcde-409e-9765-6ff7f312f976\",\n        \"created_date\": \"2025-09-20T13:08:23.2953+00:00\",\n        \"last_modified_by\": null,\n        \"last_modified_date\": null,\n        \"snapshot_db_roles_id\": [\n            \"c8c4b56b-8641-4475-93fb-d6e255c0427f\"\n        ]\n    },\n    {\n        \"id\": \"64809317-d6dd-49ab-84ed-109ea067c83a\",\n        \"name\": \"64809317\",\n        \"status\": \"CREATED\",\n        \"snapshot_type\": \"MANUAL\",\n        \"snapshot_comment\": \"snapshot from api\",\n        \"snapshot_schema\": {\n            \"info\": \"Schema is not available yet. It will be updated after schema extraction.\"\n        },\n        \"customer_id\": \"f7ae431f-fcde-409e-9765-6ff7f312f976\",\n        \"dataset_id\": \"da7aa19e-fe31-4eb6-8f16-2f56b7d8c2a8\",\n        \"deployment_id\": \"f04afd60-bbcc-4880-9147-29944d098e31\",\n        \"parent_id\": \"a3f15f14-f25d-412e-8663-d885a33da464\",\n        \"is_ephemeral\": false,\n        \"is_golden\": false,\n        \"created_by\": \"f7ae431f-fcde-409e-9765-6ff7f312f976\",\n        \"created_date\": \"2025-09-20T13:08:50.556487+00:00\",\n        \"last_modified_by\": null,\n        \"last_modified_date\": null,\n        \"snapshot_db_roles_id\": [\n            \"c8c4b56b-8641-4475-93fb-d6e255c0427f\"\n        ]\n    }\n]"
+						},
+						{
+							"id": "3839699-835bc34d-2700-4067-afbe-a502c352597b",
+							"name": "Error Response - Branch Not Found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/deploy-123/nonexistent-branch/snap",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"deploy-123",
+										"nonexistent-branch",
+										"snap"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Branch not found\",\n  \"error_code\": \"NOT_FOUND\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Snapshot",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "48a8a486-5041-4b43-bb1b-25566881f641",
+								"exec": [
+									"pm.environment.set(\"snapshot_id\", pm.response.json().id);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "3839699-daea1876-9aef-46b1-a9b8-83f629300a92",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"snapshot_comment\": \"snapshot from api\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/deploy/{{deployment_id}}/{{branch_id}}/snap",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"deploy",
+								"{{deployment_id}}",
+								"{{branch_id}}",
+								"snap"
+							]
+						},
+						"description": "### Bookmark a Snapshot\n\nThis endpoint is used to create a snapshot with a specific comment for a specific database.\n\n#### Request Body\n\n- snapshot_comment (string, required): A comment for the snapshot.\n    \n\n#### Response\n\n- `id` (string): The ID of the snapshot.\n    \n- `name` (string): The name of the snapshot.\n    \n- `status` (string): The status of the snapshot.\n    \n- `snapshot_type` (string): The type of the snapshot.\n    \n- `snapshot_comment` (string): The comment of the snapshot.\n    \n- `snapshot_schema` (object): The schema of the snapshot, including databases and tables.\n    \n- `customer_id` (string): The ID of the customer associated with the snapshot.\n    \n- `dataset_id` (string): The ID of the dataset associated with the snapshot.\n    \n- `deployment_id` (string): The ID of the deployment associated with the snapshot.\n    \n- `parent_id` (string): The ID of the parent snapshot, if any.\n    \n- `is_ephemeral` (boolean): Indicates if the snapshot is ephemeral.\n    \n- `is_golden` (boolean): Indicates if the snapshot is a golden snapshot.\n    \n- `created_by` (string): The user who created the snapshot.\n    \n- `created_date` (string): The date when the snapshot was created.\n    \n- `last_modified_by` (string): The user who last modified the snapshot.\n    \n- `last_modified_date` (string): The date when the snapshot was last modified.\n    \n\n#### Example\n\n``` json\n{\n  \"id\": \"\",\n  \"name\": \"\",\n  \"status\": \"\",\n  \"snapshot_type\": \"\",\n  \"snapshot_comment\": \"\",\n  \"snapshot_schema\": {\n    \"databases\": [\n      {\n        \"id\": \"\",\n        \"name\": \"\",\n        \"tables\": []\n      }\n    ]\n  },\n  \"customer_id\": \"\",\n  \"dataset_id\": \"\",\n  \"deployment_id\": \"\",\n  \"parent_id\": \"\",\n  \"is_ephemeral\": true,\n  \"is_golden\": true,\n  \"created_by\": \"\",\n  \"created_date\": \"\",\n  \"last_modified_by\": null,\n  \"last_modified_date\": null\n}\n\n ```"
+					},
+					"response": [
+						{
+							"id": "3839699-875c6a80-12fa-42ea-aa3a-a8b03fe4a409",
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"snapshot_comment\": \"snapshot from api\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/deploy/deploy-123/branch-456/snap",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"deploy-123",
+										"branch-456",
+										"snap"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n    \"id\": \"64809317-d6dd-49ab-84ed-109ea067c83a\",\n    \"name\": \"64809317\",\n    \"status\": \"INIT\",\n    \"snapshot_type\": \"MANUAL\",\n    \"snapshot_comment\": \"snapshot from api\",\n    \"snapshot_schema\": {\n        \"info\": \"Schema is not available yet. It will be updated after schema extraction.\"\n    },\n    \"customer_id\": \"f7ae431f-fcde-409e-9765-6ff7f312f976\",\n    \"dataset_id\": \"da7aa19e-fe31-4eb6-8f16-2f56b7d8c2a8\",\n    \"deployment_id\": \"f04afd60-bbcc-4880-9147-29944d098e31\",\n    \"parent_id\": \"a3f15f14-f25d-412e-8663-d885a33da464\",\n    \"is_ephemeral\": false,\n    \"is_golden\": false,\n    \"created_by\": \"f7ae431f-fcde-409e-9765-6ff7f312f976\",\n    \"created_date\": \"2025-09-20T13:08:50.556487+00:00\",\n    \"last_modified_by\": null,\n    \"last_modified_date\": null,\n    \"snapshot_db_roles_id\": [\n        \"c8c4b56b-8641-4475-93fb-d6e255c0427f\"\n    ]\n}"
+						},
+						{
+							"id": "3839699-98afbce2-3033-4788-9b3b-d691ad843a51",
+							"name": "Error Response - Branch Not Found",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"snapshot_comment\": \"Test snapshot\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/deploy/deploy-123/nonexistent-branch/snap",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"deploy-123",
+										"nonexistent-branch",
+										"snap"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Branch not found\",\n  \"error_code\": \"NOT_FOUND\"\n}"
+						},
+						{
+							"id": "3839699-5f092dfc-88db-4552-9167-90c98608d647",
+							"name": "Error Response - Validation Error",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"snapshot_comment\": \"\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/deploy/deploy-123/branch-456/snap",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"deploy-123",
+										"branch-456",
+										"snap"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Snapshot comment is required\",\n  \"error_code\": \"VALIDATION_ERROR\"\n}"
+						}
+					]
+				}
+			],
+			"id": "3839699-3e5f5b34-398a-4c37-acbf-d8d9ced42369",
+			"description": "Snapshot management - create and list database snapshots"
+		},
+		{
+			"name": "🌿 Branches",
+			"item": [
+				{
+					"name": "List Branches",
+					"id": "3839699-a07be245-3d24-4dc9-af98-0e14a0842122",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/deploy/{{deployment_id}}/branch",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"deploy",
+								"{{deployment_id}}",
+								"branch"
+							]
+						},
+						"description": "### Get All Branches for a Deployment\n\nThis endpoint retrieves all branches associated with a specific deployment.\n\n#### Request\n\n- Method: GET\n- URL: `{{guepard_api}}/deploy/{{deployment_id}}/branch`\n- Headers: Authorization with Bearer token\n\n#### Response\n\nUpon successful execution, the endpoint returns an array of branch objects:\n\n- `id` (string): The unique identifier of the branch\n- `name` (string): The name of the branch\n- `status` (string): The current status of the branch\n- `snapshot_id` (string): The ID of the snapshot this branch is based on\n- `deployment_id` (string): The ID of the parent deployment\n- `environment_type` (string): The type of environment (dev, staging, prod, etc.)\n- `database_provider` (string): The database provider\n- `is_ephemeral` (boolean): Whether the branch is ephemeral\n- `is_masked` (boolean): Whether sensitive data is masked\n- `is_purged` (boolean): Whether the branch has been purged\n- `created_by` (string): The user who created the branch\n- `created_date` (string): The date when the branch was created\n- `clone_id` (string): The clone identifier\n\n#### Example Response\n\n``` json\n[\n  {\n    \"id\": \"branch_123\",\n    \"name\": \"feature-new-api\",\n    \"status\": \"ACTIVE\",\n    \"snapshot_id\": \"snapshot_456\",\n    \"deployment_id\": \"deployment_789\",\n    \"environment_type\": \"development\",\n    \"database_provider\": \"PostgreSQL\",\n    \"is_ephemeral\": false,\n    \"is_masked\": false,\n    \"is_purged\": false,\n    \"created_by\": \"user_123\",\n    \"created_date\": \"2024-01-15T10:30:00Z\",\n    \"clone_id\": \"clone_abc\"\n  },\n  {\n    \"id\": \"branch_124\",\n    \"name\": \"hotfix-security-patch\",\n    \"status\": \"ACTIVE\",\n    \"snapshot_id\": \"snapshot_457\",\n    \"deployment_id\": \"deployment_789\",\n    \"environment_type\": \"staging\",\n    \"database_provider\": \"PostgreSQL\",\n    \"is_ephemeral\": true,\n    \"is_masked\": true,\n    \"is_purged\": false,\n    \"created_by\": \"user_456\",\n    \"created_date\": \"2024-01-15T11:00:00Z\",\n    \"clone_id\": \"clone_def\"\n  }\n]\n```\n\n#### Error Responses\n\n- **401 Unauthorized**: Invalid or expired access token\n- **403 Forbidden**: User not authorized to access this deployment\n- **404 Not Found**: Deployment not found\n\n#### Use Cases\n\n- List all branches for a deployment\n- Monitor branch status and health\n- Track branch creation and usage\n- Implement branch management UI\n- Audit branch activities\n\n#### Notes\n\n- Branches are returned in chronological order (newest first)\n- Ephemeral branches may be automatically cleaned up\n- Masked branches have sensitive data obfuscated\n- Purged branches are marked but data may be deleted"
+					},
+					"response": [
+						{
+							"id": "3839699-6f48e5bf-8103-4b4a-a066-f07e25f65991",
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/deploy-123/branch",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"deploy-123",
+										"branch"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "[\n    {\n        \"id\": \"da7aa19e-fe31-4eb6-8f16-2f56b7d8c2a8\",\n        \"account_id\": \"f7ae431f-fcde-409e-9765-6ff7f312f976\",\n        \"deployment_id\": \"f04afd60-bbcc-4880-9147-29944d098e31\",\n        \"label_name\": \"quiet-ocean-2t54xf\",\n        \"job_status\": \"CREATED\",\n        \"is_ephemeral\": false,\n        \"is_masked\": false,\n        \"is_purged\": false,\n        \"updated_at\": null,\n        \"created_at\": null,\n        \"created_by\": \"f7ae431f-fcde-409e-9765-6ff7f312f976\",\n        \"updated_by\": null,\n        \"branch_name\": \"main\",\n        \"snapshot_id\": \"64809317-d6dd-49ab-84ed-109ea067c83a\"\n    }\n]"
+						},
+						{
+							"id": "3839699-dc8111a7-7ed5-4ff5-be68-ddb05031d03c",
+							"name": "Error Response - Unauthorized",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer invalid-token"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/deploy-123/branch",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"deploy-123",
+										"branch"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Missing token\",\n  \"error_code\": \"UNAUTHORIZED\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Branch from Snapshot",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "87ed2b46-8cbc-4364-b25a-959e1af8a6ad",
+								"exec": [
+									"pm.environment.set(\"branch_id\", pm.response.json().id);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "3839699-49932004-8846-40bd-a815-bb16585ec631",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"branch_name\": \"new branch\",\n    \"discard_changes\": \"true\",\n    \"checkout\": false,\n    \"ephemeral\": false\n}\n"
+						},
+						"url": {
+							"raw": "{{base_url}}/deploy/{{deployment_id}}/{{branch_id}}/{{snapshot_id}}/branch",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"deploy",
+								"{{deployment_id}}",
+								"{{branch_id}}",
+								"{{snapshot_id}}",
+								"branch"
+							]
+						},
+						"description": "### Create Branch From a Snapshot\n\nThis endpoint allows you to create a branch starting from specific snapshot for your database.\n\n#### Request Body\n\n- `branch_name` (string): The name of the branch to be deployed.\n    \n- `discard_changes` (boolean): Indicates whether any changes should be discarded.\n    \n- `checkout` (boolean): Indicates whether to perform a checkout operation.\n    \n- `ephemeral` (boolean): Indicates whether the deployment is ephemeral.\n    \n\n#### Response\n\nUpon successful execution, the endpoint returns the following fields:\n\n- `id` (string): The unique identifier of the deployment.\n    \n- `name` (string): The name of the deployment.\n    \n- `status` (string): The status of the deployment.\n    \n- `snapshot_id` (string): The identifier of the snapshot deployed.\n    \n- `deployment_id` (string): The identifier of the deployment.\n    \n- `environment_type` (string): The type of environment.\n    \n- `database_provider` (string): The provider of the database.\n    \n- `database_username` (string): The username for the database.\n    \n- `database_password` (string): The password for the database.\n    \n- `is_ephemeral` (boolean): Indicates whether the deployment is ephemeral.\n    \n- `is_masked` (boolean): Indicates whether sensitive information is masked.\n    \n- `is_purged` (boolean): Indicates whether the deployment is purged.\n    \n- `created_by` (string): The user who created the deployment.\n    \n- `created_date` (string): The date of creation.\n    \n\n#### Example Response\n\n``` json\n{\n    \"id\": \"\",\n    \"name\": \"\",\n    \"status\": \"\",\n    \"snapshot_id\": \"\",\n    \"deployment_id\": \"\",\n    \"environment_type\": null,\n    \"database_provider\": \"\",\n    \"database_username\": \"\",\n    \"database_password\": \"\",\n    \"is_ephemeral\": true,\n    \"is_masked\": true,\n    \"is_purged\": true,\n    \"created_by\": \"\",\n    \"created_date\": \"\"\n}\n\n ```"
+					},
+					"response": [
+						{
+							"id": "3839699-bc912e16-b31b-49a8-be0e-2cc98a884492",
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"branch_name\": \"new branch\",\n    \"discard_changes\": \"true\",\n    \"checkout\": false,\n    \"ephemeral\": false\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/deploy/{{deployment_id}}/{{branch_id}}/{{snapshot_id}}/branch",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"{{deployment_id}}",
+										"{{branch_id}}",
+										"{{snapshot_id}}",
+										"branch"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n    \"id\": \"a411f70f-0e58-4251-b30e-e33d037c686b\",\n    \"account_id\": \"f7ae431f-fcde-409e-9765-6ff7f312f976\",\n    \"deployment_id\": \"f04afd60-bbcc-4880-9147-29944d098e31\",\n    \"label_name\": \"silent-sky-z7mxn3\",\n    \"job_status\": \"INIT\",\n    \"is_ephemeral\": false,\n    \"is_masked\": false,\n    \"is_purged\": false,\n    \"updated_at\": null,\n    \"created_at\": null,\n    \"created_by\": \"f7ae431f-fcde-409e-9765-6ff7f312f976\",\n    \"updated_by\": null,\n    \"branch_name\": \"new branch\",\n    \"snapshot_id\": \"8126a656-a9a9-4cfe-83b1-bac9bd4a5c38\"\n}"
+						}
+					]
+				}
+			],
+			"id": "3839699-ed07c8b7-2e8b-4dd9-9108-ef2a83861251",
+			"description": "Branch management - create, update, and checkout database branches"
+		},
+		{
+			"name": "🎮 Compute Control",
+			"item": [
+				{
+					"name": "Get Compute",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "faa99dd4-bcb5-427e-a110-155991c2c27e",
+								"exec": [
+									"pm.environment.set(\"compute_id\", pm.response.json().id);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "3839699-9df768f6-d7a4-4435-8096-6fb3a3de0e59",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/deploy/{{deployment_id}}/compute",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"deploy",
+								"{{deployment_id}}",
+								"compute"
+							]
+						},
+						"description": "Get compute resource status for deployment"
+					},
+					"response": [
+						{
+							"id": "3839699-cd6b4d21-17be-472e-9803-c1e8e44c84c2",
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/deploy-123/compute",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"deploy-123",
+										"compute"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"deployment_id\": \"deploy-123\",\n  \"status\": \"running\",\n  \"cpu_usage\": 45.2,\n  \"memory_usage\": 67.8,\n  \"storage_usage\": 23.1,\n  \"uptime\": 3600,\n  \"last_updated\": \"2024-01-15T10:30:00Z\"\n}"
+						},
+						{
+							"id": "3839699-cdb062fe-33da-4fba-8e63-b457da913774",
+							"name": "Error Response - Not Found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/nonexistent-deploy/compute",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"nonexistent-deploy",
+										"compute"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Deployment not found\",\n  \"error_code\": \"NOT_FOUND\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Start Compute",
+					"id": "3839699-73d5ea95-7bbf-4f95-8e63-d16d3c03f696",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/deploy/{{deployment_id}}/start",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"deploy",
+								"{{deployment_id}}",
+								"start"
+							]
+						},
+						"description": "Start compute resources for a deployment"
+					},
+					"response": [
+						{
+							"id": "3839699-ed89169c-96cb-4dea-8909-d05651170d85",
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/deploy-123/start",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"deploy-123",
+										"start"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Compute resources started successfully\",\n  \"deployment_id\": \"deploy-123\",\n  \"status\": \"starting\",\n  \"estimated_startup_time\": 30,\n  \"started_at\": \"2024-01-16T15:30:00Z\"\n}"
+						},
+						{
+							"id": "3839699-02f08186-a6dd-49c9-b5a1-b68b911e67d8",
+							"name": "Error Response - Already Running",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/deploy-123/start",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"deploy-123",
+										"start"
+									]
+								}
+							},
+							"status": "Conflict",
+							"code": 409,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Deployment is already running\",\n  \"error_code\": \"ALREADY_RUNNING\"\n}"
+						},
+						{
+							"id": "3839699-374ebc2c-6b1e-4d33-9788-566beaf3a206",
+							"name": "Error Response - Not Found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/nonexistent-deploy/start",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"nonexistent-deploy",
+										"start"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Deployment not found\",\n  \"error_code\": \"NOT_FOUND\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Stop Compute",
+					"id": "3839699-f20649ca-5273-4d6b-8313-4c4ce85f5a65",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/deploy/{{deployment_id}}/stop",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"deploy",
+								"{{deployment_id}}",
+								"stop"
+							]
+						},
+						"description": "Stop compute resources for a deployment"
+					},
+					"response": [
+						{
+							"id": "3839699-524a12ca-76af-4655-b0f4-a69fef9970c9",
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/deploy-123/stop",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"deploy-123",
+										"stop"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Compute resources stopped successfully\",\n  \"deployment_id\": \"deploy-123\",\n  \"status\": \"stopped\",\n  \"stopped_at\": \"2024-01-16T15:30:00Z\",\n  \"uptime_seconds\": 3600\n}"
+						},
+						{
+							"id": "3839699-d9d44ce3-42ff-4b87-912f-ffe28fb78993",
+							"name": "Error Response - Already Stopped",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/deploy-123/stop",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"deploy-123",
+										"stop"
+									]
+								}
+							},
+							"status": "Conflict",
+							"code": 409,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Deployment is already stopped\",\n  \"error_code\": \"ALREADY_STOPPED\"\n}"
+						},
+						{
+							"id": "3839699-2d91bcb8-f20e-4d60-81e1-4de381bd678a",
+							"name": "Error Response - Not Found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/nonexistent-deploy/stop",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"nonexistent-deploy",
+										"stop"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Deployment not found\",\n  \"error_code\": \"NOT_FOUND\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Compute Status",
+					"id": "3839699-4c283c60-e2c9-4a66-a6d7-7454b3a019a8",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/deploy/{{deployment_id}}/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"deploy",
+								"{{deployment_id}}",
+								"status"
+							]
+						},
+						"description": "Get compute resource status for deployment"
+					},
+					"response": [
+						{
+							"id": "3839699-563f2066-b34c-46ea-a871-dea40798721d",
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/deploy-123/compute",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"deploy-123",
+										"compute"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"deployment_id\": \"deploy-123\",\n  \"status\": \"running\",\n  \"cpu_usage\": 45.2,\n  \"memory_usage\": 67.8,\n  \"storage_usage\": 23.1,\n  \"uptime\": 3600,\n  \"last_updated\": \"2024-01-15T10:30:00Z\"\n}"
+						},
+						{
+							"id": "3839699-25157b89-7b9a-474b-925c-070fa572afd0",
+							"name": "Error Response - Not Found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/nonexistent-deploy/compute",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"nonexistent-deploy",
+										"compute"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Deployment not found\",\n  \"error_code\": \"NOT_FOUND\"\n}"
+						}
+					]
+				}
+			],
+			"id": "3839699-e0d2d8df-48d1-4f2f-b90e-df7cd5ba12b6",
+			"description": "Compute resource control - start, stop deployments"
+		},
+		{
+			"name": "🔄 Checkouts",
+			"item": [
+				{
+					"name": "Checkout Branch",
+					"id": "3839699-e572d88e-fe2c-4fa4-8d30-ec6821477eeb",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base_url}}/deploy/{{deployment_id}}/{{branch_id}}/checkout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"deploy",
+								"{{deployment_id}}",
+								"{{branch_id}}",
+								"checkout"
+							]
+						},
+						"description": "### Checkout to a Specific Branch with Snapshot\n\nThis endpoint allows you to checkout to a specific branch and deploy it with a particular snapshot, enabling time-travel functionality and branch switching.\n\n#### Request\n\n- Method: POST\n- URL: `{{base_url}}/deploy/{{deployment_id}}/{{branch_id}}/checkout`\n- Headers: Authorization with Bearer token, Content-Type: application/json\n\n#### Request Body\n\n- `snapshot_id` (string, required): The ID of the snapshot to checkout to\n- `discard_changes` (boolean, optional): Whether to discard any uncommitted changes (default: false)\n- `force_checkout` (boolean, optional): Force checkout even if there are conflicts (default: false)\n- `create_backup` (boolean, optional): Create a backup before checkout (default: true)\n- `backup_comment` (string, optional): Comment for the backup snapshot\n\n#### Response\n\nUpon successful checkout, the endpoint returns the checkout information:\n\n- `checkout_id` (string): Unique identifier for the checkout operation\n- `deployment_id` (string): The deployment ID\n- `branch_id` (string): The branch ID\n- `snapshot_id` (string): The snapshot that was checked out\n- `status` (string): Current status of the checkout (INITIATED, IN_PROGRESS, COMPLETED, FAILED)\n- `previous_snapshot_id` (string): The previous snapshot before checkout\n- `backup_snapshot_id` (string): ID of the backup snapshot (if created)\n- `connection_info` (object): Updated connection information\n- `estimated_completion_time` (string): Estimated time when checkout will complete\n- `created_at` (string): When the checkout was initiated\n- `updated_at` (string): When the checkout status was last updated\n\n#### Example Request\n\n``` json\n{\n  \"snapshot_id\": \"snapshot_456\",\n  \"discard_changes\": false,\n  \"force_checkout\": false,\n  \"create_backup\": true,\n  \"backup_comment\": \"Backup before checkout to feature branch\"\n}\n```\n\n#### Example Response\n\n``` json\n{\n  \"checkout_id\": \"checkout_789\",\n  \"deployment_id\": \"deployment_123\",\n  \"branch_id\": \"branch_456\",\n  \"snapshot_id\": \"snapshot_456\",\n  \"status\": \"IN_PROGRESS\",\n  \"previous_snapshot_id\": \"snapshot_123\",\n  \"backup_snapshot_id\": \"snapshot_backup_789\",\n  \"connection_info\": {\n    \"fqdn\": \"feature-branch-abc123.us-west-aws.db.guepard.run\",\n    \"connection_string\": \"postgres://postgres:password@feature-branch-abc123.us-west-aws.db.guepard.run:5432/dbname\",\n    \"database_provider\": \"PostgreSQL\",\n    \"database_version\": \"16\"\n  },\n  \"estimated_completion_time\": \"2024-01-15T10:35:00.000Z\",\n  \"created_at\": \"2024-01-15T10:30:00.000Z\",\n  \"updated_at\": \"2024-01-15T10:30:15.000Z\"\n}\n```\n\n#### Error Responses\n\n- **400 Bad Request**: Invalid snapshot ID or missing required fields\n- **401 Unauthorized**: Invalid or expired access token\n- **403 Forbidden**: User not authorized to checkout this branch\n- **404 Not Found**: Deployment, branch, or snapshot not found\n- **409 Conflict**: Checkout conflicts with active operations\n- **422 Unprocessable Entity**: Invalid checkout parameters\n- **500 Internal Server Error**: Checkout operation failed\n\n#### Use Cases\n\n- Switch between different feature branches\n- Implement time-travel functionality\n- Deploy specific snapshots for testing\n- Rollback to previous states\n- Implement branch-based workflows\n\n#### Notes\n\n- Checkout operations are asynchronous and may take several minutes\n- The branch must be in a stable state before checkout\n- Backup snapshots are created automatically unless disabled\n- Connection information is updated after successful checkout\n- Use force_checkout only when necessary as it may cause data loss"
+					},
+					"response": [
+						{
+							"id": "3839699-0e73d109-9e09-49a7-a6b1-d78f9ff12136",
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{base_url}}/deploy/deploy-123/branch-456/checkout",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"deploy-123",
+										"branch-456",
+										"checkout"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n    \"statusCode\": 200,\n    \"headers\": {\n        \"Access-Control-Allow-Origin\": \"*\",\n        \"Access-Control-Allow-Credentials\": true,\n        \"X-Content-Type-Options\": \"nosniff\",\n        \"X-Frame-Options\": \"Deny\",\n        \"X-XSS-Protection\": \"1; mode=block\",\n        \"Cache-Control\": \"no-store\",\n        \"Content-Security-Policy\": \"frame-ancestors 'none'; default-src: 'self'; upgrade-insecure-requests; referrer no-referrer\",\n        \"Strict-Transport-Security\": \"max-age=31536000\"\n    },\n    \"body\": \"{\\\"id\\\":\\\"8adb1dc3-3016-4246-b8c8-e93f182c5a2a\\\",\\\"account_id\\\":\\\"f7ae431f-fcde-409e-9765-6ff7f312f976\\\",\\\"label_name\\\":\\\"happy-storm-fjjze7\\\",\\\"job_status\\\":\\\"CREATED\\\",\\\"compute_status\\\":\\\"RUNNING\\\",\\\"deployment_id\\\":\\\"f04afd60-bbcc-4880-9147-29944d098e31\\\",\\\"branch_id\\\":\\\"a411f70f-0e58-4251-b30e-e33d037c686b\\\",\\\"performance_profile_id\\\":\\\"e54710e1-73dd-4628-a51d-93d1aab5226c\\\",\\\"updated_at\\\":null,\\\"created_at\\\":null,\\\"created_by\\\":null,\\\"updated_by\\\":null,\\\"port\\\":30078}\"\n}"
+						},
+						{
+							"id": "3839699-1d349bee-6ca8-4d0b-bc2d-28f553e8df37",
+							"name": "Error Response - Invalid Snapshot",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"snapshot_id\": \"invalid-snapshot\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/deploy/deploy-123/branch-456/checkout",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"deploy-123",
+										"branch-456",
+										"checkout"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Invalid snapshot ID or snapshot does not belong to this branch\",\n  \"error_code\": \"INVALID_SNAPSHOT\"\n}"
+						},
+						{
+							"id": "3839699-92f31538-e769-4a0a-b515-9057425ded20",
+							"name": "Error Response - Already Checked Out",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"snapshot_id\": \"invalid-snapshot\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/deploy/deploy-123/branch-456/checkout",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"deploy-123",
+										"branch-456",
+										"checkout"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n    \"statusCode\": 400,\n    \"headers\": {\n        \"Access-Control-Allow-Origin\": \"*\",\n        \"Access-Control-Allow-Credentials\": true,\n        \"X-Content-Type-Options\": \"nosniff\",\n        \"X-Frame-Options\": \"Deny\",\n        \"X-XSS-Protection\": \"1; mode=block\",\n        \"Cache-Control\": \"no-store\",\n        \"Content-Security-Policy\": \"frame-ancestors 'none'; default-src: 'self'; upgrade-insecure-requests; referrer no-referrer\",\n        \"Strict-Transport-Security\": \"max-age=31536000\"\n    },\n    \"body\": \"{\\\"message\\\":\\\"The workspace is already checked out to this branch.\\\"}\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Checkout Snapshot",
+					"id": "3839699-71524cee-4d06-441c-b21e-d35b223d3183",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"discard_changes\": \"true\", \n    \"checkout\": true,\n    \"ephemeral\": true // DO NOT CHANGE THIS VALUE\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/deploy/{{deployment_id}}/{{branch_id}}/{{snapshot_id}}/branch",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"deploy",
+								"{{deployment_id}}",
+								"{{branch_id}}",
+								"{{snapshot_id}}",
+								"branch"
+							]
+						},
+						"description": "### Create a New Branch from a Specific Snapshot\n\nThis endpoint creates a new branch from a specific snapshot, enabling you to fork the database state at a particular point in time.\n\n#### Request\n\n- Method: POST\n- URL: `{{base_url}}/deploy/{{deployment_id}}/{{branch_id}}/{{snapshot_id}}/branch`\n- Headers: Authorization with Bearer token, Content-Type: application/json\n\n#### Request Body\n\n- `branch_name` (string, required): Name for the new branch\n- `snapshot_id` (string, required): The ID of the snapshot to branch from\n- `is_ephemeral` (boolean, optional): Whether the new branch should be ephemeral (default: false)\n- `description` (string, optional): Description of the new branch\n- `environment_type` (string, optional): Environment type (dev, staging, prod, test)\n- `tags` (object, optional): Key-value pairs for tagging the branch\n- `auto_cleanup` (boolean, optional): Enable automatic cleanup (default: false)\n- `cleanup_after_hours` (number, optional): Hours after which to cleanup (if auto_cleanup is true)\n\n#### Response\n\nUpon successful creation, the endpoint returns the new branch information:\n\n- `id` (string): The unique identifier of the new branch\n- `name` (string): The name of the new branch\n- `status` (string): Current status of the branch (CREATING, ACTIVE, ERROR)\n- `snapshot_id` (string): The snapshot this branch was created from\n- `deployment_id` (string): The parent deployment ID\n- `parent_branch_id` (string): The parent branch ID\n- `environment_type` (string): The environment type\n- `is_ephemeral` (boolean): Whether the branch is ephemeral\n- `auto_cleanup` (boolean): Whether auto cleanup is enabled\n- `cleanup_after_hours` (number): Cleanup time in hours\n- `connection_info` (object): Connection information for the new branch\n- `created_by` (string): The user who created the branch\n- `created_at` (string): When the branch was created\n- `estimated_ready_time` (string): Estimated time when the branch will be ready\n\n#### Example Request\n\n``` json\n{\n  \"branch_name\": \"feature-user-authentication\",\n  \"snapshot_id\": \"snapshot_456\",\n  \"is_ephemeral\": false,\n  \"description\": \"Branch for implementing user authentication features\",\n  \"environment_type\": \"development\",\n  \"tags\": {\n    \"feature\": \"authentication\",\n    \"team\": \"backend\",\n    \"priority\": \"high\"\n  },\n  \"auto_cleanup\": true,\n  \"cleanup_after_hours\": 72\n}\n```\n\n#### Example Response\n\n``` json\n{\n  \"id\": \"branch_789\",\n  \"name\": \"feature-user-authentication\",\n  \"status\": \"CREATING\",\n  \"snapshot_id\": \"snapshot_456\",\n  \"deployment_id\": \"deployment_123\",\n  \"parent_branch_id\": \"branch_456\",\n  \"environment_type\": \"development\",\n  \"is_ephemeral\": false,\n  \"auto_cleanup\": true,\n  \"cleanup_after_hours\": 72,\n  \"connection_info\": {\n    \"fqdn\": \"feature-user-auth-abc123.us-west-aws.db.guepard.run\",\n    \"connection_string\": \"postgres://postgres:password@feature-user-auth-abc123.us-west-aws.db.guepard.run:5432/dbname\",\n    \"database_provider\": \"PostgreSQL\",\n    \"database_version\": \"16\"\n  },\n  \"created_by\": \"user_123\",\n  \"created_at\": \"2024-01-15T10:30:00.000Z\",\n  \"estimated_ready_time\": \"2024-01-15T10:35:00.000Z\"\n}\n```\n\n#### Error Responses\n\n- **400 Bad Request**: Invalid branch name or missing required fields\n- **401 Unauthorized**: Invalid or expired access token\n- **403 Forbidden**: User not authorized to create branches\n- **404 Not Found**: Deployment, branch, or snapshot not found\n- **409 Conflict**: Branch name already exists\n- **422 Unprocessable Entity**: Invalid branch parameters\n- **500 Internal Server Error**: Branch creation failed\n\n#### Use Cases\n\n- Create feature branches for development\n- Fork database state for experimentation\n- Implement parallel development workflows\n- Create temporary branches for testing\n- Implement database versioning strategies\n\n#### Notes\n\n- Branch creation is asynchronous and may take several minutes\n- Branch names must be unique within the deployment\n- Ephemeral branches are automatically cleaned up after use\n- The new branch inherits the database state from the specified snapshot\n- Connection information is provided once the branch is ready"
+					},
+					"response": [
+						{
+							"id": "3839699-46ed9933-e53d-4429-bc90-8b41e72a44e0",
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"discard_changes\": \"true\", \n    \"checkout\": true,\n    \"ephemeral\": true // DO NOT CHANGE THIS VALUE\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/deploy/deploy-123/branch-456/snapshot-789/branch",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"deploy-123",
+										"branch-456",
+										"snapshot-789",
+										"branch"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n    \"id\": \"42ca21cb-ae56-4fae-b826-d4fe06c204fa\",\n    \"account_id\": \"f7ae431f-fcde-409e-9765-6ff7f312f976\",\n    \"deployment_id\": \"f04afd60-bbcc-4880-9147-29944d098e31\",\n    \"label_name\": \"misty-sky-fxvsvu\",\n    \"job_status\": \"INIT\",\n    \"is_ephemeral\": true,\n    \"is_masked\": false,\n    \"is_purged\": false,\n    \"updated_at\": null,\n    \"created_at\": null,\n    \"created_by\": \"f7ae431f-fcde-409e-9765-6ff7f312f976\",\n    \"updated_by\": null,\n    \"branch_name\": null,\n    \"snapshot_id\": \"867befab-4288-4cbd-afeb-36965b710af8\"\n}"
+						},
+						{
+							"id": "3839699-604a006f-6437-40ca-9635-d0994f4d853c",
+							"name": "Error Response - Snapshot Not Found",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"branch_name\": \"feature-branch\",\n  \"snapshot_id\": \"nonexistent-snapshot\",\n  \"is_ephemeral\": false\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/deploy/deploy-123/branch-456/nonexistent-snapshot/branch",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"deploy-123",
+										"branch-456",
+										"nonexistent-snapshot",
+										"branch"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Snapshot not found\",\n  \"error_code\": \"NOT_FOUND\"\n}"
+						},
+						{
+							"id": "3839699-66ed7095-aa94-4e36-8aaa-9106049538df",
+							"name": "Error Response - Validation Error",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"branch_name\": \"\",\n  \"snapshot_id\": \"snapshot-789\",\n  \"is_ephemeral\": false\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/deploy/deploy-123/branch-456/snapshot-789/branch",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"deploy-123",
+										"branch-456",
+										"snapshot-789",
+										"branch"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Branch name is required\",\n  \"error_code\": \"VALIDATION_ERROR\"\n}"
+						}
+					]
+				}
+			],
+			"id": "3839699-e4342d25-f8c3-4930-9fbb-3e8e736717c6",
+			"description": "All checkout operations - branch and snapshot checkouts"
+		},
+		{
+			"name": "⚡ Performance Profiles",
+			"item": [
+				{
+					"name": "List Performance Profiles",
+					"id": "3839699-a6e0faee-ff61-4bbc-87fb-bb4fd0f00ecf",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/performance",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"performance"
+							]
+						},
+						"description": "### List All Available Performance Profiles\n\nThis endpoint retrieves all available performance profiles that can be applied to deployments to optimize database performance.\n\n#### Request\n\n- Method: GET\n- URL: `{{base_url}}/performance`\n- Headers: Authorization with Bearer token\n\n#### Response\n\nUpon successful execution, the endpoint returns an array of performance profile objects:\n\n- `id` (string): The unique identifier of the performance profile\n- `name` (string): The name of the performance profile\n- `description` (string): Description of the performance profile\n- `category` (string): Category of the profile (OLTP, OLAP, MIXED, CUSTOM)\n- `cpu_cores` (number): Recommended CPU cores\n- `memory_gb` (number): Recommended memory in GB\n- `storage_gb` (number): Recommended storage in GB\n- `database_providers` (array): Supported database providers\n- `database_versions` (object): Supported database versions per provider\n- `optimization_settings` (object): Database-specific optimization settings\n- `is_default` (boolean): Whether this is the default profile\n- `is_custom` (boolean): Whether this is a custom profile\n- `created_by` (string): The user who created the profile\n- `created_at` (string): When the profile was created\n- `last_updated` (string): When the profile was last updated\n- `usage_count` (number): Number of deployments using this profile\n\n#### Example Response\n\n``` json\n[\n  {\n    \"id\": \"profile_123\",\n    \"name\": \"High Performance OLTP\",\n    \"description\": \"Optimized for high-transaction OLTP workloads\",\n    \"category\": \"OLTP\",\n    \"cpu_cores\": 8,\n    \"memory_gb\": 32,\n    \"storage_gb\": 100,\n    \"database_providers\": [\"PostgreSQL\", \"MySQL\"],\n    \"database_versions\": {\n      \"PostgreSQL\": [\"14\", \"15\", \"16\"],\n      \"MySQL\": [\"8.0\"]\n    },\n    \"optimization_settings\": {\n      \"PostgreSQL\": {\n        \"shared_buffers\": \"8GB\",\n        \"effective_cache_size\": \"24GB\",\n        \"work_mem\": \"256MB\",\n        \"maintenance_work_mem\": \"2GB\",\n        \"checkpoint_completion_target\": 0.9,\n        \"wal_buffers\": \"16MB\",\n        \"max_connections\": 200\n      },\n      \"MySQL\": {\n        \"innodb_buffer_pool_size\": \"24GB\",\n        \"innodb_log_file_size\": \"1GB\",\n        \"innodb_flush_log_at_trx_commit\": 2,\n        \"max_connections\": 200\n      }\n    },\n    \"is_default\": false,\n    \"is_custom\": false,\n    \"created_by\": \"admin_123\",\n    \"created_at\": \"2024-01-01T00:00:00Z\",\n    \"last_updated\": \"2024-01-15T10:30:00Z\",\n    \"usage_count\": 15\n  },\n  {\n    \"id\": \"profile_124\",\n    \"name\": \"Analytics Workload\",\n    \"description\": \"Optimized for analytical and reporting workloads\",\n    \"category\": \"OLAP\",\n    \"cpu_cores\": 16,\n    \"memory_gb\": 64,\n    \"storage_gb\": 500,\n    \"database_providers\": [\"PostgreSQL\", \"MySQL\"],\n    \"database_versions\": {\n      \"PostgreSQL\": [\"14\", \"15\", \"16\"],\n      \"MySQL\": [\"8.0\"]\n    },\n    \"optimization_settings\": {\n      \"PostgreSQL\": {\n        \"shared_buffers\": \"16GB\",\n        \"effective_cache_size\": \"48GB\",\n        \"work_mem\": \"1GB\",\n        \"maintenance_work_mem\": \"4GB\",\n        \"checkpoint_completion_target\": 0.7,\n        \"wal_buffers\": \"32MB\",\n        \"max_connections\": 100\n      }\n    },\n    \"is_default\": false,\n    \"is_custom\": false,\n    \"created_by\": \"admin_123\",\n    \"created_at\": \"2024-01-01T00:00:00Z\",\n    \"last_updated\": \"2024-01-15T10:30:00Z\",\n    \"usage_count\": 8\n  }\n]\n```\n\n#### Error Responses\n\n- **401 Unauthorized**: Invalid or expired access token\n- **403 Forbidden**: User not authorized to access performance profiles\n- **500 Internal Server Error**: Infrastructure error\n\n#### Use Cases\n\n- Browse available performance profiles\n- Select appropriate profile for deployment\n- Compare profile specifications\n- Monitor profile usage\n- Plan performance optimization\n\n#### Notes\n\n- Profiles are categorized by workload type (OLTP, OLAP, MIXED)\n- Custom profiles are user-created and may have specific access restrictions\n- Optimization settings are database-provider specific\n- Usage count helps identify popular profiles"
+					},
+					"response": [
+						{
+							"id": "3839699-88c4c1ed-4985-4617-85bc-3b2b83d23a29",
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/performance",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"performance"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "[\n    {\n        \"id\": \"b0a4e557-bb67-4463-b774-ad82c04ab087\",\n        \"account_id\": null,\n        \"label_name\": \"gp.g1.xsmall\",\n        \"description_text\": \"default performance profile\",\n        \"database_provider\": \"PostgreSQL\",\n        \"database_version\": \"17\",\n        \"min_cpu\": 100,\n        \"min_memory\": 256,\n        \"config_flags\": {\n            \"work_mem\": \"2MB\",\n            \"autovacuum\": \"on\",\n            \"wal_buffers\": \"4MB\",\n            \"wal_recycle\": \"off\",\n            \"max_wal_size\": \"128MB\",\n            \"wal_init_zero\": \"off\",\n            \"shared_buffers\": \"32MB\",\n            \"max_connections\": \"10\",\n            \"full_page_writes\": \"off\",\n            \"checkpoint_timeout\": \"15min\",\n            \"synchronous_commit\": \"off\",\n            \"maintenance_work_mem\": \"4MB\",\n            \"max_parallel_workers\": \"0\",\n            \"shared_preload_libraries\": \"pg_cron,pglogical\",\n            \"log_min_duration_statement\": \"1000\",\n            \"checkpoint_completion_target\": \"0.9\",\n            \"max_parallel_workers_per_gather\": \"0\",\n            \"idle_in_transaction_session_timeout\": \"60s\"\n        },\n        \"is_default\": true,\n        \"is_active\": true,\n        \"updated_at\": null,\n        \"created_at\": null,\n        \"created_by\": null,\n        \"updated_by\": null,\n        \"is_seed\": false,\n        \"profile_key\": null\n    },\n    {\n        \"id\": \"e54710e1-73dd-4628-a51d-93d1aab5226c\",\n        \"account_id\": null,\n        \"label_name\": \"gp.g1.xsmall\",\n        \"description_text\": \"default performance profile\",\n        \"database_provider\": \"PostgreSQL\",\n        \"database_version\": \"16\",\n        \"min_cpu\": 100,\n        \"min_memory\": 256,\n        \"config_flags\": {\n            \"work_mem\": \"2MB\",\n            \"autovacuum\": \"on\",\n            \"wal_buffers\": \"4MB\",\n            \"wal_recycle\": \"off\",\n            \"max_wal_size\": \"128MB\",\n            \"wal_init_zero\": \"off\",\n            \"shared_buffers\": \"32MB\",\n            \"max_connections\": \"10\",\n            \"full_page_writes\": \"off\",\n            \"checkpoint_timeout\": \"15min\",\n            \"synchronous_commit\": \"off\",\n            \"maintenance_work_mem\": \"4MB\",\n            \"max_parallel_workers\": \"0\",\n            \"shared_preload_libraries\": \"pg_cron,pglogical\",\n            \"log_min_duration_statement\": \"1000\",\n            \"checkpoint_completion_target\": \"0.9\",\n            \"max_parallel_workers_per_gather\": \"0\",\n            \"idle_in_transaction_session_timeout\": \"60s\"\n        },\n        \"is_default\": true,\n        \"is_active\": true,\n        \"updated_at\": null,\n        \"created_at\": null,\n        \"created_by\": null,\n        \"updated_by\": null,\n        \"is_seed\": false,\n        \"profile_key\": null\n    }\n]"
+						},
+						{
+							"id": "3839699-8b64cd75-d7c9-4eaa-b791-67c0a06604e9",
+							"name": "Error Response - Unauthorized",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer invalid-token"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/performance",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"performance"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Invalid or expired token\",\n  \"error_code\": \"UNAUTHORIZED\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Apply Performance Profile",
+					"id": "3839699-978b0014-ae1c-4b3e-a31f-747f424da9b5",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/deploy/{{deployment_id}}/performance/{{performance_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"deploy",
+								"{{deployment_id}}",
+								"performance",
+								"{{performance_id}}"
+							]
+						},
+						"description": "Apply a performance profile to a deployment"
+					},
+					"response": [
+						{
+							"id": "3839699-f689f17b-0212-4a8a-9adf-80aa76f80fa4",
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/deploy-123/performance/profile-789",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"deploy-123",
+										"performance",
+										"profile-789"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Performance profile applied successfully\",\n  \"deployment_id\": \"deploy-123\",\n  \"performance_profile_id\": \"profile-789\",\n  \"applied_date\": \"2024-01-16T15:30:00Z\",\n  \"restart_required\": true\n}"
+						},
+						{
+							"id": "3839699-c59508e3-4089-4391-99ce-5f0830689cd6",
+							"name": "Error Response - Deployment Not Found",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/nonexistent-deploy/performance/profile-789",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"nonexistent-deploy",
+										"performance",
+										"profile-789"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Deployment not found\",\n  \"error_code\": \"NOT_FOUND\"\n}"
+						},
+						{
+							"id": "3839699-f3be39be-d5b7-466a-8dc3-718ffcd33189",
+							"name": "Error Response - Profile Not Found",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/deploy-123/performance/nonexistent-profile",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"deploy-123",
+										"performance",
+										"nonexistent-profile"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Performance profile not found\",\n  \"error_code\": \"NOT_FOUND\"\n}"
+						}
+					]
+				}
+			],
+			"id": "3839699-c116e459-0730-4b59-beba-d552075bda57",
+			"description": "Performance profile management - create, update, and apply performance configurations"
+		},
+		{
+			"name": "🖼️ Image Providers",
+			"item": [
+				{
+					"name": "List Image Providers",
+					"id": "3839699-087ea797-6168-4e9b-9124-cf2844e989ae",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/image-providers",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"image-providers"
+							]
+						},
+						"description": "Get all available database image providers"
+					},
+					"response": [
+						{
+							"id": "3839699-94adce59-5c62-45a3-bc14-06a2e6300c3b",
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/image-providers",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"image-providers"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "[\n    {\n        \"id\": \"c61df5c3-7a1b-4f0e-9157-4f1e5e6d07b9\",\n        \"account_id\": null,\n        \"is_active\": true,\n        \"is_default\": true,\n        \"catalog\": {\n            \"id\": \"41fe7047-c856-438b-8496-788426be0bab\",\n            \"min_cpu\": 100,\n            \"log_path\": \"/var/log/postgresql\",\n            \"user_gid\": 999,\n            \"user_uid\": 999,\n            \"created_at\": null,\n            \"created_by\": null,\n            \"image_name\": \"guepardrun/postgres:16\",\n            \"image_type\": \"PUBLIC\",\n            \"min_memory\": 128,\n            \"updated_at\": null,\n            \"updated_by\": null,\n            \"volume_path\": \"/var/lib/postgresql/data\",\n            \"default_port\": 5432,\n            \"image_source\": \"dockerhub\",\n            \"user_var_name\": \"POSTGRES_USER\",\n            \"image_registry\": null,\n            \"support_status\": \"SUPPORTED\",\n            \"database_version\": \"16\",\n            \"database_provider\": \"PostgreSQL\",\n            \"database_var_name\": \"POSTGRES_DB\",\n            \"password_var_name\": \"POSTGRES_PASSWORD\",\n            \"registry_password\": null,\n            \"registry_username\": null\n        }\n    }\n]"
+						},
+						{
+							"id": "3839699-c104e925-82e2-486e-8f7f-ef5bc188810c",
+							"name": "Error Response - Unauthorized",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer invalid-token"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/image-providers",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"image-providers"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Invalid or expired token\",\n  \"error_code\": \"UNAUTHORIZED\"\n}"
+						}
+					]
+				}
+			],
+			"id": "3839699-1b3b796e-63dc-45ea-8940-9bde4bb4fdb5",
+			"description": "Database image provider management"
+		},
+		{
+			"name": "📊 Usage & Resources",
+			"item": [
+				{
+					"name": "Get Usage Statistics",
+					"id": "3839699-b8664e47-f810-4316-8d42-30cece864549",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/usage",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usage"
+							]
+						},
+						"description": "### Get Usage Statistics for the Authenticated User\n\nThis endpoint retrieves comprehensive usage statistics and resource consumption information for the authenticated user, including quotas, current usage, and billing information.\n\n#### Request\n\n- Method: GET\n- URL: `{{base_url}}/usage`\n- Headers: Authorization with Bearer token\n\n#### Query Parameters\n\n- `time_range` (string, optional): Time range for usage statistics (1d, 7d, 30d, 90d, 1y, default: 30d)\n- `include_billing` (boolean, optional): Include billing information (default: false)\n- `include_forecasts` (boolean, optional): Include usage forecasts (default: false)\n- `granularity` (string, optional): Data granularity (hourly, daily, weekly, monthly, default: daily)\n\n#### Response\n\nUpon successful execution, the endpoint returns comprehensive usage statistics:\n\n- `user_id` (string): The authenticated user's ID\n- `time_range` (object): Time range of the statistics\n- `quotas` (object): Current quota limits\n- `current_usage` (object): Current resource usage\n- `usage_history` (array): Historical usage data\n- `resource_breakdown` (object): Usage breakdown by resource type\n- `cost_analysis` (object): Cost analysis and billing information\n- `forecasts` (object): Usage forecasts and predictions\n- `alerts` (array): Quota and usage alerts\n- `recommendations` (array): Optimization recommendations\n\n#### Example Response\n\n``` json\n{\n  \"user_id\": \"user_123\",\n  \"time_range\": {\n    \"start\": \"2024-01-01T00:00:00.000Z\",\n    \"end\": \"2024-01-31T23:59:59.999Z\"\n  },\n  \"quotas\": {\n    \"deployments\": {\n      \"limit\": 10,\n      \"used\": 3,\n      \"remaining\": 7,\n      \"percentage_used\": 30\n    },\n    \"snapshots\": {\n      \"limit\": 100,\n      \"used\": 25,\n      \"remaining\": 75,\n      \"percentage_used\": 25\n    },\n    \"branches\": {\n      \"limit\": 50,\n      \"used\": 8,\n      \"remaining\": 42,\n      \"percentage_used\": 16\n    },\n    \"storage_gb\": {\n      \"limit\": 1000,\n      \"used\": 250.5,\n      \"remaining\": 749.5,\n      \"percentage_used\": 25.05\n    },\n    \"compute_hours\": {\n      \"limit\": 720,\n      \"used\": 180.5,\n      \"remaining\": 539.5,\n      \"percentage_used\": 25.07\n    }\n  },\n  \"current_usage\": {\n    \"active_deployments\": 3,\n    \"active_branches\": 8,\n    \"active_snapshots\": 25,\n    \"total_storage_gb\": 250.5,\n    \"compute_hours_this_month\": 180.5,\n    \"api_calls_this_month\": 15420,\n    \"data_transfer_gb\": 125.8\n  },\n  \"usage_history\": [\n    {\n      \"date\": \"2024-01-01\",\n      \"deployments\": 2,\n      \"snapshots\": 20,\n      \"branches\": 5,\n      \"storage_gb\": 200.2,\n      \"compute_hours\": 150.3,\n      \"api_calls\": 5000\n    },\n    {\n      \"date\": \"2024-01-02\",\n      \"deployments\": 3,\n      \"snapshots\": 22,\n      \"branches\": 6,\n      \"storage_gb\": 210.5,\n      \"compute_hours\": 160.8,\n      \"api_calls\": 5200\n    }\n  ],\n  \"resource_breakdown\": {\n    \"by_deployment\": [\n      {\n        \"deployment_id\": \"deployment_123\",\n        \"name\": \"production-db\",\n        \"storage_gb\": 150.2,\n        \"compute_hours\": 120.5,\n        \"snapshots\": 15,\n        \"branches\": 3\n      },\n      {\n        \"deployment_id\": \"deployment_456\",\n        \"name\": \"staging-db\",\n        \"storage_gb\": 100.3,\n        \"compute_hours\": 60.0,\n        \"snapshots\": 10,\n        \"branches\": 5\n      }\n    ],\n    \"by_region\": {\n      \"us-west\": {\n        \"storage_gb\": 200.2,\n        \"compute_hours\": 150.3,\n        \"deployments\": 2\n      },\n      \"us-east\": {\n        \"storage_gb\": 50.3,\n        \"compute_hours\": 30.2,\n        \"deployments\": 1\n      }\n    }\n  },\n  \"cost_analysis\": {\n    \"total_cost_this_month\": 125.50,\n    \"cost_breakdown\": {\n      \"storage\": 25.10,\n      \"compute\": 75.30,\n      \"bandwidth\": 15.20,\n      \"snapshots\": 9.90\n    },\n    \"billing_cycle\": \"monthly\",\n    \"next_billing_date\": \"2024-02-01T00:00:00.000Z\",\n    \"estimated_monthly_cost\": 135.75\n  },\n  \"forecasts\": {\n    \"next_month\": {\n      \"estimated_deployments\": 4,\n      \"estimated_storage_gb\": 300.0,\n      \"estimated_compute_hours\": 220.0,\n      \"estimated_cost\": 145.50\n    },\n    \"next_quarter\": {\n      \"estimated_deployments\": 6,\n      \"estimated_storage_gb\": 450.0,\n      \"estimated_compute_hours\": 350.0,\n      \"estimated_cost\": 200.00\n    }\n  },\n  \"alerts\": [\n    {\n      \"type\": \"QUOTA_WARNING\",\n      \"resource\": \"storage_gb\",\n      \"current_usage\": 250.5,\n      \"quota_limit\": 1000,\n      \"percentage_used\": 25.05,\n      \"severity\": \"INFO\",\n      \"message\": \"Storage usage is at 25% of quota\"\n    }\n  ],\n  \"recommendations\": [\n    {\n      \"type\": \"COST_OPTIMIZATION\",\n      \"priority\": \"MEDIUM\",\n      \"title\": \"Consider cleaning up old snapshots\",\n      \"description\": \"You have 15 snapshots older than 30 days that could be archived\",\n      \"potential_savings\": \"$15.50/month\"\n    },\n    {\n      \"type\": \"PERFORMANCE\",\n      \"priority\": \"LOW\",\n      \"title\": \"Optimize branch usage\",\n      \"description\": \"Consider using ephemeral branches for temporary testing\",\n      \"potential_savings\": \"$8.25/month\"\n    }\n  ]\n}\n```\n\n#### Error Responses\n\n- **401 Unauthorized**: Invalid or expired access token\n- **403 Forbidden**: User not authorized to access usage statistics\n- **500 Internal Server Error**: Usage statistics retrieval error\n\n#### Use Cases\n\n- Monitor resource consumption and quotas\n- Track usage patterns and trends\n- Plan resource allocation\n- Optimize costs and usage\n- Generate usage reports\n- Implement usage-based alerting\n\n#### Notes\n\n- Usage statistics are updated in real-time\n- Historical data is available for up to 2 years\n- Forecasts are based on current usage patterns\n- Billing information requires appropriate permissions\n- Recommendations are generated using machine learning algorithms"
+					},
+					"response": [
+						{
+							"id": "3839699-e0665a9b-f540-495a-8a31-90f9be4edd3a",
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/usage",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"usage"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"user_id\": \"user-123\",\n  \"period\": \"current_month\",\n  \"deployments\": {\n    \"total\": 5,\n    \"active\": 3,\n    \"stopped\": 2,\n    \"created_this_month\": 2\n  },\n  \"resources\": {\n    \"cpu_hours\": 120.5,\n    \"memory_gb_hours\": 480.2,\n    \"storage_gb_hours\": 200.1,\n    \"network_gb\": 15.3\n  },\n  \"quotas\": {\n    \"max_deployments\": 10,\n    \"max_cpu\": 8,\n    \"max_memory_gb\": 32,\n    \"max_storage_gb\": 1000\n  },\n  \"usage_percentages\": {\n    \"deployments\": 50.0,\n    \"cpu\": 25.0,\n    \"memory\": 40.0,\n    \"storage\": 20.0\n  },\n  \"billing\": {\n    \"current_month_cost\": 45.67,\n    \"currency\": \"USD\",\n    \"last_updated\": \"2024-01-16T15:30:00Z\"\n  }\n}"
+						},
+						{
+							"id": "3839699-eea17307-3cdd-46cc-bd6b-6d128416425e",
+							"name": "Error Response - Unauthorized",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer invalid-token"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/usage",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"usage"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Invalid or expired token\",\n  \"error_code\": \"UNAUTHORIZED\"\n}"
+						}
+					]
+				}
+			],
+			"id": "3839699-a803fbe5-684f-49d8-8abd-fbb67f9a27ba",
+			"description": "Usage statistics and resource management"
+		},
+		{
+			"name": "🚀 F2 Deployments",
+			"item": [
+				{
+					"name": "List F2 Deployments",
+					"id": "3839699-af6510e9-17a1-408d-b485-0e20576ba978",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/deploy/f2",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"deploy",
+								"f2"
+							]
+						},
+						"description": "Get all F2 deployments"
+					},
+					"response": [
+						{
+							"id": "3839699-420bb124-e95b-4cf0-a44b-be97b59687ec",
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/f2",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"f2"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "[\n  {\n    \"id\": \"f2-deploy-123\",\n    \"name\": \"fast-database\",\n    \"repository_name\": \"my-repo\",\n    \"status\": \"active\",\n    \"deployment_type\": \"F2\",\n    \"database_provider\": \"PostgreSQL\",\n    \"database_version\": \"17\",\n    \"fqdn\": \"fast-database.guepard.com\",\n    \"port\": 5432,\n    \"connection_string\": \"postgresql://user:pass@fast-database.guepard.com:5432/db\",\n    \"region\": \"us-east-1\",\n    \"datacenter\": \"dc1\",\n    \"created_date\": \"2024-01-15T10:30:00Z\",\n    \"created_by\": \"user-123\",\n    \"f2_specific_config\": {\n      \"fast_provisioning\": true,\n      \"optimized_storage\": true,\n      \"quick_start\": true\n    }\n  },\n  {\n    \"id\": \"f2-deploy-456\",\n    \"name\": \"test-f2-db\",\n    \"repository_name\": \"test-repo\",\n    \"status\": \"stopped\",\n    \"deployment_type\": \"F2\",\n    \"database_provider\": \"PostgreSQL\",\n    \"database_version\": \"16\",\n    \"fqdn\": \"test-f2-db.guepard.com\",\n    \"port\": 5432,\n    \"connection_string\": \"postgresql://user:pass@test-f2-db.guepard.com:5432/db\",\n    \"region\": \"us-west-2\",\n    \"datacenter\": \"dc2\",\n    \"created_date\": \"2024-01-10T08:15:00Z\",\n    \"created_by\": \"user-456\",\n    \"f2_specific_config\": {\n      \"fast_provisioning\": true,\n      \"optimized_storage\": true,\n      \"quick_start\": true\n    }\n  }\n]"
+						},
+						{
+							"id": "3839699-59502259-49c9-480f-8112-5c00c5e4761c",
+							"name": "Error Response - Unauthorized",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer invalid-token"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/f2",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"f2"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"message\": \"Invalid or expired token\",\n  \"error_code\": \"UNAUTHORIZED\"\n}"
+						}
+					]
+				}
+			],
+			"id": "3839699-8a33f57a-201c-4b22-b631-cd2c62ddd07c",
+			"description": "Fast F2 deployment management"
+		},
+		{
+			"name": "🏗️ Shadows",
+			"item": [
+				{
+					"name": "List Shadows for Deployment",
+					"id": "3839699-52541fa4-6f09-499f-9093-4ce33dedd738",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/deploy/{{deployment_id}}/shadow",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"deploy",
+								"{{deployment_id}}",
+								"shadow"
+							]
+						},
+						"description": "### List Shadow Deployments for a Specific Deployment\n\nThis endpoint retrieves all shadow deployments associated with a specific deployment. Shadow deployments are temporary, read-only copies used for testing, analysis, or backup purposes.\n\n#### Request\n\n- Method: GET\n- URL: `{{base_url}}/deploy/{{deployment_id}}/shadow`\n- Headers: Authorization with Bearer token\n\n#### Query Parameters\n\n- `status` (string, optional): Filter by shadow status (ACTIVE, INACTIVE, CREATING, DELETED)\n- `type` (string, optional): Filter by shadow type (BACKUP, TEST, ANALYSIS, MIGRATION)\n- `created_after` (string, optional): ISO 8601 timestamp to filter shadows created after this time\n- `created_before` (string, optional): ISO 8601 timestamp to filter shadows created before this time\n- `limit` (number, optional): Maximum number of shadows to return (default: 50, max: 100)\n- `offset` (number, optional): Number of shadows to skip for pagination (default: 0)\n\n#### Response\n\nUpon successful execution, the endpoint returns an array of shadow deployment objects:\n\n- `id` (string): The unique identifier of the shadow deployment\n- `name` (string): The name of the shadow deployment\n- `status` (string): Current status of the shadow (ACTIVE, INACTIVE, CREATING, DELETED)\n- `type` (string): Type of shadow (BACKUP, TEST, ANALYSIS, MIGRATION)\n- `deployment_id` (string): The parent deployment ID\n- `snapshot_id` (string): The snapshot used to create the shadow\n- `created_by` (string): The user who created the shadow\n- `created_at` (string): When the shadow was created\n- `expires_at` (string): When the shadow will expire (if applicable)\n- `description` (string): Description of the shadow\n- `tags` (object): Key-value pairs for tagging\n- `connection_info` (object): Connection information for the shadow\n- `resource_usage` (object): Resource usage statistics\n- `access_count` (number): Number of times the shadow has been accessed\n- `last_accessed` (string): When the shadow was last accessed\n\n#### Example Response\n\n``` json\n[\n  {\n    \"id\": \"shadow_123\",\n    \"name\": \"backup-2024-01-15\",\n    \"status\": \"ACTIVE\",\n    \"type\": \"BACKUP\",\n    \"deployment_id\": \"deployment_456\",\n    \"snapshot_id\": \"snapshot_789\",\n    \"created_by\": \"user_123\",\n    \"created_at\": \"2024-01-15T10:30:00.000Z\",\n    \"expires_at\": \"2024-01-22T10:30:00.000Z\",\n    \"description\": \"Daily backup shadow deployment\",\n    \"tags\": {\n      \"purpose\": \"backup\",\n      \"retention\": \"7_days\"\n    },\n    \"connection_info\": {\n      \"fqdn\": \"shadow-backup-abc123.us-west-aws.db.guepard.run\",\n      \"connection_string\": \"postgres://postgres:password@shadow-backup-abc123.us-west-aws.db.guepard.run:5432/dbname\",\n      \"database_provider\": \"PostgreSQL\",\n      \"database_version\": \"16\"\n    },\n    \"resource_usage\": {\n      \"cpu_usage\": 15.5,\n      \"memory_usage\": 2.1,\n      \"storage_usage\": 12.3\n    },\n    \"access_count\": 5,\n    \"last_accessed\": \"2024-01-15T14:30:00.000Z\"\n  },\n  {\n    \"id\": \"shadow_124\",\n    \"name\": \"test-migration-v2\",\n    \"status\": \"ACTIVE\",\n    \"type\": \"TEST\",\n    \"deployment_id\": \"deployment_456\",\n    \"snapshot_id\": \"snapshot_790\",\n    \"created_by\": \"user_456\",\n    \"created_at\": \"2024-01-15T11:00:00.000Z\",\n    \"expires_at\": \"2024-01-16T11:00:00.000Z\",\n    \"description\": \"Testing migration to version 2.0\",\n    \"tags\": {\n      \"purpose\": \"testing\",\n      \"version\": \"2.0\",\n      \"team\": \"backend\"\n    },\n    \"connection_info\": {\n      \"fqdn\": \"shadow-test-def456.us-west-aws.db.guepard.run\",\n      \"connection_string\": \"postgres://postgres:password@shadow-test-def456.us-west-aws.db.guepard.run:5432/dbname\",\n      \"database_provider\": \"PostgreSQL\",\n      \"database_version\": \"16\"\n    },\n    \"resource_usage\": {\n      \"cpu_usage\": 8.2,\n      \"memory_usage\": 1.5,\n      \"storage_usage\": 8.7\n    },\n    \"access_count\": 12,\n    \"last_accessed\": \"2024-01-15T15:45:00.000Z\"\n  }\n]\n```\n\n#### Error Responses\n\n- **401 Unauthorized**: Invalid or expired access token\n- **403 Forbidden**: User not authorized to access shadow deployments\n- **404 Not Found**: Deployment not found\n- **500 Internal Server Error**: Shadow retrieval error\n\n#### Use Cases\n\n- Monitor backup shadow deployments\n- Track testing environments\n- Manage shadow deployment lifecycle\n- Implement shadow-based workflows\n- Audit shadow usage and access\n\n#### Notes\n\n- Shadow deployments are read-only copies\n- They automatically expire based on configuration\n- Resource usage is tracked for cost management\n- Access count helps monitor shadow utilization\n- Shadows are created from specific snapshots"
+					},
+					"response": [
+						{
+							"id": "3839699-0382f107-6a52-48b7-a207-25cf3ebd97f1",
+							"name": "Success - List Shadows for Deployment",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/{{deployment_id}}/shadow",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"{{deployment_id}}",
+										"shadow"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"shadows\": [\n    {\n      \"id\": \"shadow_123\",\n      \"name\": \"Testing Shadow\",\n      \"description\": \"Shadow environment for testing\",\n      \"deployment_id\": \"deploy_789\",\n      \"created_at\": \"2024-01-15T10:30:00Z\",\n      \"status\": \"active\",\n      \"snapshot_id\": \"snapshot_456\",\n      \"branch_id\": \"branch_789\"\n    },\n    {\n      \"id\": \"shadow_456\",\n      \"name\": \"Development Shadow\",\n      \"description\": \"Shadow environment for development\",\n      \"deployment_id\": \"deploy_789\",\n      \"created_at\": \"2024-01-16T09:15:00Z\",\n      \"status\": \"inactive\",\n      \"snapshot_id\": \"snapshot_789\",\n      \"branch_id\": \"branch_456\"\n    }\n  ],\n  \"total\": 2,\n  \"deployment_id\": \"deploy_789\"\n}"
+						},
+						{
+							"id": "3839699-f0251929-c8a3-4228-8790-f1b05aa968fd",
+							"name": "Error - Deployment Not Found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/invalid_deployment_id/shadow",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"invalid_deployment_id",
+										"shadow"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"error\": \"Not Found\",\n  \"message\": \"Deployment not found\",\n  \"code\": \"DEPLOYMENT_NOT_FOUND\"\n}"
+						},
+						{
+							"id": "3839699-db819390-8408-4183-b8c3-fc32016ea5c9",
+							"name": "Error - Unauthorized",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer invalid_token"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/{{deployment_id}}/shadow",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"{{deployment_id}}",
+										"shadow"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"error\": \"Unauthorized\",\n  \"message\": \"Invalid or expired access token\",\n  \"code\": \"UNAUTHORIZED\"\n}"
+						}
+					]
+				},
+				{
+					"name": "List All Shadows",
+					"id": "3839699-09e038cd-ab5d-4a64-b63a-2f603c08a8d3",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/deploy/shadow",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"deploy",
+								"shadow"
+							]
+						},
+						"description": "### List All Shadow Deployments\n\nThis endpoint retrieves all shadow deployments across all deployments that the authenticated user has access to.\n\n#### Request\n\n- Method: GET\n- URL: `{{base_url}}/deploy/shadow`\n- Headers: Authorization with Bearer token\n\n#### Query Parameters\n\n- `status` (string, optional): Filter by shadow status (ACTIVE, INACTIVE, CREATING, DELETED)\n- `type` (string, optional): Filter by shadow type (BACKUP, TEST, ANALYSIS, MIGRATION)\n- `deployment_id` (string, optional): Filter by specific deployment ID\n- `created_after` (string, optional): ISO 8601 timestamp to filter shadows created after this time\n- `created_before` (string, optional): ISO 8601 timestamp to filter shadows created before this time\n- `expires_after` (string, optional): ISO 8601 timestamp to filter shadows expiring after this time\n- `expires_before` (string, optional): ISO 8601 timestamp to filter shadows expiring before this time\n- `limit` (number, optional): Maximum number of shadows to return (default: 50, max: 100)\n- `offset` (number, optional): Number of shadows to skip for pagination (default: 0)\n- `sort_by` (string, optional): Sort field (created_at, expires_at, name, status, default: created_at)\n- `sort_order` (string, optional): Sort order (asc, desc, default: desc)\n\n#### Response\n\nUpon successful execution, the endpoint returns a paginated list of shadow deployment objects:\n\n- `shadows` (array): Array of shadow deployment objects\n- `pagination` (object): Pagination information\n- `total_count` (number): Total number of shadows matching the filters\n- `filters_applied` (object): Summary of applied filters\n\n#### Shadow Object Structure\n\nEach shadow object contains:\n\n- `id` (string): The unique identifier of the shadow deployment\n- `name` (string): The name of the shadow deployment\n- `status` (string): Current status of the shadow\n- `type` (string): Type of shadow (BACKUP, TEST, ANALYSIS, MIGRATION)\n- `deployment_id` (string): The parent deployment ID\n- `deployment_name` (string): The name of the parent deployment\n- `snapshot_id` (string): The snapshot used to create the shadow\n- `created_by` (string): The user who created the shadow\n- `created_at` (string): When the shadow was created\n- `expires_at` (string): When the shadow will expire (if applicable)\n- `description` (string): Description of the shadow\n- `tags` (object): Key-value pairs for tagging\n- `connection_info` (object): Connection information for the shadow\n- `resource_usage` (object): Resource usage statistics\n- `access_count` (number): Number of times the shadow has been accessed\n- `last_accessed` (string): When the shadow was last accessed\n\n#### Example Response\n\n``` json\n{\n  \"shadows\": [\n    {\n      \"id\": \"shadow_123\",\n      \"name\": \"backup-2024-01-15\",\n      \"status\": \"ACTIVE\",\n      \"type\": \"BACKUP\",\n      \"deployment_id\": \"deployment_456\",\n      \"deployment_name\": \"production-db\",\n      \"snapshot_id\": \"snapshot_789\",\n      \"created_by\": \"user_123\",\n      \"created_at\": \"2024-01-15T10:30:00.000Z\",\n      \"expires_at\": \"2024-01-22T10:30:00.000Z\",\n      \"description\": \"Daily backup shadow deployment\",\n      \"tags\": {\n        \"purpose\": \"backup\",\n        \"retention\": \"7_days\"\n      },\n      \"connection_info\": {\n        \"fqdn\": \"shadow-backup-abc123.us-west-aws.db.guepard.run\",\n        \"connection_string\": \"postgres://postgres:password@shadow-backup-abc123.us-west-aws.db.guepard.run:5432/dbname\",\n        \"database_provider\": \"PostgreSQL\",\n        \"database_version\": \"16\"\n      },\n      \"resource_usage\": {\n        \"cpu_usage\": 15.5,\n        \"memory_usage\": 2.1,\n        \"storage_usage\": 12.3\n      },\n      \"access_count\": 5,\n      \"last_accessed\": \"2024-01-15T14:30:00.000Z\"\n    },\n    {\n      \"id\": \"shadow_124\",\n      \"name\": \"test-migration-v2\",\n      \"status\": \"ACTIVE\",\n      \"type\": \"TEST\",\n      \"deployment_id\": \"deployment_789\",\n      \"deployment_name\": \"staging-db\",\n      \"snapshot_id\": \"snapshot_790\",\n      \"created_by\": \"user_456\",\n      \"created_at\": \"2024-01-15T11:00:00.000Z\",\n      \"expires_at\": \"2024-01-16T11:00:00.000Z\",\n      \"description\": \"Testing migration to version 2.0\",\n      \"tags\": {\n        \"purpose\": \"testing\",\n        \"version\": \"2.0\",\n        \"team\": \"backend\"\n      },\n      \"connection_info\": {\n        \"fqdn\": \"shadow-test-def456.us-west-aws.db.guepard.run\",\n        \"connection_string\": \"postgres://postgres:password@shadow-test-def456.us-west-aws.db.guepard.run:5432/dbname\",\n        \"database_provider\": \"PostgreSQL\",\n        \"database_version\": \"16\"\n      },\n      \"resource_usage\": {\n        \"cpu_usage\": 8.2,\n        \"memory_usage\": 1.5,\n        \"storage_usage\": 8.7\n      },\n      \"access_count\": 12,\n      \"last_accessed\": \"2024-01-15T15:45:00.000Z\"\n    }\n  ],\n  \"pagination\": {\n    \"limit\": 50,\n    \"offset\": 0,\n    \"total_count\": 2,\n    \"has_more\": false\n  },\n  \"total_count\": 2,\n  \"filters_applied\": {\n    \"status\": null,\n    \"type\": null,\n    \"deployment_id\": null,\n    \"created_after\": null,\n    \"created_before\": null\n  }\n}\n```\n\n#### Error Responses\n\n- **401 Unauthorized**: Invalid or expired access token\n- **403 Forbidden**: User not authorized to access shadow deployments\n- **500 Internal Server Error**: Shadow retrieval error\n\n#### Use Cases\n\n- Monitor all shadow deployments across the organization\n- Track shadow usage and resource consumption\n- Implement shadow lifecycle management\n- Audit shadow access and creation patterns\n- Generate reports on shadow utilization\n\n#### Notes\n\n- Only shadows accessible to the authenticated user are returned\n- Results are paginated for performance\n- Sorting and filtering help manage large numbers of shadows\n- Resource usage is aggregated for cost analysis\n- Expiration dates help with cleanup planning"
+					},
+					"response": [
+						{
+							"id": "3839699-4923b06d-019d-4fbe-b576-85eeab16726a",
+							"name": "Success - List All Shadows",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/shadow",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"shadow"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"shadows\": [\n    {\n      \"id\": \"shadow_123\",\n      \"name\": \"Testing Shadow\",\n      \"description\": \"Shadow environment for testing\",\n      \"deployment_id\": \"deploy_789\",\n      \"created_at\": \"2024-01-15T10:30:00Z\",\n      \"status\": \"active\",\n      \"snapshot_id\": \"snapshot_456\",\n      \"branch_id\": \"branch_789\"\n    },\n    {\n      \"id\": \"shadow_456\",\n      \"name\": \"Development Shadow\",\n      \"description\": \"Shadow environment for development\",\n      \"deployment_id\": \"deploy_789\",\n      \"created_at\": \"2024-01-16T09:15:00Z\",\n      \"status\": \"inactive\",\n      \"snapshot_id\": \"snapshot_789\",\n      \"branch_id\": \"branch_456\"\n    },\n    {\n      \"id\": \"shadow_789\",\n      \"name\": \"Staging Shadow\",\n      \"description\": \"Shadow environment for staging\",\n      \"deployment_id\": \"deploy_456\",\n      \"created_at\": \"2024-01-17T14:20:00Z\",\n      \"status\": \"active\",\n      \"snapshot_id\": \"snapshot_123\",\n      \"branch_id\": \"branch_123\"\n    }\n  ],\n  \"total\": 3\n}"
+						},
+						{
+							"id": "3839699-658373d6-8faf-4870-b1f9-dfe2105f5060",
+							"name": "Error - Unauthorized",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer invalid_token"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/shadow",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"shadow"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"error\": \"Unauthorized\",\n  \"message\": \"Invalid or expired access token\",\n  \"code\": \"UNAUTHORIZED\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Shadow",
+					"id": "3839699-eb2636ab-d4e3-448f-92ff-bf0f8abcaccb",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/deploy/{{deployment_id}}/snapshot/{{snapshot_id}}/shadow",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"deploy",
+								"{{deployment_id}}",
+								"snapshot",
+								"{{snapshot_id}}",
+								"shadow"
+							]
+						},
+						"description": "Create a shadow deployment from a snapshot"
+					},
+					"response": [
+						{
+							"id": "3839699-6d51aa06-9f3d-4d23-aecc-2155d34265e0",
+							"name": "Success - Create Shadow",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/{{deployment_id}}/snapshot/{{snapshot_id}}/shadow",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"{{deployment_id}}",
+										"snapshot",
+										"{{snapshot_id}}",
+										"shadow"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"shadow\": {\n    \"id\": \"shadow_789\",\n    \"name\": \"New Shadow Environment\",\n    \"description\": \"Shadow environment created from snapshot\",\n    \"deployment_id\": \"deploy_789\",\n    \"created_at\": \"2024-01-20T17:30:00Z\",\n    \"status\": \"active\",\n    \"snapshot_id\": \"snapshot_456\",\n    \"branch_id\": \"branch_789\"\n  },\n  \"message\": \"Shadow deployment created successfully\"\n}"
+						},
+						{
+							"id": "3839699-dbbe851d-69f4-4240-8281-e5b1ba96a38d",
+							"name": "Error - Snapshot Not Found",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/{{deployment_id}}/snapshot/invalid_snapshot_id/shadow",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"{{deployment_id}}",
+										"snapshot",
+										"invalid_snapshot_id",
+										"shadow"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"error\": \"Not Found\",\n  \"message\": \"Snapshot not found\",\n  \"code\": \"SNAPSHOT_NOT_FOUND\"\n}"
+						},
+						{
+							"id": "3839699-106ccbfe-98f1-4087-aae1-d6938728725d",
+							"name": "Error - Deployment Not Found",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/invalid_deployment_id/snapshot/{{snapshot_id}}/shadow",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"invalid_deployment_id",
+										"snapshot",
+										"{{snapshot_id}}",
+										"shadow"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"error\": \"Not Found\",\n  \"message\": \"Deployment not found\",\n  \"code\": \"DEPLOYMENT_NOT_FOUND\"\n}"
+						},
+						{
+							"id": "3839699-11920956-7379-4bb5-8f75-c320853cbec2",
+							"name": "Error - Unauthorized",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer invalid_token"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/deploy/{{deployment_id}}/snapshot/{{snapshot_id}}/shadow",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"deploy",
+										"{{deployment_id}}",
+										"snapshot",
+										"{{snapshot_id}}",
+										"shadow"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n  \"error\": \"Unauthorized\",\n  \"message\": \"Invalid or expired access token\",\n  \"code\": \"UNAUTHORIZED\"\n}"
+						}
+					]
+				}
+			],
+			"id": "3839699-6ac2dab6-77e9-431c-be61-d23cbc88bbf9",
+			"description": "Shadow deployment management - create and list shadow environments"
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{access_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Auto-refresh token if needed",
+					"const refreshToken = pm.environment.get('refresh_token');",
+					"const accessToken = pm.environment.get('access_token');",
+					"",
+					"if (!accessToken && refreshToken) {",
+					"    console.log('No access token found, please login first');",
+					"}"
+				],
+				"id": "901f6020-e27f-4329-aa0d-2b3556de6bdb"
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Auto-save IDs from responses",
+					"if (pm.response.code === 200) {",
+					"    const responseJson = pm.response.json();",
+					"    ",
+					"    // Save deployment ID",
+					"    if (responseJson.id && pm.request.url.path.includes('deployments')) {",
+					"        pm.environment.set('deployment_id', responseJson.id);",
+					"    }",
+					"    ",
+					"    // Save branch ID",
+					"    if (responseJson.id && pm.request.url.path.includes('branches')) {",
+					"        pm.environment.set('branch_id', responseJson.id);",
+					"    }",
+					"    ",
+					"    // Save snapshot ID",
+					"    if (responseJson.id && pm.request.url.path.includes('snapshots')) {",
+					"        pm.environment.set('snapshot_id', responseJson.id);",
+					"    }",
+					"    ",
+					"    // Save node ID",
+					"    if (responseJson.id && pm.request.url.path.includes('nodes')) {",
+					"        pm.environment.set('node_id', responseJson.id);",
+					"    }",
+					"    ",
+					"    // Save performance profile ID",
+					"    if (responseJson.id && pm.request.url.path.includes('performance-profiles')) {",
+					"        pm.environment.set('performance_profile_id', responseJson.id);",
+					"    }",
+					"    ",
+					"    // Save token ID",
+					"    if (responseJson.id && pm.request.url.path.includes('tokens')) {",
+					"        pm.environment.set('token_id', responseJson.id);",
+					"    }",
+					"    ",
+					"    // Save user info from auth response",
+					"    if (responseJson.user) {",
+					"        pm.environment.set('user_id', responseJson.user.id);",
+					"        pm.environment.set('user_email', responseJson.user.email);",
+					"    }",
+					"    ",
+					"    // Save tokens from auth response",
+					"    if (responseJson.access_token) {",
+					"        pm.environment.set('access_token', responseJson.access_token);",
+					"    }",
+					"    if (responseJson.refresh_token) {",
+					"        pm.environment.set('refresh_token', responseJson.refresh_token);",
+					"    }",
+					"}"
+				],
+				"id": "86b37afa-a2e3-4b59-899c-ee6d78003dc9"
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "{{base_url}}",
+			"type": "string"
+		}
+	]
+}

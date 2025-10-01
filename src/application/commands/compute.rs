@@ -1,65 +1,119 @@
-use crate::application::services::compute_service;
-use crate::config::config::Config;
-use crate::domain::errors::compute_error::ComputeError;
-use crate::structure::GetComputeArgs;
 use anyhow::Result;
+use crate::config::config::Config;
+use crate::structure::{ComputeCommand, GetComputeArgs};
+use crate::application::services::compute;
 use colored::Colorize;
+use tabled::{Table, Tabled, settings::Style};
 
-pub async fn list(args: &GetComputeArgs, config: &Config) -> Result<()> {
-    let compute = compute_service::list_compute(&args.deployment_id, &args.compute_id, config).await?;
-    println!(
-        "{} Compute [{}]: '{}', FQDN: [{}], Branch: [{}]",
-        "✅".green(),
-        compute.clone_id.cyan(), // Using clone_id as Compute ID
-        compute.name,
-        compute.fqdn,
-        compute.attached_branch
-    );
+#[derive(Tabled)]
+struct ComputeRow {
+    #[tabled(rename = "Deployment ID")]
+    id: String,
+    #[tabled(rename = "Repository")]
+    repository_name: String,
+    #[tabled(rename = "Snapshot ID")]
+    snapshot_id: String,
+    #[tabled(rename = "Name")]
+    name: String,
+    #[tabled(rename = "FQDN")]
+    fqdn: String,
+    #[tabled(rename = "Provider")]
+    database_provider: String,
+    #[tabled(rename = "Version")]
+    database_version: String,
+    #[tabled(rename = "Ephemeral")]
+    is_ephemeral: String,
+}
+
+#[derive(Tabled)]
+struct StatusRow {
+    #[tabled(rename = "Status")]
+    status: String,
+    #[tabled(rename = "Message")]
+    message: String,
+}
+
+pub async fn compute(cmd: &ComputeCommand, config: &Config) -> Result<()> {
+    match cmd {
+        ComputeCommand::Status(args) => status(args, config).await,
+        ComputeCommand::Start(args) => start(args, config).await,
+        ComputeCommand::Stop(args) => stop(args, config).await,
+        ComputeCommand::Restart(args) => restart(args, config).await,
+        ComputeCommand::List(args) => list(args, config).await,
+        ComputeCommand::Logs(args) => logs(args, config).await,
+    }
+}
+
+pub async fn status(args: &GetComputeArgs, config: &Config) -> Result<()> {
+    let result = compute::get_status(&args.deployment_id, config).await?;
+    
+    let status_row = StatusRow {
+        status: result.status,
+        message: result.message.unwrap_or("No additional information".to_string()),
+    };
+    
+    println!("{} Compute Status for deployment: {}", "📊".blue(), args.deployment_id);
+    println!("{}", Table::new(vec![status_row]).with(Style::rounded()));
     Ok(())
 }
 
 pub async fn start(args: &GetComputeArgs, config: &Config) -> Result<()> {
-    compute_service::start_compute(&args.deployment_id, &args.compute_id, config).await?;
-    println!("{} Started compute [{}]", "✅".green(), args.compute_id.cyan());    Ok(())
-}
-
-pub async fn stop(args: &GetComputeArgs, config: &Config) -> Result<()> {
-    compute_service::stop_compute(&args.deployment_id, &args.compute_id, config).await?;
-    println!("{} Stopped compute [{}]", "✅".green(), args.compute_id.cyan());    Ok(())
-}
-
-pub async fn logs(args: &GetComputeArgs, config: &Config) -> Result<()> {
-    let logs = compute_service::get_logs(&args.deployment_id, &args.compute_id, config).await?;
-    let stdout_truncated: Vec<&str> = logs.stdout_logs.lines().collect();
-    let stderr_truncated: Vec<&str> = logs.stderr_logs.lines().collect();
-    let stdout_display = if stdout_truncated.len() > 5 {
-        format!("{}\n...", stdout_truncated[..5].join("\n"))
-    } else {
-        logs.stdout_logs.clone()
-    };
-    let stderr_display = if stderr_truncated.len() > 5 {
-        format!("{}\n...", stderr_truncated[..5].join("\n"))
-    } else {
-        logs.stderr_logs.clone()
-    };
-
-    println!(
-        "{} Compute Logs for Compute ID: {}\n{} Stdout Logs:\n{}\n{} Stderr Logs:\n{}",
-        "✅".green(),
-        args.compute_id.cyan(),
-        "📜".green(),
-        stdout_display,
-        "⚠️".yellow(),
-        stderr_display
-    );
+    compute::start_compute(&args.deployment_id, config).await?;
+    println!("{} Compute instance started successfully!", "✅".green());
     Ok(())
 }
 
-pub async fn status(args: &GetComputeArgs, config: &Config) -> Result<()> {
-    match compute_service::get_status(&args.deployment_id, &args.compute_id, config).await {
-        Ok(()) => println!("{} Compute [{}] is healthy", "✅".green(), args.compute_id.cyan()),
-        Err(ComputeError::NotHealthy(msg)) => println!("{} Compute [{}] is unhealthy: {}", "⚠️".yellow(), args.compute_id.cyan(), msg),
-        Err(e) => return Err(e.into()),
+pub async fn stop(args: &GetComputeArgs, config: &Config) -> Result<()> {
+    compute::stop_compute(&args.deployment_id, config).await?;
+    println!("{} Compute instance stopped successfully!", "✅".green());
+    Ok(())
+}
+
+pub async fn restart(args: &GetComputeArgs, config: &Config) -> Result<()> {
+    stop(args, config).await?;
+    start(args, config).await?;
+    println!("{} Compute instance restarted successfully!", "✅".green());
+    Ok(())
+}
+
+pub async fn list(args: &GetComputeArgs, config: &Config) -> Result<()> {
+    let result = compute::list_compute(&args.deployment_id, config).await?;
+    
+    let compute_row = ComputeRow {
+        id: result.id,
+        repository_name: result.repository_name,
+        snapshot_id: result.snapshot_id,
+        name: result.name,
+        fqdn: result.fqdn,
+        database_provider: result.database_provider,
+        database_version: result.database_version,
+        is_ephemeral: if result.is_ephemeral { "Yes".to_string() } else { "No".to_string() },
+    };
+    
+    println!("{} Compute instance details for deployment: {}", "🖥️".blue(), args.deployment_id);
+    println!("{}", Table::new(vec![compute_row]).with(Style::rounded()));
+    Ok(())
+}
+
+pub async fn logs(args: &GetComputeArgs, config: &Config) -> Result<()> {
+    let result = compute::get_logs(&args.deployment_id, config).await?;
+    
+    println!("{} Compute logs for deployment: {}", "📋".blue(), args.deployment_id);
+    println!("{}", "=".repeat(80).cyan());
+    
+    if !result.stdout_logs.is_empty() {
+        println!("{} STDOUT:", "📤".green());
+        println!("{}", result.stdout_logs);
     }
+    
+    if !result.stderr_logs.is_empty() {
+        println!("{} STDERR:", "📥".red());
+        println!("{}", result.stderr_logs);
+    }
+    
+    if result.stdout_logs.is_empty() && result.stderr_logs.is_empty() {
+        println!("{} No logs available", "ℹ️".blue());
+    }
+    
     Ok(())
 }

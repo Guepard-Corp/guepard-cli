@@ -1,4 +1,4 @@
-use crate::application::services::usage_service;
+use crate::application::services::usage;
 use crate::config::config::Config;
 use anyhow::Result;
 use tabled::{Table, Tabled, settings::Style};
@@ -14,7 +14,7 @@ struct UsageRow {
     used: i32,
 }
 pub async fn usage(config: &Config) -> Result<()> {
-    let usage = usage_service::get_usage(config).await?;
+    let usage = usage::get_usage(config).await?;
     let rows = vec![
         UsageRow { resource: "Deployments".to_string(), quota: usage.quota_deployments, used: usage.usage_deployments },
         UsageRow { resource: "Snapshots".to_string(), quota: usage.quota_snapshots, used: usage.usage_snapshots },

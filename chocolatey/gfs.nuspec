@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>gfs</id>
+    <version>0.25.1</version>
+    <title>Guepard CLI</title>
+    <authors>Guepard Engineering</authors>
+    <owners>Guepard Engineering</owners>
+    <projectUrl>https://www.guepard.run</projectUrl>
+    <packageSourceUrl>https://github.com/Guepard-Corp/guepard-cli</packageSourceUrl>
+    <docsUrl>https://docs.guepard.run</docsUrl>
+    <bugTrackerUrl>https://github.com/Guepard-Corp/guepard-cli/issues</bugTrackerUrl>
+    <tags>database filesystem cli git versioning</tags>
+    <summary>Guepard CLI - Git-like filesystem for databases</summary>
+    <description>
+Guepard CLI provides a Git-like filesystem for databases, offering version control 
+and management capabilities for database schemas and data. It supports familiar 
+commands like init, commit, branch, checkout, and more.
+
+Features:
+- Git-like interface with familiar commands
+- Multi-platform support (Linux, macOS, Windows)
+- Database management and deployment
+- Cross-platform consistency
+
+Installation:
+After installation, you can use 'gfs' command from any terminal.
+
+Usage:
+  gfs init .                    # Initialize a new Guepard repository
+  gfs deploy --database_provider=MySQL --database_version=8
+  gfs commit -m "Initial version"
+  gfs branch                    # List branches
+  gfs checkout develop          # Switch to a branch
+  gfs log                       # View commit history
+  gfs compute status            # Manage compute instances
+    </description>
+    <releaseNotes>
+Version 0.25.1:
+- Initial release
+- Git-like filesystem for databases
+- Multi-platform support
+- Database management capabilities
+    </releaseNotes>
+    <copyright>Guepard (c) 2025</copyright>
+    <licenseUrl>https://www.guepard.run/license</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>
