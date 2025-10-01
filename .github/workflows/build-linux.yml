@@ -34,7 +34,7 @@ jobs:
 
       - name: Build
         run: |
-          cargo build --release --target ${{ matrix.target }} --features linux-keyring
+          cargo build --release --target ${{ matrix.target }}
 
       - name: Create archive
         run: |
