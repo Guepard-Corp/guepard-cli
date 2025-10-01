@@ -1,0 +1,55 @@
+name: Build Linux Binaries
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            name: linux-amd64
+          - target: aarch64-unknown-linux-gnu
+            name: linux-arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libssl-dev libdbus-1-dev pkg-config
+
+      - name: Build
+        run: |
+          cargo build --release --target ${{ matrix.target }} --features linux-keyring
+
+      - name: Create archive
+        run: |
+          mkdir -p dist/${{ matrix.name }}
+          cp target/${{ matrix.target }}/release/gfs dist/${{ matrix.name }}/
+          cd dist
+          tar -czf guepard-cli-${{ github.ref_name }}-${{ matrix.name }}.tar.gz ${{ matrix.name }}/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: guepard-cli-${{ matrix.name }}
+          path: dist/guepard-cli-${{ github.ref_name }}-${{ matrix.name }}.tar.gz
+
+      - name: Calculate SHA256
+        run: |
+          echo "SHA256 for ${{ matrix.name }}:"
+          shasum -a 256 dist/guepard-cli-${{ github.ref_name }}-${{ matrix.name }}.tar.gz
