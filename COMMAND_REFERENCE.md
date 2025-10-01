@@ -154,13 +154,13 @@ guepard show branches -x <deployment_id>
 ### Quick Commands
 ```bash
 # List deployments
-gfs deploy -x <deployment_id>
+guepard deploy -x <deployment_id>
 
 # List branches
-gfs branch -x <deployment_id>
+guepard branch -x <deployment_id>
 
 # Check compute status
-gfs compute status -x <deployment_id>
+guepard compute status -x <deployment_id>
 ```
 
 ## Migration Notes

@@ -36,8 +36,8 @@ pub async fn checkout(args: &CheckoutArgs, config: &Config) -> Result<()> {
     } else {
         // Show help for checkout command
         println!("{} Checkout command requires deployment ID", "💡".yellow());
-        println!("{} Usage: gfs checkout -x <deployment_id> -c <branch_id>", "ℹ️".blue());
-        println!("{} Or: gfs checkout -x <deployment_id> (to list available branches)", "ℹ️".blue());
+        println!("{} Usage: guepard checkout -x <deployment_id> -c <branch_id>", "ℹ️".blue());
+        println!("{} Or: guepard checkout -x <deployment_id> (to list available branches)", "ℹ️".blue());
     }
     Ok(())
 }
@@ -74,7 +74,7 @@ async fn list_branches_for_checkout(deployment_id: &str, config: &Config) -> Res
         environment_type: b.environment_type.unwrap_or("development".to_string()),
     }).collect();
     
-    println!("{} Use 'gfs checkout -x {} -c <branch_id>' to checkout a branch", "💡".yellow(), deployment_id);
+    println!("{} Use 'guepard checkout -x {} -c <branch_id>' to checkout a branch", "💡".yellow(), deployment_id);
     println!("{}", Table::new(rows).with(Style::rounded()));
     Ok(())
 }

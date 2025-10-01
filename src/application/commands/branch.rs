@@ -41,10 +41,10 @@ pub async fn branch(args: &BranchArgs, config: &Config) -> Result<()> {
     } else if let Some(name) = &args.name {
         // Git-like branch creation (simplified)
         println!("{} Creating branch '{}'", "ℹ️".blue(), name);
-        println!("{} Use 'gfs branch -x <deployment_id> -s <snapshot_id> -n {}' for full functionality", "💡".yellow(), name);
+        println!("{} Use 'guepard branch -x <deployment_id> -s <snapshot_id> -n {}' for full functionality", "💡".yellow(), name);
     } else {
         // Git-like branch listing (simplified)
-        println!("{} Use 'gfs branch -x <deployment_id>' to list branches", "💡".yellow());
+        println!("{} Use 'guepard branch -x <deployment_id>' to list branches", "💡".yellow());
     }
     Ok(())
 }
