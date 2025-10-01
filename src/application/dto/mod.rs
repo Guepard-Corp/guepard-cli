@@ -1,7 +1,7 @@
-pub mod bookmark_dto;
-pub mod deploy_dto;
-pub mod branch_dto;
-pub mod compute_dto;
-pub mod usage_dto;
-pub mod link_dto;
-pub mod login_dto;
+pub mod commit;
+pub mod deploy;
+pub mod branch;
+pub mod compute;
+pub mod usage;
+pub mod link;
+pub mod login;

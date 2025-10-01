@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use reqwest::Client;
 
-use crate::application::dto::deploy_dto::{
+use crate::application::dto::deploy::{
     CreateDeploymentRequest, GetDeploymentResponse, ListDeploymentsResponse,
     UpdateDeploymentRequest,
 };
@@ -88,4 +88,19 @@ pub async fn get_deployment(
     } else {
         Err(DeployError::from_response(response).await)
     }
+}
+
+pub async fn delete_deployment(deployment_id: &str, config: &Config) -> Result<()> {
+    let jwt_token = config::load_jwt_token()
+        .map_err(|e| DeployError::SessionError(e.to_string()))
+        .context("Failed to load JWT token")?;
+    let client = Client::new();
+    let response = client
+        .delete(format!("{}/deploy/{}", config.api_url, deployment_id))
+        .header("Authorization", format!("Bearer {}", jwt_token))
+        .send()
+        .await
+        .context("Failed to send delete request")?;
+
+    handle_api_response(response).await
 }

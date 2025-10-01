@@ -1,18 +1,20 @@
 [package]
 name = "guepard-cli"
 authors = ["Guepard Engineering <engineering@guepard.run>"]
-description = "Guepard CLI"
+description = "Guepard CLI - Git-like filesystem for databases"
 license = "Guepard (c) 2025"
 homepage = "https://www.guepard.run"
 edition = "2021"
 readme = "README.md"
 repository = "https://github.com/Guepard-Corp/guepard-cli.git"
-version = "0.1.0"
+version = "0.25.1"
+keywords = ["database", "filesystem", "cli", "git", "versioning"]
+categories = ["command-line-utilities", "development-tools"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [[bin]]
-name = "gprd"
+name = "gfs"
 path = "src/cli.rs"
 
 [dependencies]
@@ -43,6 +45,7 @@ keyring = { version = "3", features = ["apple-native", "windows-native", "sync-s
 [build-dependencies]
 mockall = "0.13.0"
 
+# Multi-platform build configuration
 [package.metadata.deb]
 copyright = "Guepard (c) 2025"
 maintainer = "Guepard Engineering <engineering@guepard.run>"
@@ -51,8 +54,23 @@ section = "utility"
 priority = "optional"
 assets = [
     # binary
-    ["target/release/gprd", "usr/bin/", "755"],
-    # assets - point to the correct relative path to the scripts directory
-    #["./scripts/**/*", "etc/guepard/", "755"],
-    #["./debian/environment", "etc/guepard/gfs/environment", "755"],
+    ["target/release/gfs", "usr/bin/", "755"],
 ]
+
+# Cross-compilation targets
+[package.metadata.cross]
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-pc-windows-gnu",
+    "aarch64-pc-windows-gnu",
+    "x86_64-apple-darwin",
+    "aarch64-apple-darwin",
+]
+
+# Platform-specific features
+[features]
+default = []
+apple-keyring = ["keyring/apple-native"]
+windows-keyring = ["keyring/windows-native"]
+linux-keyring = ["keyring/sync-secret-service"]

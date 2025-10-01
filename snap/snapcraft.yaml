@@ -1,0 +1,42 @@
+name: gfs
+base: core22
+version: '0.25.1'
+summary: Guepard CLI - Git-like filesystem for databases
+description: |
+  Guepard CLI provides a Git-like filesystem for databases, offering version control 
+  and management capabilities for database schemas and data. It supports familiar 
+  commands like init, commit, branch, checkout, and more.
+  
+  Features:
+  - Git-like interface with familiar commands
+  - Multi-platform support (Linux, macOS, Windows)
+  - Database management and deployment
+  - Cross-platform consistency
+
+grade: stable
+confinement: strict
+
+parts:
+  gfs:
+    plugin: dump
+    source: https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.25.1/guepard-cli-0.25.1-linux-amd64.tar.gz
+    source-checksum: sha256/PLACEHOLDER_LINUX_AMD64_SHA256
+    organize:
+      gfs: bin/gfs
+
+apps:
+  gfs:
+    command: bin/gfs
+    plugs:
+      - home
+      - network
+      - removable-media
+
+slots:
+  gfs:
+    command: bin/gfs
+    interface: content
+    read:
+      - $SNAP_USER_DATA
+    write:
+      - $SNAP_USER_DATA

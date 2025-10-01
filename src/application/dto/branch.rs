@@ -14,12 +14,10 @@ pub struct BranchResponse {
     pub id: String,  // Branch ID (UUID)
     pub name: String, // Branch name
     pub status: String,
-    pub snapshot_id: String, // Source bookmark
+    pub snapshot_id: String, // Source snapshot
     pub deployment_id: String,
     pub environment_type: Option<String>,
     pub database_provider: String,
-    pub database_username: String,
-    pub database_password: String,
     pub is_ephemeral: bool,
     pub is_masked: bool,
     pub is_purged: bool,
@@ -27,13 +25,13 @@ pub struct BranchResponse {
     pub created_date: String,
 }
 
-/// matches the GET /clone response.
+/// matches the GET /deploy/{deployment_id}/branch response.
 #[derive(Debug, Deserialize)]
 pub struct ListBranchesResponse {
-    pub id: String, // deployment id 
+    pub id: String, // branch id 
     pub name: String,
     pub status: String,
-    pub snapshot_id: Option<String>,
+    pub snapshot_id: String,
     pub deployment_id: String,
     pub environment_type: Option<String>,
     pub database_provider: String,
@@ -42,5 +40,4 @@ pub struct ListBranchesResponse {
     pub is_purged: bool,
     pub created_by: String,
     pub created_date: String,
-    pub clone_id: String,
 }

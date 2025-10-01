@@ -1,7 +1,7 @@
 use crate::config::config::{Config, save_session_id};
 use crate::domain::errors::config_error::ConfigError;
 use crate::domain::errors::link_error::LinkError;
-use crate::application::dto::link_dto::StartLoginResponse;
+use crate::application::dto::link::StartLoginResponse;
 use reqwest::Client;
 
 impl From<ConfigError> for LinkError {

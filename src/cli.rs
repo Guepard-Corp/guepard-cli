@@ -1,8 +1,8 @@
 use clap::Parser;
-use guepard_cli::application::commands::{bookmark, branch, deploy, compute, usage, show, link,login,logout};
+use guepard_cli::application::commands::{init, deploy, commit, branch, log, rev_parse, checkout, compute, show, usage, link, login, logout};
 use guepard_cli::config::config::{load_config, Config};
 use guepard_cli::domain::errors::{bookmark_error::BookmarkError, branch_error::BranchError, compute_error::ComputeError, deploy_error::DeployError, link_error::LinkError, usage_error::UsageError};
-use guepard_cli::structure::{BookmarkCommand, DeployCommand, SubCommand, CLI, BranchCommand, ComputeCommand, ShowCommand};
+use guepard_cli::structure::{SubCommand, CLI};
 
 #[tokio::main]
 async fn main() {
@@ -37,7 +37,7 @@ async fn main() {
         } else if let Some(usage_error) = err.downcast_ref::<UsageError>() {
             eprintln!("❌ Usage Error: {}", usage_error);
             exit_code = 6;
-        }else {
+        } else {
             eprintln!("{}", err);
             exit_code = 1;
         }
@@ -49,36 +49,17 @@ async fn main() {
 
 async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
     match sub_commands {
-        SubCommand::Deploy(cmd) => match cmd {
-            DeployCommand::Create(args) => deploy::create(args, config).await,
-            DeployCommand::Update(args) => deploy::update(args, config).await,
-            DeployCommand::List => deploy::list(config).await,
-            DeployCommand::Get(args) => deploy::get(&args.deployment_id, config).await,
-        },
-        SubCommand::Branch(cmd) => match cmd {
-            BranchCommand::Create(args) => branch::create(args, config).await,
-            BranchCommand::List(args) => branch::list(&args.deployment_id, config).await,
-            BranchCommand::Checkout(args) => branch::checkout(args, config).await,
-        },
-        SubCommand::Bookmark(cmd) => match cmd {
-            BookmarkCommand::ListAll(args) => bookmark::list_all(&args.deployment_id, config).await,
-            BookmarkCommand::List(args) => bookmark::list(&args.deployment_id, &args.clone_id, config).await,
-            BookmarkCommand::Create(args) => bookmark::create(args, config).await,
-            BookmarkCommand::Checkout(args) => bookmark::checkout(args, config).await,
-        },
-        SubCommand::Compute(cmd) => match cmd {
-            ComputeCommand::List(args) => compute::list(args, config).await,
-            ComputeCommand::Start(args) => compute::start(args, config).await,
-            ComputeCommand::Stop(args) => compute::stop(args, config).await,
-            ComputeCommand::Logs(args) => compute::logs(args, config).await,
-            ComputeCommand::Status(args) => compute::status(args, config).await,
-        },
+        SubCommand::Init(args) => init::init(args, config).await,
+        SubCommand::Deploy(args) => deploy::deploy(args, config).await,
+        SubCommand::Commit(args) => commit::commit(args, config).await,
+        SubCommand::Branch(args) => branch::branch(args, config).await,
+        SubCommand::Log => log::log(config).await,
+        SubCommand::RevParse => rev_parse::rev_parse(config).await,
+        SubCommand::Checkout(args) => checkout::checkout(args, config).await,
+        SubCommand::Compute(cmd) => compute::compute(cmd, config).await,
+        SubCommand::Show(cmd) => show::show(cmd, config).await,
         SubCommand::Usage => usage::usage(config).await,
-        SubCommand::Show(cmd) => match cmd {
-            ShowCommand::Branches(args) => show::show_branches(args, config).await,
-            ShowCommand::Bookmarks(args) => show::show_bookmarks(args, config).await,
-        },
-        SubCommand::Link => link::execute(config).await.map_err(Into::into),    
+        SubCommand::Link => link::execute(config).await.map_err(Into::into),
         SubCommand::Login(args) => login::execute(config, &args.code).await,
         SubCommand::Logout => logout::logout(config).await,
     }
