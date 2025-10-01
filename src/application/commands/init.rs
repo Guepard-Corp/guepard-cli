@@ -29,7 +29,7 @@ pub async fn init(_args: &InitArgs, config: &Config) -> Result<()> {
     
     if deployments.is_empty() {
         println!("{} No deployments found. Create one with:", "ℹ️".blue());
-        println!("{} gfs deploy -p PostgreSQL -v 16 -r us-west-aws -d us-west-aws -n myrepo -w password", "💡".yellow());
+        println!("{} guepard deploy -p PostgreSQL -v 16 -r us-west-aws -d us-west-aws -n myrepo -w password", "💡".yellow());
         return Ok(());
     }
     
@@ -45,8 +45,8 @@ pub async fn init(_args: &InitArgs, config: &Config) -> Result<()> {
     println!("{} Found {} deployments:", "✅".green(), rows.len());
     println!("{}", Table::new(rows).with(Style::rounded()));
     
-    println!("{} Use 'gfs branch -x <deployment_id>' to work with branches", "💡".yellow());
-    println!("{} Use 'gfs checkout -x <deployment_id> -c <branch_id>' to checkout branches", "💡".yellow());
+    println!("{} Use 'guepard branch -x <deployment_id>' to work with branches", "💡".yellow());
+    println!("{} Use 'guepard checkout -x <deployment_id> -c <branch_id>' to checkout branches", "💡".yellow());
     
     Ok(())
 }

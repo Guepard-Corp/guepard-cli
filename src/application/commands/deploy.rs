@@ -69,7 +69,7 @@ pub async fn create(args: &CreateDeployArgs, config: &Config) -> Result<()> {
     deploy::create_deployment(request, config).await?;
     
     println!("{} Deployment created successfully!", "✅".green());
-    println!("{} Use 'gfs deploy -x <deployment_id>' to get details", "💡".yellow());
+    println!("{} Use 'guepard deploy -x <deployment_id>' to get details", "💡".yellow());
     
     Ok(())
 }
