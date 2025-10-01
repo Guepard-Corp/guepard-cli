@@ -20,7 +20,7 @@ parts:
   gfs:
     plugin: dump
     source: https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.25.1/guepard-cli-0.25.1-linux-amd64.tar.gz
-    source-checksum: sha256/PLACEHOLDER_LINUX_AMD64_SHA256
+    source-checksum: sha256/b6c1f7bd9073dfd49067d3df8d64d22bbd9cd58e815205521b71f1bfbf773514
     organize:
       gfs: bin/gfs
 
