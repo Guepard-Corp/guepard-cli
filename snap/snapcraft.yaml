@@ -1,6 +1,6 @@
 name: gfs
 base: core22
-version: '0.25.1'
+version: '0.25.2'
 summary: Guepard CLI - Git-like filesystem for databases
 description: |
   Guepard CLI provides a Git-like filesystem for databases, offering version control 
@@ -19,8 +19,8 @@ confinement: strict
 parts:
   gfs:
     plugin: dump
-    source: https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.25.1/guepard-cli-0.25.1-linux-amd64.tar.gz
-    source-checksum: sha256/b6c1f7bd9073dfd49067d3df8d64d22bbd9cd58e815205521b71f1bfbf773514
+    source: https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.25.2/guepard-cli-0.25.2-linux-amd64.tar.gz
+    source-checksum: sha256/4815b4ab32ab9ed9824577446fd38ad2e0a6a170c672e46e2242c4ea564bf7aa
     organize:
       gfs: bin/gfs
 

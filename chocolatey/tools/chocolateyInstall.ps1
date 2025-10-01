@@ -3,8 +3,8 @@
 $ErrorActionPreference = 'Stop'
 
 $packageName = 'gfs'
-$url = 'https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.25.1/guepard-cli-0.25.1-windows-amd64.zip'
-$checksum = '8abf4cf1877ff6472fbbae15abcae1c55f657f02d895f66b368393e3842a7901'
+$url = 'https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.25.2/guepard-cli-0.25.2-windows-amd64.zip'
+$checksum = '965aeaa1c2b82d284e399f73eab99c6846859c65107db79438b653895a483c7f'
 $checksumType = 'sha256'
 
 # Download and extract
