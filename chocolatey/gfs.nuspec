@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
   <metadata>
     <id>gfs</id>
-    <version>0.25.1</version>
+        <version>0.25.2</version>
     <title>Guepard CLI</title>
     <authors>Guepard Engineering</authors>
     <owners>Guepard Engineering</owners>
@@ -36,11 +36,10 @@ Usage:
   gfs compute status            # Manage compute instances
     </description>
     <releaseNotes>
-Version 0.25.1:
-- Initial release
-- Git-like filesystem for databases
-- Multi-platform support
-- Database management capabilities
+Version 0.25.2:
+- Updated to version 0.25.2 with improved stability and performance
+- Bug fixes and enhancements
+- Multi-platform support maintained
     </releaseNotes>
     <copyright>Guepard (c) 2025</copyright>
     <licenseUrl>https://www.guepard.run/license</licenseUrl>

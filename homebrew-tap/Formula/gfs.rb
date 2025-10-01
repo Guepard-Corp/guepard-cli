@@ -1,32 +1,32 @@
 class Gfs < Formula
   desc "Guepard CLI - Git-like filesystem for databases"
   homepage "https://www.guepard.run"
-  url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.25.1/guepard-cli-0.25.1-macos-arm64.tar.gz"
-  version "0.25.1"
-  sha256 "680dd71aed7c9d522a53316970d102cddfcebf7128ebda228eda1580dc5c1853"
+  url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.25.2/guepard-cli-0.25.2-macos-arm64.tar.gz"
+  version "0.25.2"
+  sha256 "568929d4a8ada6e38c9eaa0222eafc946bead757b8fc90a8bb1fd22e111cde69"
   license "Guepard (c) 2025"
 
   on_macos do
     on_arm do
-      url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.25.1/guepard-cli-0.25.1-macos-arm64.tar.gz"
-      sha256 "680dd71aed7c9d522a53316970d102cddfcebf7128ebda228eda1580dc5c1853"
+      url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.25.2/guepard-cli-0.25.2-macos-arm64.tar.gz"
+      sha256 "568929d4a8ada6e38c9eaa0222eafc946bead757b8fc90a8bb1fd22e111cde69"
     end
     on_intel do
-      url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.25.1/guepard-cli-0.25.1-macos-amd64.tar.gz"
-      sha256 "8f63bfc072bb82ce5e1abb220fec176758cc3e68626e30ffaba6881741d41949"
+      url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.25.2/guepard-cli-0.25.2-macos-amd64.tar.gz"
+      sha256 "3322235013aca5021b83d52cce49a1b57e6e7780727428372a411f1c406d89f7"
     end
   end
 
-      on_linux do
-        on_arm do
-          url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.25.1/guepard-cli-0.25.1-linux-arm64.tar.gz"
-          sha256 "6d28ecac558b761dbaabd7400343009dc02e0ae2f0e6c86fdea6eece657fa834"
-        end
-        on_intel do
-          url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.25.1/guepard-cli-0.25.1-linux-amd64.tar.gz"
-          sha256 "b6c1f7bd9073dfd49067d3df8d64d22bbd9cd58e815205521b71f1bfbf773514"
-        end
-      end
+  on_linux do
+    on_arm do
+      url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.25.2/guepard-cli-0.25.2-linux-arm64.tar.gz"
+      sha256 "e44b5c47f070dcde1f088e4b43ef54f31e9e1acbe1c336e4645b7fcc65a9ffdf"
+    end
+    on_intel do
+      url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.25.2/guepard-cli-0.25.2-linux-amd64.tar.gz"
+      sha256 "4815b4ab32ab9ed9824577446fd38ad2e0a6a170c672e46e2242c4ea564bf7aa"
+    end
+  end
 
   def install
     bin.install "gfs"
