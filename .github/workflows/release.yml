@@ -69,6 +69,26 @@ jobs:
           # Install ARM64 cross-compilation tools
           sudo apt-get install -y gcc-aarch64-linux-gnu libc6-dev-arm64-cross
 
+      - name: Verify and install Rust targets
+        run: |
+          echo "Installed targets:"
+          rustup target list --installed
+          echo "Installing ARM64 target explicitly..."
+          rustup target add aarch64-unknown-linux-gnu
+          echo "Verifying ARM64 target is installed:"
+          rustup target list --installed | grep aarch64-unknown-linux-gnu
+
+      - name: Configure cross-compilation environment
+        run: |
+          # Set up cross-compilation environment variables
+          echo "PKG_CONFIG_ALLOW_CROSS=1" >> $GITHUB_ENV
+          echo "PKG_CONFIG_SYSROOT_DIR=/usr/aarch64-linux-gnu" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=/usr/aarch64-linux-gnu/lib/pkgconfig" >> $GITHUB_ENV
+          echo "CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+          echo "CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++" >> $GITHUB_ENV
+          echo "AR_aarch64_unknown_linux_gnu=aarch64-linux-gnu-ar" >> $GITHUB_ENV
+          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+
       - name: Build Linux AMD64
         run: |
           echo "Building Linux AMD64..."
@@ -150,20 +170,30 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          target: x86_64-pc-windows-msvc
+          target: x86_64-pc-windows-gnu
           override: true
 
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libssl-dev libdbus-1-dev pkg-config zip
+          # Install Windows cross-compilation tools
+          sudo apt-get install -y gcc-mingw-w64-x86-64
+
+      - name: Configure Windows cross-compilation environment
+        run: |
+          # Set up Windows cross-compilation environment variables
+          echo "CC_x86_64_pc_windows_gnu=x86_64-w64-mingw32-gcc" >> $GITHUB_ENV
+          echo "CXX_x86_64_pc_windows_gnu=x86_64-w64-mingw32-g++" >> $GITHUB_ENV
+          echo "AR_x86_64_pc_windows_gnu=x86_64-w64-mingw32-ar" >> $GITHUB_ENV
+          echo "CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=x86_64-w64-mingw32-gcc" >> $GITHUB_ENV
 
       - name: Build Windows AMD64
         run: |
           echo "Building Windows AMD64..."
-          cargo build --release --target x86_64-pc-windows-msvc
+          cargo build --release --target x86_64-pc-windows-gnu
           mkdir -p dist/windows-amd64
-          cp target/x86_64-pc-windows-msvc/release/guepard.exe dist/windows-amd64/
+          cp target/x86_64-pc-windows-gnu/release/guepard.exe dist/windows-amd64/
           cd dist
           zip -r guepard-cli-${{ needs.detect-platforms.outputs.version }}-windows-amd64.zip windows-amd64/
 
