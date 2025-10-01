@@ -47,8 +47,9 @@ jobs:
           echo "Detected platforms: '$PLATFORMS'"
           echo "Version: $VERSION"
 
-  build-and-release:
+  build-linux:
     needs: detect-platforms
+    if: contains(needs.detect-platforms.outputs.platforms, 'linux')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -58,18 +59,52 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          targets: x86_64-unknown-linux-gnu,aarch64-unknown-linux-gnu,x86_64-apple-darwin,aarch64-apple-darwin,x86_64-pc-windows-msvc
+          targets: x86_64-unknown-linux-gnu,aarch64-unknown-linux-gnu
           override: true
 
-      - name: Verify Rust targets
+      - name: Install system dependencies
         run: |
-          rustup target list --installed
-          echo "Installing missing targets..."
-          rustup target add x86_64-unknown-linux-gnu || true
-          rustup target add aarch64-unknown-linux-gnu || true
-          rustup target add x86_64-apple-darwin || true
-          rustup target add aarch64-apple-darwin || true
-          rustup target add x86_64-pc-windows-msvc || true
+          sudo apt-get update
+          sudo apt-get install -y libssl-dev libdbus-1-dev pkg-config zip
+          # Install ARM64 cross-compilation tools
+          sudo apt-get install -y gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+
+      - name: Build Linux AMD64
+        run: |
+          echo "Building Linux AMD64..."
+          cargo build --release --target x86_64-unknown-linux-gnu
+          mkdir -p dist/linux-amd64
+          cp target/x86_64-unknown-linux-gnu/release/guepard dist/linux-amd64/
+          tar -czf dist/guepard-cli-${{ needs.detect-platforms.outputs.version }}-linux-amd64.tar.gz -C dist linux-amd64/
+
+      - name: Build Linux ARM64
+        run: |
+          echo "Building Linux ARM64..."
+          cargo build --release --target aarch64-unknown-linux-gnu
+          mkdir -p dist/linux-arm64
+          cp target/aarch64-unknown-linux-gnu/release/guepard dist/linux-arm64/
+          tar -czf dist/guepard-cli-${{ needs.detect-platforms.outputs.version }}-linux-arm64.tar.gz -C dist linux-arm64/
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: dist/guepard-cli-${{ needs.detect-platforms.outputs.version }}-linux-*.tar.gz
+
+  build-macos:
+    needs: detect-platforms
+    if: contains(needs.detect-platforms.outputs.platforms, 'macos')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          targets: x86_64-apple-darwin,aarch64-apple-darwin
+          override: true
 
       - name: Install system dependencies
         run: |
@@ -79,30 +114,9 @@ jobs:
       - name: Debug platform detection
         run: |
           echo "Detected platforms: '${{ needs.detect-platforms.outputs.platforms }}'"
-          echo "Contains linux: ${{ contains(needs.detect-platforms.outputs.platforms, 'linux') }}"
-          echo "Contains macos: ${{ contains(needs.detect-platforms.outputs.platforms, 'macos') }}"
-          echo "Contains windows: ${{ contains(needs.detect-platforms.outputs.platforms, 'windows') }}"
-
-      - name: Build Linux AMD64
-        if: contains(needs.detect-platforms.outputs.platforms, 'linux')
-        run: |
-          echo "Building Linux AMD64..."
-          cargo build --release --target x86_64-unknown-linux-gnu
-          mkdir -p dist/linux-amd64
-          cp target/x86_64-unknown-linux-gnu/release/guepard dist/linux-amd64/
-          tar -czf dist/guepard-cli-${{ needs.detect-platforms.outputs.version }}-linux-amd64.tar.gz -C dist linux-amd64/
-
-      - name: Build Linux ARM64
-        if: contains(needs.detect-platforms.outputs.platforms, 'linux')
-        run: |
-          echo "Building Linux ARM64..."
-          cargo build --release --target aarch64-unknown-linux-gnu
-          mkdir -p dist/linux-arm64
-          cp target/aarch64-unknown-linux-gnu/release/guepard dist/linux-arm64/
-          tar -czf dist/guepard-cli-${{ needs.detect-platforms.outputs.version }}-linux-arm64.tar.gz -C dist linux-arm64/
+          echo "Building macOS..."
 
       - name: Build macOS AMD64
-        if: contains(needs.detect-platforms.outputs.platforms, 'macos')
         run: |
           echo "Building macOS AMD64..."
           cargo build --release --target x86_64-apple-darwin
@@ -111,7 +125,6 @@ jobs:
           tar -czf dist/guepard-cli-${{ needs.detect-platforms.outputs.version }}-macos-amd64.tar.gz -C dist macos-amd64/
 
       - name: Build macOS ARM64
-        if: contains(needs.detect-platforms.outputs.platforms, 'macos')
         run: |
           echo "Building macOS ARM64..."
           cargo build --release --target aarch64-apple-darwin
@@ -119,8 +132,33 @@ jobs:
           cp target/aarch64-apple-darwin/release/guepard dist/macos-arm64/
           tar -czf dist/guepard-cli-${{ needs.detect-platforms.outputs.version }}-macos-arm64.tar.gz -C dist macos-arm64/
 
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: dist/guepard-cli-${{ needs.detect-platforms.outputs.version }}-macos-*.tar.gz
+
+  build-windows:
+    needs: detect-platforms
+    if: contains(needs.detect-platforms.outputs.platforms, 'windows')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-pc-windows-msvc
+          override: true
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libssl-dev libdbus-1-dev pkg-config zip
+
       - name: Build Windows AMD64
-        if: contains(needs.detect-platforms.outputs.platforms, 'windows')
         run: |
           echo "Building Windows AMD64..."
           cargo build --release --target x86_64-pc-windows-msvc
@@ -128,6 +166,31 @@ jobs:
           cp target/x86_64-pc-windows-msvc/release/guepard.exe dist/windows-amd64/
           cd dist
           zip -r guepard-cli-${{ needs.detect-platforms.outputs.version }}-windows-amd64.zip windows-amd64/
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-amd64
+          path: dist/guepard-cli-${{ needs.detect-platforms.outputs.version }}-windows-amd64.zip
+
+  build-and-release:
+    needs: [detect-platforms, build-linux, build-macos, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Prepare release files
+        run: |
+          mkdir -p dist
+          # Copy artifacts to dist folder
+          find artifacts -name "*.tar.gz" -exec cp {} dist/ \;
+          find artifacts -name "*.zip" -exec cp {} dist/ \;
 
       - name: Calculate SHA256 checksums
         run: |
