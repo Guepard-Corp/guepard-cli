@@ -1,4 +1,4 @@
-class Gfs < Formula
+class Guepard < Formula
   desc "Guepard CLI - Git-like filesystem for databases"
   homepage "https://www.guepard.run"
   url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.25.2/guepard-cli-0.25.2-macos-arm64.tar.gz"
@@ -29,10 +29,10 @@ class Gfs < Formula
   end
 
   def install
-    bin.install "gfs"
+    bin.install "guepard"
   end
 
   test do
-    system "#{bin}/gfs", "--version"
+    system "#{bin}/guepard", "--version"
   end
 end
