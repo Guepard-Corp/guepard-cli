@@ -2,7 +2,7 @@
 
 $ErrorActionPreference = 'Stop'
 
-$packageName = 'gfs'
+$packageName = 'guepard'
 $url = 'https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.25.2/guepard-cli-0.25.2-windows-amd64.zip'
 $checksum = '965aeaa1c2b82d284e399f73eab99c6846859c65107db79438b653895a483c7f'
 $checksumType = 'sha256'
@@ -33,13 +33,13 @@ if (-not (Test-Path $binDir)) {
     New-Item -ItemType Directory -Path $binDir | Out-Null
 }
 
-$exePath = Join-Path $tempDir "gfs.exe"
+$exePath = Join-Path $tempDir "guepard.exe"
 if (Test-Path $exePath) {
     Copy-Item $exePath $binDir -Force
     Write-Host "Guepard CLI installed successfully!"
-    Write-Host "You can now use 'gfs' command from any terminal."
+    Write-Host "You can now use 'guepard' command from any terminal."
 } else {
-    throw "gfs.exe not found in downloaded package"
+    throw "guepard.exe not found in downloaded package"
 }
 
 # Cleanup

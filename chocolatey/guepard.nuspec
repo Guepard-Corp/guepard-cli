@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
   <metadata>
-    <id>gfs</id>
+    <id>guepard</id>
         <version>0.25.2</version>
     <title>Guepard CLI</title>
     <authors>Guepard Engineering</authors>
@@ -24,16 +24,16 @@ Features:
 - Cross-platform consistency
 
 Installation:
-After installation, you can use 'gfs' command from any terminal.
+After installation, you can use 'guepard' command from any terminal.
 
 Usage:
-  gfs init .                    # Initialize a new Guepard repository
-  gfs deploy --database_provider=MySQL --database_version=8
-  gfs commit -m "Initial version"
-  gfs branch                    # List branches
-  gfs checkout develop          # Switch to a branch
-  gfs log                       # View commit history
-  gfs compute status            # Manage compute instances
+  guepard init .                    # Initialize a new Guepard repository
+  guepard deploy --database_provider=MySQL --database_version=8
+  guepard commit -m "Initial version"
+  guepard branch                    # List branches
+  guepard checkout develop          # Switch to a branch
+  guepard log                       # View commit history
+  guepard compute status            # Manage compute instances
     </description>
     <releaseNotes>
 Version 0.25.2:
