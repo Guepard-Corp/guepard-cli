@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>guepard</id>
+        <version>0.25.2</version>
+    <title>Guepard CLI</title>
+    <authors>Guepard Engineering</authors>
+    <owners>Guepard Engineering</owners>
+    <projectUrl>https://www.guepard.run</projectUrl>
+    <packageSourceUrl>https://github.com/Guepard-Corp/guepard-cli</packageSourceUrl>
+    <docsUrl>https://docs.guepard.run</docsUrl>
+    <bugTrackerUrl>https://github.com/Guepard-Corp/guepard-cli/issues</bugTrackerUrl>
+    <tags>database filesystem cli git versioning</tags>
+    <summary>Guepard CLI - Git-like filesystem for databases</summary>
+    <description>
+Guepard CLI provides a Git-like filesystem for databases, offering version control 
+and management capabilities for database schemas and data. It supports familiar 
+commands like init, commit, branch, checkout, and more.
+
+Features:
+- Git-like interface with familiar commands
+- Multi-platform support (Linux, macOS, Windows)
+- Database management and deployment
+- Cross-platform consistency
+
+Installation:
+After installation, you can use 'guepard' command from any terminal.
+
+Usage:
+  guepard init .                    # Initialize a new Guepard repository
+  guepard deploy --database_provider=MySQL --database_version=8
+  guepard commit -m "Initial version"
+  guepard branch                    # List branches
+  guepard checkout develop          # Switch to a branch
+  guepard log                       # View commit history
+  guepard compute status            # Manage compute instances
+    </description>
+    <releaseNotes>
+Version 0.25.2:
+- Updated to version 0.25.2 with improved stability and performance
+- Bug fixes and enhancements
+- Multi-platform support maintained
+    </releaseNotes>
+    <copyright>Guepard (c) 2025</copyright>
+    <licenseUrl>https://www.guepard.run/license</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>
