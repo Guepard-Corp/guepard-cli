@@ -144,11 +144,11 @@ jobs:
             ```
 
             ### SHA256 Checksums
-            ${{ env.guepard-cli-${{ needs.detect-platforms.outputs.version }}-linux-amd64.tar.gz_SHA256 && format('* Linux AMD64: `{0}`', env.guepard-cli-${{ needs.detect-platforms.outputs.version }}-linux-amd64.tar.gz_SHA256) || '' }}
-            ${{ env.guepard-cli-${{ needs.detect-platforms.outputs.version }}-linux-arm64.tar.gz_SHA256 && format('* Linux ARM64: `{0}`', env.guepard-cli-${{ needs.detect-platforms.outputs.version }}-linux-arm64.tar.gz_SHA256) || '' }}
-            ${{ env.guepard-cli-${{ needs.detect-platforms.outputs.version }}-macos-amd64.tar.gz_SHA256 && format('* macOS AMD64: `{0}`', env.guepard-cli-${{ needs.detect-platforms.outputs.version }}-macos-amd64.tar.gz_SHA256) || '' }}
-            ${{ env.guepard-cli-${{ needs.detect-platforms.outputs.version }}-macos-arm64.tar.gz_SHA256 && format('* macOS ARM64: `{0}`', env.guepard-cli-${{ needs.detect-platforms.outputs.version }}-macos-arm64.tar.gz_SHA256) || '' }}
-            ${{ env.guepard-cli-${{ needs.detect-platforms.outputs.version }}-windows-amd64.zip_SHA256 && format('* Windows AMD64: `{0}`', env.guepard-cli-${{ needs.detect-platforms.outputs.version }}-windows-amd64.zip_SHA256) || '' }}
+            - Linux AMD64: `${{ env.LINUX_AMD64_SHA256 }}`
+            - Linux ARM64: `${{ env.LINUX_ARM64_SHA256 }}`
+            - macOS AMD64: `${{ env.MACOS_AMD64_SHA256 }}`
+            - macOS ARM64: `${{ env.MACOS_ARM64_SHA256 }}`
+            - Windows AMD64: `${{ env.WINDOWS_AMD64_SHA256 }}`
 
             ### What's New
             - Multi-platform support
