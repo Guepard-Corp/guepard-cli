@@ -23,6 +23,7 @@ jobs:
           
           PLATFORMS=""
           
+          # Check for specific platform tags
           if [[ "$TAG" == *"-linux"* ]]; then
             PLATFORMS="$PLATFORMS linux"
           fi
@@ -33,14 +34,17 @@ jobs:
             PLATFORMS="$PLATFORMS windows"
           fi
           
-          # If no platform specified, build all
+          # If no platform specified in tag, build all
           if [[ -z "$PLATFORMS" ]]; then
             PLATFORMS="linux macos windows"
           fi
           
+          # Trim leading space
+          PLATFORMS=$(echo "$PLATFORMS" | sed 's/^ *//')
+          
           echo "platforms=$PLATFORMS" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Detected platforms: $PLATFORMS"
+          echo "Detected platforms: '$PLATFORMS'"
           echo "Version: $VERSION"
 
   build-and-release:
@@ -56,6 +60,16 @@ jobs:
           toolchain: stable
           targets: x86_64-unknown-linux-gnu,aarch64-unknown-linux-gnu,x86_64-apple-darwin,aarch64-apple-darwin,x86_64-pc-windows-msvc
           override: true
+
+      - name: Verify Rust targets
+        run: |
+          rustup target list --installed
+          echo "Installing missing targets..."
+          rustup target add x86_64-unknown-linux-gnu || true
+          rustup target add aarch64-unknown-linux-gnu || true
+          rustup target add x86_64-apple-darwin || true
+          rustup target add aarch64-apple-darwin || true
+          rustup target add x86_64-pc-windows-msvc || true
 
       - name: Install system dependencies
         run: |
