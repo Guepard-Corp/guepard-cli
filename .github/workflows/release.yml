@@ -256,3 +256,208 @@ jobs:
           git add Formula/guepard.rb
           git commit -m "Update guepard to ${{ needs.detect-platforms.outputs.version }}"
           git push
+
+  update-snap:
+    needs: [detect-platforms, build-and-release]
+    if: contains(needs.detect-platforms.outputs.platforms, 'linux')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Linux AMD64 release
+        run: |
+          curl -L -o linux-amd64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/${{ github.ref_name }}/guepard-cli-${{ needs.detect-platforms.outputs.version }}-linux-amd64.tar.gz"
+
+      - name: Calculate SHA256 checksum
+        run: |
+          echo "LINUX_AMD64_SHA256=$(shasum -a 256 linux-amd64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
+
+      - name: Update snapcraft.yaml
+        run: |
+          VERSION="${{ needs.detect-platforms.outputs.version }}"
+          cat > snap/snapcraft.yaml << EOF
+          name: guepard
+          base: core22
+          version: '\${VERSION}'
+          summary: Guepard CLI - Git-like filesystem for databases
+          description: |
+            Guepard CLI provides a Git-like filesystem for databases, offering version control 
+            and management capabilities for database schemas and data. It supports familiar 
+            commands like init, commit, branch, checkout, and more.
+            
+            Features:
+            - Git-like interface with familiar commands
+            - Multi-platform support (Linux, macOS, Windows)
+            - Database management and deployment
+            - Cross-platform consistency
+
+          grade: stable
+          confinement: strict
+
+          parts:
+            guepard:
+              plugin: dump
+              source: https://github.com/Guepard-Corp/guepard-cli/releases/download/${{ github.ref_name }}/guepard-cli-\${VERSION}-linux-amd64.tar.gz
+              source-checksum: sha256/${{ env.LINUX_AMD64_SHA256 }}
+              organize:
+                guepard: bin/guepard
+
+          apps:
+            guepard:
+              command: bin/guepard
+              plugs:
+                - home
+                - network
+                - removable-media
+
+          slots:
+            guepard:
+              command: bin/guepard
+              interface: content
+              read:
+                - \$SNAP_USER_DATA
+              write:
+                - \$SNAP_USER_DATA
+          EOF
+
+      - name: Commit snapcraft.yaml update
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add snap/snapcraft.yaml
+          git commit -m "Update snapcraft.yaml to ${{ needs.detect-platforms.outputs.version }}"
+          git push
+
+  update-chocolatey:
+    needs: [detect-platforms, build-and-release]
+    if: contains(needs.detect-platforms.outputs.platforms, 'windows')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Windows release
+        run: |
+          curl -L -o windows-amd64.zip "https://github.com/Guepard-Corp/guepard-cli/releases/download/${{ github.ref_name }}/guepard-cli-${{ needs.detect-platforms.outputs.version }}-windows-amd64.zip"
+
+      - name: Calculate SHA256 checksum
+        run: |
+          echo "WINDOWS_AMD64_SHA256=$(shasum -a 256 windows-amd64.zip | cut -d' ' -f1)" >> $GITHUB_ENV
+
+      - name: Update Chocolatey package
+        run: |
+          VERSION="${{ needs.detect-platforms.outputs.version }}"
+          
+          # Update nuspec file
+          cat > chocolatey/guepard.nuspec << EOF
+          <?xml version="1.0" encoding="utf-8"?>
+          <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+            <metadata>
+              <id>guepard</id>
+              <version>\${VERSION}</version>
+              <title>Guepard CLI</title>
+              <authors>Guepard Engineering</authors>
+              <owners>Guepard Engineering</owners>
+              <projectUrl>https://www.guepard.run</projectUrl>
+              <packageSourceUrl>https://github.com/Guepard-Corp/guepard-cli</packageSourceUrl>
+              <docsUrl>https://docs.guepard.run</docsUrl>
+              <bugTrackerUrl>https://github.com/Guepard-Corp/guepard-cli/issues</bugTrackerUrl>
+              <tags>database filesystem cli git versioning</tags>
+              <summary>Guepard CLI - Git-like filesystem for databases</summary>
+              <description>
+          Guepard CLI provides a Git-like filesystem for databases, offering version control 
+          and management capabilities for database schemas and data. It supports familiar 
+          commands like init, commit, branch, checkout, and more.
+
+          Features:
+          - Git-like interface with familiar commands
+          - Multi-platform support (Linux, macOS, Windows)
+          - Database management and deployment
+          - Cross-platform consistency
+
+          Installation:
+          After installation, you can use 'guepard' command from any terminal.
+
+          Usage:
+            guepard init .                    # Initialize a new Guepard repository
+            guepard deploy --database_provider=MySQL --database_version=8
+            guepard commit -m "Initial version"
+            guepard branch                    # List branches
+            guepard checkout develop          # Switch to a branch
+            guepard log                       # View commit history
+            guepard compute status            # Manage compute instances
+              </description>
+              <releaseNotes>
+          Version \${VERSION}:
+          - Updated to version \${VERSION} with improved stability and performance
+          - Bug fixes and enhancements
+          - Multi-platform support maintained
+              </releaseNotes>
+              <copyright>Guepard (c) 2025</copyright>
+              <licenseUrl>https://www.guepard.run/license</licenseUrl>
+              <requireLicenseAcceptance>false</requireLicenseAcceptance>
+            </metadata>
+            <files>
+              <file src="tools\**" target="tools" />
+            </files>
+          </package>
+          EOF
+
+          # Update PowerShell install script
+          cat > chocolatey/tools/chocolateyInstall.ps1 << EOF
+          # Guepard CLI Chocolatey Package Installation Script
+
+          \$ErrorActionPreference = 'Stop'
+
+          \$packageName = 'guepard'
+          \$url = 'https://github.com/Guepard-Corp/guepard-cli/releases/download/${{ github.ref_name }}/guepard-cli-\${VERSION}-windows-amd64.zip'
+          \$checksum = '${{ env.WINDOWS_AMD64_SHA256 }}'
+          \$checksumType = 'sha256'
+
+          # Download and extract
+          \$tempDir = Join-Path \$env:TEMP \$packageName
+          if (Test-Path \$tempDir) {
+              Remove-Item \$tempDir -Recurse -Force
+          }
+          New-Item -ItemType Directory -Path \$tempDir | Out-Null
+
+          Write-Host "Downloading Guepard CLI..."
+          \$zipFile = Join-Path \$tempDir "guepard-cli.zip"
+          Invoke-WebRequest -Uri \$url -OutFile \$zipFile
+
+          # Verify checksum
+          \$fileHash = Get-FileHash -Path \$zipFile -Algorithm SHA256
+          if (\$fileHash.Hash -ne \$checksum) {
+              throw "Checksum verification failed. Expected: \$checksum, Got: \$(\$fileHash.Hash)"
+          }
+
+          Write-Host "Extracting Guepard CLI..."
+          Expand-Archive -Path \$zipFile -DestinationPath \$tempDir -Force
+
+          # Install to chocolatey bin directory
+          \$binDir = Join-Path \$env:ChocolateyInstall "bin"
+          if (-not (Test-Path \$binDir)) {
+              New-Item -ItemType Directory -Path \$binDir | Out-Null
+          }
+
+          \$exePath = Join-Path \$tempDir "windows-amd64\guepard.exe"
+          if (Test-Path \$exePath) {
+              Copy-Item \$exePath \$binDir -Force
+              Write-Host "Guepard CLI installed successfully!"
+              Write-Host "You can now use 'guepard' command from any terminal."
+          } else {
+              throw "guepard.exe not found in downloaded package"
+          }
+
+          # Cleanup
+          Remove-Item \$tempDir -Recurse -Force
+          EOF
+
+      - name: Commit Chocolatey package updates
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add chocolatey/
+          git commit -m "Update Chocolatey package to ${{ needs.detect-platforms.outputs.version }}"
+          git push
