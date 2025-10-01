@@ -26,6 +26,7 @@ jobs:
       - name: Build
         run: |
           cargo build --release
+          ls -la target/release/
 
       - name: Create archive
         run: |
@@ -64,6 +65,7 @@ jobs:
       - name: Build
         run: |
           cargo build --release
+          ls -la target/release/
 
       - name: Create archive
         run: |
