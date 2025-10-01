@@ -6,94 +6,94 @@ Your Guepard CLI now follows a Git-like structure while preserving all your orig
 ## Commands
 
 ### Core Commands
-- `gfs init [path]` - Initialize a new Guepard environment
-- `gfs deploy` - Deploy database instances with beautiful table output
-- `gfs commit -m "message" -x <deployment_id> -c <clone_id>` - Create snapshots (bookmarks)
-- `gfs branch` - List and manage branches with detailed tables
-- `gfs checkout` - Switch branches or checkout snapshots
-- `gfs log` - Show commit history
-- `gfs rev-parse` - Find .gfs directory
+- `guepard init [path]` - Initialize a new Guepard environment
+- `guepard deploy` - Deploy database instances with beautiful table output
+- `guepard commit -m "message" -x <deployment_id> -c <clone_id>` - Create snapshots (bookmarks)
+- `guepard branch` - List and manage branches with detailed tables
+- `guepard checkout` - Switch branches or checkout snapshots
+- `guepard log` - Show commit history
+- `guepard rev-parse` - Find .gfs directory
 
 ### Management Commands
-- `gfs compute status|start|stop|restart|list|logs -x <deployment_id>` - Compute management
-- `gfs show branches|bookmarks -x <deployment_id>` - Show detailed information
-- `gfs usage` - Show usage information
+- `guepard compute status|start|stop|restart|list|logs -x <deployment_id>` - Compute management
+- `guepard show branches|commits -x <deployment_id>` - Show detailed information
+- `guepard usage` - Show usage information
 
 ### Authentication
-- `gfs link` - Start login process
-- `gfs login -c <code>` - Complete login with verification code
-- `gfs logout` - Log out and clear credentials
+- `guepard link` - Start login process
+- `guepard login -c <code>` - Complete login with verification code
+- `guepard logout` - Log out and clear credentials
 
 ## Detailed Usage
 
 ### Deploy Command
 ```bash
 # Create new deployment
-gfs deploy -p PostgreSQL -v 16 -r us-west-aws -d us-west-aws -n myrepo -w password
+guepard deploy -p PostgreSQL -v 16 -r us-west-aws -d us-west-aws -n myrepo -w password
 
 # Update deployment
-gfs deploy -x <deployment_id> -n <new_repository_name>
+guepard deploy -x <deployment_id> -n <new_repository_name>
 
 # Get deployment details
-gfs deploy -x <deployment_id>
+guepard deploy -x <deployment_id>
 ```
 
 ### Commit Command (Snapshots)
 ```bash
 # Create a snapshot with message
-gfs commit -m "Production snapshot" -x <deployment_id> -c <clone_id>
+guepard commit -m "Production snapshot" -x <deployment_id> -c <clone_id>
 ```
 
 ### Branch Command
 ```bash
 # List branches for deployment
-gfs branch -x <deployment_id>
+guepard branch -x <deployment_id>
 
 # Create new branch
-gfs branch -x <deployment_id> -s <snapshot_id> -n <branch_name> -k -e
+guepard branch -x <deployment_id> -s <snapshot_id> -n <branch_name> -k -e
 
 # Git-like usage (simplified)
-gfs branch <branch_name>  # Shows helpful message
-gfs branch              # Shows helpful message
+guepard branch <branch_name>  # Shows helpful message
+guepard branch              # Shows helpful message
 ```
 
 ### Checkout Command
 ```bash
 # Checkout branch
-gfs checkout -x <deployment_id> -c <branch_id>
+guepard checkout -x <deployment_id> -c <branch_id>
 
 # Git-like usage (simplified)
-gfs checkout <branch_name>  # Shows helpful message
+guepard checkout <branch_name>  # Shows helpful message
 ```
 
 ### Compute Commands
 ```bash
 # Get compute status
-gfs compute status -x <deployment_id>
+guepard compute status -x <deployment_id>
 
 # Start compute
-gfs compute start -x <deployment_id>
+guepard compute start -x <deployment_id>
 
 # Stop compute
-gfs compute stop -x <deployment_id>
+guepard compute stop -x <deployment_id>
 
 # Restart compute
-gfs compute restart -x <deployment_id>
+guepard compute restart -x <deployment_id>
 
 # List compute details
-gfs compute list -x <deployment_id>
+guepard compute list -x <deployment_id>
 
 # View logs
-gfs compute logs -x <deployment_id>
+guepard compute logs -x <deployment_id>
 ```
 
 ### Show Commands
 ```bash
 # Show branches with active indicator
-gfs show branches -x <deployment_id>
+guepard show branches -x <deployment_id>
 
-# Show bookmarks
-gfs show bookmarks -x <deployment_id>
+# Show commits
+guepard show commits -x <deployment_id>
 ```
 
 ## Beautiful Output Features
@@ -132,23 +132,23 @@ All commands use beautiful tables with:
 ### Complete Workflow
 ```bash
 # Initialize environment
-gfs init .
+guepard init .
 
 # Deploy database
-gfs deploy -p PostgreSQL -v 16 -r us-west-aws -d us-west-aws -n myrepo -w password
+guepard deploy -p PostgreSQL -v 16 -r us-west-aws -d us-west-aws -n myrepo -w password
 
 # Create snapshot
-gfs commit -m "Initial setup" -x <deployment_id> -c <clone_id>
+guepard commit -m "Initial setup" -x <deployment_id> -c <clone_id>
 
 # Create branch
-gfs branch -x <deployment_id> -s <snapshot_id> -n feature-branch -k
+guepard branch -x <deployment_id> -s <snapshot_id> -n feature-branch -k
 
 # Manage compute
-gfs compute start -x <deployment_id>
-gfs compute status -x <deployment_id>
+guepard compute start -x <deployment_id>
+guepard compute status -x <deployment_id>
 
 # Show branches
-gfs show branches -x <deployment_id>
+guepard show branches -x <deployment_id>
 ```
 
 ### Quick Commands
