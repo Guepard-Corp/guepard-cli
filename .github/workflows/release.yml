@@ -8,6 +8,10 @@ on:
       - 'v*-windows'
       - 'v*'
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   detect-platforms:
     runs-on: ubuntu-latest
