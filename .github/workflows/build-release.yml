@@ -135,10 +135,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libssl-dev libdbus-1-dev pkg-config zip
 
-      - name: Debug platform detection
+      - name: Verify and install Rust targets
         run: |
-          echo "Detected platforms: '${{ needs.detect-platforms.outputs.platforms }}'"
-          echo "Building macOS..."
+          echo "Installed targets:"
+          rustup target list --installed
+          echo "Installing macOS targets explicitly..."
+          rustup target add x86_64-apple-darwin
+          rustup target add aarch64-apple-darwin
+          echo "Verifying macOS targets are installed:"
+          rustup target list --installed | grep apple-darwin
 
       - name: Build macOS AMD64
         run: |
