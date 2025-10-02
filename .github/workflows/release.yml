@@ -204,7 +204,7 @@ jobs:
           path: dist/guepard-cli-${{ needs.detect-platforms.outputs.version }}-windows-amd64.zip
 
   create-release:
-    needs: [detect-platforms, build-linux, build-macos, build-windows]
+    needs: [detect-platforms]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -227,7 +227,18 @@ jobs:
           cd dist
           for file in *.tar.gz *.zip; do
             if [ -f "$file" ]; then
-              echo "${file}_SHA256=$(shasum -a 256 "$file" | cut -d' ' -f1)" >> $GITHUB_ENV
+              # Extract platform and architecture from filename
+              if [[ "$file" == *"linux-amd64"* ]]; then
+                echo "LINUX_AMD64_SHA256=$(shasum -a 256 "$file" | cut -d' ' -f1)" >> $GITHUB_ENV
+              elif [[ "$file" == *"linux-arm64"* ]]; then
+                echo "LINUX_ARM64_SHA256=$(shasum -a 256 "$file" | cut -d' ' -f1)" >> $GITHUB_ENV
+              elif [[ "$file" == *"macos-amd64"* ]]; then
+                echo "MACOS_AMD64_SHA256=$(shasum -a 256 "$file" | cut -d' ' -f1)" >> $GITHUB_ENV
+              elif [[ "$file" == *"macos-arm64"* ]]; then
+                echo "MACOS_ARM64_SHA256=$(shasum -a 256 "$file" | cut -d' ' -f1)" >> $GITHUB_ENV
+              elif [[ "$file" == *"windows-amd64"* ]]; then
+                echo "WINDOWS_AMD64_SHA256=$(shasum -a 256 "$file" | cut -d' ' -f1)" >> $GITHUB_ENV
+              fi
             fi
           done
 
@@ -330,30 +341,30 @@ jobs:
           class Guepard < Formula
             desc "Guepard CLI - Git-like filesystem for databases"
             homepage "https://www.guepard.run"
-            url "https://github.com/Guepard-Corp/guepard-cli/releases/download/${{ github.ref_name }}/guepard-cli-\${VERSION}-macos-arm64.tar.gz"
+            url "https://github.com/Guepard-Corp/guepard-cli/releases/download/\${VERSION}/guepard-cli-\${VERSION}-macos-arm64.tar.gz"
             version "\${VERSION}"
-            sha256 "${{ env.MACOS_ARM64_SHA256 || 'placeholder' }}"
+            sha256 "${{ env.MACOS_ARM64_SHA256 || '0000000000000000000000000000000000000000000000000000000000000000' }}"
             license "Guepard (c) 2025"
 
             on_macos do
               on_arm do
-                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/${{ github.ref_name }}/guepard-cli-\${VERSION}-macos-arm64.tar.gz"
-                sha256 "${{ env.MACOS_ARM64_SHA256 || 'placeholder' }}"
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/\${VERSION}/guepard-cli-\${VERSION}-macos-arm64.tar.gz"
+                sha256 "${{ env.MACOS_ARM64_SHA256 || '0000000000000000000000000000000000000000000000000000000000000000' }}"
               end
               on_intel do
-                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/${{ github.ref_name }}/guepard-cli-\${VERSION}-macos-amd64.tar.gz"
-                sha256 "${{ env.MACOS_AMD64_SHA256 || 'placeholder' }}"
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/\${VERSION}/guepard-cli-\${VERSION}-macos-amd64.tar.gz"
+                sha256 "${{ env.MACOS_AMD64_SHA256 || '0000000000000000000000000000000000000000000000000000000000000000' }}"
               end
             end
 
             on_linux do
               on_arm do
-                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/${{ github.ref_name }}/guepard-cli-\${VERSION}-linux-arm64.tar.gz"
-                sha256 "${{ env.LINUX_ARM64_SHA256 || 'placeholder' }}"
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/\${VERSION}/guepard-cli-\${VERSION}-linux-arm64.tar.gz"
+                sha256 "${{ env.LINUX_ARM64_SHA256 || '0000000000000000000000000000000000000000000000000000000000000000' }}"
               end
               on_intel do
-                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/${{ github.ref_name }}/guepard-cli-\${VERSION}-linux-amd64.tar.gz"
-                sha256 "${{ env.LINUX_AMD64_SHA256 || 'placeholder' }}"
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/\${VERSION}/guepard-cli-\${VERSION}-linux-amd64.tar.gz"
+                sha256 "${{ env.LINUX_AMD64_SHA256 || '0000000000000000000000000000000000000000000000000000000000000000' }}"
               end
             end
 
@@ -417,7 +428,7 @@ jobs:
           parts:
             guepard:
               plugin: dump
-              source: https://github.com/Guepard-Corp/guepard-cli/releases/download/${{ github.ref_name }}/guepard-cli-\${VERSION}-linux-amd64.tar.gz
+              source: https://github.com/Guepard-Corp/guepard-cli/releases/download/\${VERSION}/guepard-cli-\${VERSION}-linux-amd64.tar.gz
               source-checksum: sha256/${{ env.LINUX_AMD64_SHA256 }}
               organize:
                 guepard: bin/guepard
@@ -530,7 +541,7 @@ jobs:
           \$ErrorActionPreference = 'Stop'
 
           \$packageName = 'guepard'
-          \$url = 'https://github.com/Guepard-Corp/guepard-cli/releases/download/${{ github.ref_name }}/guepard-cli-\${VERSION}-windows-amd64.zip'
+          \$url = 'https://github.com/Guepard-Corp/guepard-cli/releases/download/\${VERSION}/guepard-cli-\${VERSION}-windows-amd64.zip'
           \$checksum = '${{ env.WINDOWS_AMD64_SHA256 }}'
           \$checksumType = 'sha256'
 
