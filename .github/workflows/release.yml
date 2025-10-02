@@ -466,11 +466,19 @@ jobs:
 
   update-chocolatey:
     needs: [detect-platforms, create-release]
-    if: contains(needs.detect-platforms.outputs.platforms, 'windows')
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Debug platform detection
+        run: |
+          echo "Detected platforms: '${{ needs.detect-platforms.outputs.platforms }}'"
+          echo "Checking for windows: ${{ contains(needs.detect-platforms.outputs.platforms, 'windows') }}"
+          echo "Platforms length: ${#{{ needs.detect-platforms.outputs.platforms }}}"
+          if [[ "${{ needs.detect-platforms.outputs.platforms }}" == *"windows"* ]]; then
+            echo "Windows detected - proceeding with Chocolatey update"
+          else
+            echo "No Windows detected - skipping Chocolatey update"
+            exit 0
+          fi
 
       - name: Download Windows release
         run: |
