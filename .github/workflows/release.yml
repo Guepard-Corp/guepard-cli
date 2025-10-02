@@ -204,7 +204,8 @@ jobs:
           path: dist/guepard-cli-${{ needs.detect-platforms.outputs.version }}-windows-amd64.zip
 
   create-release:
-    needs: [detect-platforms]
+    needs: [detect-platforms, build-linux, build-macos, build-windows]
+    if: always() && needs.detect-platforms.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
