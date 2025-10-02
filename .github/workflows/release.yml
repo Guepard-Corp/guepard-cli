@@ -203,7 +203,7 @@ jobs:
           name: windows-amd64
           path: dist/guepard-cli-${{ needs.detect-platforms.outputs.version }}-windows-amd64.zip
 
-  build-and-release:
+  create-release:
     needs: [detect-platforms, build-linux, build-macos, build-windows]
     runs-on: ubuntu-latest
     steps:
@@ -279,7 +279,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   update-homebrew:
-    needs: [detect-platforms, build-and-release]
+    needs: [detect-platforms, create-release]
     if: contains(needs.detect-platforms.outputs.platforms, 'macos') || contains(needs.detect-platforms.outputs.platforms, 'linux')
     runs-on: ubuntu-latest
     steps:
@@ -377,7 +377,7 @@ jobs:
           git push
 
   update-snap:
-    needs: [detect-platforms, build-and-release]
+    needs: [detect-platforms, create-release]
     if: contains(needs.detect-platforms.outputs.platforms, 'linux')
     runs-on: ubuntu-latest
     steps:
@@ -449,7 +449,7 @@ jobs:
           git push
 
   update-chocolatey:
-    needs: [detect-platforms, build-and-release]
+    needs: [detect-platforms, create-release]
     if: contains(needs.detect-platforms.outputs.platforms, 'windows')
     runs-on: ubuntu-latest
     steps:
