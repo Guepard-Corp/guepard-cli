@@ -1,0 +1,148 @@
+name: Update Linux Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to update packages for (e.g., 0.26.8)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  update-homebrew:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout homebrew tap
+        uses: actions/checkout@v4
+        with:
+          repository: Guepard-Corp/homebrew-guepard-cli
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: homebrew-tap
+
+      - name: Download Linux releases
+        run: |
+          mkdir -p release-assets
+          cd release-assets
+          curl -L -o linux-arm64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ github.event.inputs.version }}-linux/guepard-cli-${{ github.event.inputs.version }}-linux-arm64.tar.gz"
+          curl -L -o linux-amd64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ github.event.inputs.version }}-linux/guepard-cli-${{ github.event.inputs.version }}-linux-amd64.tar.gz"
+
+      - name: Calculate SHA256 checksums
+        run: |
+          echo "LINUX_ARM64_SHA256=$(shasum -a 256 release-assets/linux-arm64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
+          echo "LINUX_AMD64_SHA256=$(shasum -a 256 release-assets/linux-amd64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
+
+      - name: Update Homebrew formula
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          cat > homebrew-tap/Formula/guepard.rb << EOF
+          class Guepard < Formula
+            desc "Guepard CLI - Git-like filesystem for databases"
+            homepage "https://www.guepard.run"
+            url "https://github.com/Guepard-Corp/guepard-cli/releases/download/\${VERSION}/guepard-cli-\${VERSION}-linux-arm64.tar.gz"
+            version "\${VERSION}"
+            sha256 "${{ env.LINUX_ARM64_SHA256 }}"
+            license "Guepard (c) 2025"
+
+            on_linux do
+              on_arm do
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/\${VERSION}/guepard-cli-\${VERSION}-linux-arm64.tar.gz"
+                sha256 "${{ env.LINUX_ARM64_SHA256 }}"
+              end
+              on_intel do
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/\${VERSION}/guepard-cli-\${VERSION}-linux-amd64.tar.gz"
+                sha256 "${{ env.LINUX_AMD64_SHA256 }}"
+              end
+            end
+
+            def install
+              bin.install "guepard"
+            end
+
+            test do
+              system "#{bin}/guepard", "--version"
+            end
+          end
+          EOF
+
+      - name: Commit and push Homebrew formula
+        run: |
+          cd homebrew-tap
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add Formula/guepard.rb
+          git commit -m "Update guepard to ${{ github.event.inputs.version }} (Linux)"
+          git push
+
+  update-snap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Linux AMD64 release
+        run: |
+          curl -L -o linux-amd64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ github.event.inputs.version }}-linux/guepard-cli-${{ github.event.inputs.version }}-linux-amd64.tar.gz"
+
+      - name: Calculate SHA256 checksum
+        run: |
+          echo "LINUX_AMD64_SHA256=$(shasum -a 256 linux-amd64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
+
+      - name: Update snapcraft.yaml
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          cat > snap/snapcraft.yaml << EOF
+          name: guepard
+          base: core22
+          version: '\${VERSION}'
+          summary: Guepard CLI - Git-like filesystem for databases
+          description: |
+            Guepard CLI provides a Git-like filesystem for databases, offering version control 
+            and management capabilities for database schemas and data. It supports familiar 
+            commands like init, commit, branch, checkout, and more.
+            
+            Features:
+            - Git-like interface with familiar commands
+            - Multi-platform support (Linux, macOS, Windows)
+            - Database management and deployment
+            - Cross-platform consistency
+
+          grade: stable
+          confinement: strict
+
+          parts:
+            guepard:
+              plugin: dump
+              source: https://github.com/Guepard-Corp/guepard-cli/releases/download/\${VERSION}/guepard-cli-\${VERSION}-linux-amd64.tar.gz
+              source-checksum: sha256/${{ env.LINUX_AMD64_SHA256 }}
+              organize:
+                guepard: bin/guepard
+
+          apps:
+            guepard:
+              command: bin/guepard
+              plugs:
+                - home
+                - network
+                - removable-media
+
+          slots:
+            guepard:
+              command: bin/guepard
+              interface: content
+              read:
+                - \$SNAP_USER_DATA
+              write:
+                - \$SNAP_USER_DATA
+          EOF
+
+      - name: Commit snapcraft.yaml update
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add snap/snapcraft.yaml
+          git commit -m "Update snapcraft.yaml to ${{ github.event.inputs.version }}"
+          git push
