@@ -134,6 +134,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libssl-dev libdbus-1-dev pkg-config zip
+          # Install macOS cross-compilation tools
+          sudo apt-get install -y clang llvm-dev libc++-dev
 
       - name: Verify and install Rust targets
         run: |
@@ -144,6 +146,19 @@ jobs:
           rustup target add aarch64-apple-darwin
           echo "Verifying macOS targets are installed:"
           rustup target list --installed | grep apple-darwin
+
+      - name: Configure macOS cross-compilation environment
+        run: |
+          # Set up macOS cross-compilation environment variables
+          echo "CC_x86_64_apple_darwin=clang" >> $GITHUB_ENV
+          echo "CXX_x86_64_apple_darwin=clang++" >> $GITHUB_ENV
+          echo "AR_x86_64_apple_darwin=llvm-ar" >> $GITHUB_ENV
+          echo "CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER=clang" >> $GITHUB_ENV
+          echo "CC_aarch64_apple_darwin=clang" >> $GITHUB_ENV
+          echo "CXX_aarch64_apple_darwin=clang++" >> $GITHUB_ENV
+          echo "AR_aarch64_apple_darwin=llvm-ar" >> $GITHUB_ENV
+          echo "CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER=clang" >> $GITHUB_ENV
+          echo "MACOSX_DEPLOYMENT_TARGET=10.7" >> $GITHUB_ENV
 
       - name: Build macOS AMD64
         run: |
