@@ -172,60 +172,61 @@ jobs:
           git commit -m "Prepare Homebrew Core formula for v${{ github.event.inputs.version }}"
           git push
 
-      - name: Fork and clone homebrew-core
+      - name: Create direct submission instructions
         if: ${{ github.event.inputs.submit_pr == 'true' }}
         run: |
-          # Install GitHub CLI
-          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-          sudo apt update
-          sudo apt install gh -y
-          
-          # Authenticate with GitHub
-          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
-          
-          # Fork homebrew-core (if not already forked)
-          gh repo fork Homebrew/homebrew-core --clone --remote-name origin || true
-          
-          # Clone the fork
-          git clone https://github.com/Guepard-Corp/homebrew-core.git homebrew-core-fork
-          cd homebrew-core-fork
+          cat > DIRECT_SUBMISSION.md << EOF
+          # Direct Homebrew Core Submission for Guepard v${{ github.event.inputs.version }}
 
-      - name: Create PR to Homebrew Core
-        if: ${{ github.event.inputs.submit_pr == 'true' }}
-        run: |
-          cd homebrew-core-fork
-          
-          # Create new branch
+          ## 🚀 Quick Submission Steps
+
+          ### 1. Fork homebrew-core
+          Go to https://github.com/Homebrew/homebrew-core and click "Fork"
+
+          ### 2. Clone your fork
+          \`\`\`bash
+          git clone https://github.com/YOUR_USERNAME/homebrew-core.git
+          cd homebrew-core
+          \`\`\`
+
+          ### 3. Create branch
+          \`\`\`bash
           git checkout -b add-guepard-${{ github.event.inputs.version }}
+          \`\`\`
+
+          ### 4. Copy the formula
+          Copy the content from \`Formula/guepard.rb\` and create the file:
+          \`\`\`bash
+          # Create the file
+          touch Formula/guepard.rb
           
-          # Copy formula
-          cp ../Formula/guepard.rb Formula/
-          
-          # Commit changes
+          # Copy the content (the formula is ready in your repository)
+          \`\`\`
+
+          ### 5. Commit and push
+          \`\`\`bash
           git add Formula/guepard.rb
           git commit -m "guepard ${{ github.event.inputs.version }} (new formula)"
           git push origin add-guepard-${{ github.event.inputs.version }}
+          \`\`\`
+
+          ### 6. Create Pull Request
+          Go to your fork on GitHub and create a PR against Homebrew/homebrew-core
+
+          ## 📋 Formula Content
+          The formula is ready in: \`Formula/guepard.rb\`
+
+          ## ✅ Checksums Verified
+          - macOS ARM64: \`${{ env.MACOS_ARM64_SHA256 }}\`
+          - macOS AMD64: \`${{ env.MACOS_AMD64_SHA256 }}\`
+          - Linux ARM64: \`${{ env.LINUX_ARM64_SHA256 }}\`
+          - Linux AMD64: \`${{ env.LINUX_AMD64_SHA256 }}\`
+
+          ## 🎯 Result
+          Once merged: \`brew install guepard\`
+          EOF
           
-          # Create pull request
-          gh pr create \
-            --repo Homebrew/homebrew-core \
-            --title "guepard ${{ github.event.inputs.version }} (new formula)" \
-            --body "guepard ${{ github.event.inputs.version }} (new formula)
-
-          Guepard CLI provides a Git-like filesystem for databases, enabling version control 
-          and management capabilities for database schemas and data. It supports familiar 
-          commands like init, commit, branch, checkout, and more.
-
-          Features:
-          - Git-like interface with familiar commands
-          - Multi-platform support (Linux, macOS, Windows)
-          - Database management and deployment
-          - Cross-platform consistency
-
-          Homepage: https://www.guepard.run
-          License: Guepard (c) 2025" \
-            --head Guepard-Corp:add-guepard-${{ github.event.inputs.version }}
+          echo "📝 Created direct submission instructions: DIRECT_SUBMISSION.md"
 
       - name: Create summary
         run: |
@@ -242,14 +243,21 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           
           if [ "${{ github.event.inputs.submit_pr }}" = "true" ]; then
-            echo "✅ **PR submitted to Homebrew Core**" >> $GITHUB_STEP_SUMMARY
+            echo "📋 **Direct submission instructions created**" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Pull request created: [guepard ${{ github.event.inputs.version }} (new formula)](https://github.com/Homebrew/homebrew-core/pull/XXXX)" >> $GITHUB_STEP_SUMMARY
+            echo "To submit to Homebrew Core:" >> $GITHUB_STEP_SUMMARY
+            echo "1. Follow \`DIRECT_SUBMISSION.md\` for step-by-step instructions" >> $GITHUB_STEP_SUMMARY
+            echo "2. Fork [Homebrew/homebrew-core](https://github.com/Homebrew/homebrew-core)" >> $GITHUB_STEP_SUMMARY
+            echo "3. Copy \`Formula/guepard.rb\` to your fork" >> $GITHUB_STEP_SUMMARY
+            echo "4. Create a pull request" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Everything is ready in your repository!" >> $GITHUB_STEP_SUMMARY
           else
             echo "📋 **Formula prepared for manual submission**" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "To submit manually:" >> $GITHUB_STEP_SUMMARY
-            echo "1. Fork [Homebrew/homebrew-core](https://github.com/Homebrew/homebrew-core)" >> $GITHUB_STEP_SUMMARY
-            echo "2. Copy \`Formula/guepard.rb\` to your fork" >> $GITHUB_STEP_SUMMARY
-            echo "3. Create a pull request" >> $GITHUB_STEP_SUMMARY
+            echo "1. Follow instructions in \`HOMEBREW_CORE_SUBMISSION.md\`" >> $GITHUB_STEP_SUMMARY
+            echo "2. Fork [Homebrew/homebrew-core](https://github.com/Homebrew/homebrew-core)" >> $GITHUB_STEP_SUMMARY
+            echo "3. Copy \`Formula/guepard.rb\` to your fork" >> $GITHUB_STEP_SUMMARY
+            echo "4. Create a pull request" >> $GITHUB_STEP_SUMMARY
           fi
