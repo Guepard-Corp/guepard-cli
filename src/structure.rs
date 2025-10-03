@@ -133,6 +133,10 @@ pub struct DeployArgs {
     /// Performance profile label name (e.g., gp.g1.xsmall)
     #[clap(short = 'f', long)]
     pub performance_profile: Option<String>,
+    
+    /// Interactive mode - guide through deployment creation
+    #[clap(short = 'I', long)]
+    pub interactive: bool,
 }
 
 #[derive(Args, Debug)]

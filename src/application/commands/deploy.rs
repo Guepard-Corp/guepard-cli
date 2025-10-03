@@ -8,6 +8,11 @@ use std::io::{self, Write};
 
 
 pub async fn deploy(args: &DeployArgs, config: &Config) -> Result<()> {
+    // Check for interactive mode
+    if args.interactive {
+        return interactive_deploy(config).await;
+    }
+    
     if let Some(deployment_id) = &args.deployment_id {
         // We have a deployment ID, determine operation based on other args
         if args.repository_name.is_some() {
@@ -196,6 +201,232 @@ async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Conf
     deploy::delete_deployment(deployment_id, config).await?;
     
     println!("{} Deployment {} deleted successfully!", "✅".green(), deployment_id);
+    
+    Ok(())
+}
+
+async fn interactive_deploy(config: &Config) -> Result<()> {
+    println!("{} Welcome to Interactive Deployment! 🚀", "🐆".cyan());
+    println!("{} Let's create your database deployment step by step.", "💡".yellow());
+    println!();
+    
+    // Step 1: Database Provider
+    println!("{} Step 1: Choose Database Provider", "1️⃣".blue());
+    println!("Available options: PostgreSQL, MySQL, MongoDB");
+    print!("{} Database Provider [PostgreSQL]: ", "🔧".green());
+    io::stdout().flush()?;
+    
+    let mut database_provider = String::new();
+    io::stdin().read_line(&mut database_provider)?;
+    let database_provider = database_provider.trim();
+    let database_provider = if database_provider.is_empty() { "PostgreSQL" } else { database_provider };
+    
+    // Step 2: Database Version
+    println!();
+    println!("{} Step 2: Choose Database Version", "2️⃣".blue());
+    let default_version = match database_provider {
+        "PostgreSQL" => "16",
+        "MySQL" => "8.0",
+        "MongoDB" => "7.0",
+        _ => "16"
+    };
+    print!("{} Database Version [{}]: ", "🔧".green(), default_version);
+    io::stdout().flush()?;
+    
+    let mut database_version = String::new();
+    io::stdin().read_line(&mut database_version)?;
+    let database_version = database_version.trim();
+    let database_version = if database_version.is_empty() { default_version } else { database_version };
+    
+    // Step 3: Region
+    println!();
+    println!("{} Step 3: Choose Region", "3️⃣".blue());
+    println!("Available options: us-west, us-east, eu-west, asia-pacific");
+    print!("{} Region [us-west]: ", "🌍".green());
+    io::stdout().flush()?;
+    
+    let mut region = String::new();
+    io::stdin().read_line(&mut region)?;
+    let region = region.trim();
+    let region = if region.is_empty() { "us-west" } else { region };
+    
+    // Step 4: Deployment Type
+    println!();
+    println!("{} Step 4: Choose Deployment Type", "4️⃣".blue());
+    println!("Available options: REPOSITORY, F2");
+    print!("{} Deployment Type [REPOSITORY]: ", "🏗️".green());
+    io::stdout().flush()?;
+    
+    let mut instance_type = String::new();
+    io::stdin().read_line(&mut instance_type)?;
+    let instance_type = instance_type.trim();
+    let instance_type = if instance_type.is_empty() { "REPOSITORY" } else { instance_type };
+    
+    // Step 5: Datacenter
+    println!();
+    println!("{} Step 5: Choose Datacenter", "5️⃣".blue());
+    println!("Available options: aws, gcp, azure");
+    print!("{} Datacenter [aws]: ", "🏢".green());
+    io::stdout().flush()?;
+    
+    let mut datacenter = String::new();
+    io::stdin().read_line(&mut datacenter)?;
+    let datacenter = datacenter.trim();
+    let datacenter = if datacenter.is_empty() { "aws" } else { datacenter };
+    
+    // Step 6: Repository Name
+    println!();
+    println!("{} Step 6: Repository Name", "6️⃣".blue());
+    print!("{} Repository Name [my-database]: ", "📁".green());
+    io::stdout().flush()?;
+    
+    let mut repository_name = String::new();
+    io::stdin().read_line(&mut repository_name)?;
+    let repository_name = repository_name.trim();
+    let repository_name = if repository_name.is_empty() { "my-database" } else { repository_name };
+    
+    // Step 7: Database Password
+    println!();
+    println!("{} Step 7: Database Password", "7️⃣".blue());
+    print!("{} Database Password: ", "🔐".green());
+    io::stdout().flush()?;
+    
+    let mut database_password = String::new();
+    io::stdin().read_line(&mut database_password)?;
+    let database_password = database_password.trim().to_string();
+    
+    if database_password.is_empty() {
+        return Err(anyhow::anyhow!("Database password is required"));
+    }
+    
+    // Step 8: Username
+    println!();
+    println!("{} Step 8: Database Username", "8️⃣".blue());
+    print!("{} Database Username [guepard]: ", "👤".green());
+    io::stdout().flush()?;
+    
+    let mut user = String::new();
+    io::stdin().read_line(&mut user)?;
+    let user = user.trim();
+    let user = if user.is_empty() { "guepard" } else { user };
+    
+    // Step 9: Performance Profile
+    println!();
+    println!("{} Step 9: Performance Profile", "9️⃣".blue());
+    println!("Available options: gp.g1.xsmall, gp.g1.small, gp.g1.medium, gp.g1.large");
+    print!("{} Performance Profile [gp.g1.xsmall]: ", "⚡".green());
+    io::stdout().flush()?;
+    
+    let mut performance_profile = String::new();
+    io::stdin().read_line(&mut performance_profile)?;
+    let performance_profile = performance_profile.trim();
+    let performance_profile = if performance_profile.is_empty() { "gp.g1.xsmall" } else { performance_profile };
+    
+    // Summary
+    println!();
+    println!("{} Deployment Summary", "📋".blue());
+    println!("  {} {}", "Database Provider:".yellow(), database_provider);
+    println!("  {} {}", "Database Version:".yellow(), database_version);
+    println!("  {} {}", "Region:".yellow(), region);
+    println!("  {} {}", "Deployment Type:".yellow(), instance_type);
+    println!("  {} {}", "Datacenter:".yellow(), datacenter);
+    println!("  {} {}", "Repository Name:".yellow(), repository_name);
+    println!("  {} {}", "Username:".yellow(), user);
+    println!("  {} {}", "Performance Profile:".yellow(), performance_profile);
+    println!();
+    
+    // Confirmation
+    print!("{} Proceed with deployment? (y/N): ", "❓".yellow());
+    io::stdout().flush()?;
+    
+    let mut confirmation = String::new();
+    io::stdin().read_line(&mut confirmation)?;
+    
+    if !confirmation.trim().to_lowercase().starts_with('y') {
+        println!("{} Deployment cancelled.", "ℹ️".blue());
+        return Ok(());
+    }
+    
+    // Create deployment
+    println!();
+    println!("{} Creating deployment...", "🚀".cyan());
+    
+    // Get performance profile ID
+    let performance_profile_id = performance::get_performance_profile_by_label(
+        &performance_profile,
+        &database_provider,
+        &database_version,
+        config,
+    ).await?;
+    
+    let request = CreateDeploymentRequest {
+        repository_name: repository_name.to_string(),
+        database_provider: database_provider.to_string(),
+        database_version: database_version.to_string(),
+        deployment_type: instance_type.to_string(),
+        region: region.to_string(),
+        datacenter: datacenter.to_string(),
+        database_username: user.to_string(),
+        database_password: database_password,
+        performance_profile_id,
+    };
+    
+    let deployment = deploy::create_deployment(request, config).await?;
+    
+    println!("{} Deployment created successfully!", "✅".green());
+    println!();
+    
+    // Display the created deployment details in a more natural format
+    println!("{} Deployment Details", "📋".blue());
+    println!("  {} {}", "ID:".yellow(), deployment.id);
+    println!("  {} {}", "Name:".yellow(), deployment.name);
+    println!("  {} {}", "Repository:".yellow(), deployment.repository_name);
+    println!("  {} {}", "Provider:".yellow(), deployment.database_provider);
+    println!("  {} {}", "Version:".yellow(), deployment.database_version);
+    println!("  {} {}", "Status:".yellow(), deployment.status);
+    println!("  {} {}", "FQDN:".yellow(), deployment.fqdn);
+    println!("  {} {}", "Region:".yellow(), deployment.region);
+    println!("  {} {}", "Datacenter:".yellow(), deployment.datacenter);
+    println!("  {} {}", "Created:".yellow(), deployment.created_date);
+    
+    // Show database connection information
+    if let Some(port) = deployment.port {
+        println!("  {} {}", "Port:".yellow(), port);
+    }
+    if let Some(connection_string) = &deployment.connection_string {
+        println!("  {} {}", "Connection URI:".yellow(), connection_string);
+    }
+    
+    // Show helpful connection information
+    println!();
+    println!("{} Database Connection", "🔗".blue());
+    println!("  {} {}", "Host:".yellow(), deployment.fqdn);
+    println!("  {} {}", "Port:".yellow(), deployment.port.map(|p| p.to_string()).unwrap_or_else(|| "5432".to_string()));
+    println!("  {} {}", "Database:".yellow(), deployment.repository_name);
+    println!("  {} {}", "Username:".yellow(), deployment.database_username);
+    println!("  {} {}", "Password:".yellow(), deployment.database_password);
+    
+    // Construct and show the connection URI
+    let port = deployment.port.map(|p| p.to_string()).unwrap_or_else(|| "5432".to_string());
+    let connection_uri = format!("postgresql://{}:{}@{}:{}/{}", 
+        deployment.database_username,
+        deployment.database_password,
+        deployment.fqdn, 
+        port,
+        deployment.repository_name
+    );
+    println!();
+    println!("{} Ready-to-use Connection URI:", "💡".green());
+    println!("{}", connection_uri.cyan().bold());
+    println!();
+    println!("{} Connect with psql:", "📝".yellow());
+    println!("{} psql '{}'", "  $".dimmed(), connection_uri);
+    println!();
+    println!("{} Connect with any PostgreSQL client using the URI above", "ℹ️".blue());
+    
+    println!();
+    
+    println!("{} Use 'guepard deploy -x {}' to get more details", "💡".yellow(), deployment.id);
     
     Ok(())
 }
