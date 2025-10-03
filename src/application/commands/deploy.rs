@@ -72,7 +72,7 @@ async fn create_deployment(args: &DeployArgs, config: &Config) -> Result<()> {
         repository_name: args.repository_name.clone().unwrap_or("default-repo".to_string()),
         database_provider,
         database_version,
-        deployment_type: "REPOSITORY".to_string(),
+        deployment_type: args.instance_type.clone().unwrap_or("REPOSITORY".to_string()),
         region: args.region.clone().unwrap(),
         datacenter: args.datacenter.clone().unwrap(),
         database_username: args.user.clone().unwrap_or("guepard".to_string()),
@@ -80,10 +80,35 @@ async fn create_deployment(args: &DeployArgs, config: &Config) -> Result<()> {
         performance_profile_id,
     };
     
-    deploy::create_deployment(request, config).await?;
+    let deployment = deploy::create_deployment(request, config).await?;
     
     println!("{} Deployment created successfully!", "✅".green());
-    println!("{} Use 'guepard deploy -x <deployment_id>' to get details", "💡".yellow());
+    println!();
+    
+    // Display the created deployment details in a more natural format
+    println!("{} Deployment Details", "📋".blue());
+    println!("  {} {}", "ID:".yellow(), deployment.id);
+    println!("  {} {}", "Name:".yellow(), deployment.name);
+    println!("  {} {}", "Repository:".yellow(), deployment.repository_name);
+    println!("  {} {}", "Provider:".yellow(), deployment.database_provider);
+    println!("  {} {}", "Version:".yellow(), deployment.database_version);
+    println!("  {} {}", "Status:".yellow(), deployment.status);
+    println!("  {} {}", "FQDN:".yellow(), deployment.fqdn);
+    println!("  {} {}", "Region:".yellow(), deployment.region);
+    println!("  {} {}", "Datacenter:".yellow(), deployment.datacenter);
+    println!("  {} {}", "Created:".yellow(), deployment.created_date);
+    
+    // Show database connection information
+    if let Some(port) = deployment.port {
+        println!("  {} {}", "Port:".yellow(), port);
+    }
+    if let Some(connection_string) = &deployment.connection_string {
+        println!("  {} {}", "Connection URI:".yellow(), connection_string);
+    }
+    
+    println!();
+    
+    println!("{} Use 'guepard deploy -x {}' to get more details", "💡".yellow(), deployment.id);
     
     Ok(())
 }
@@ -101,22 +126,36 @@ async fn update_deployment(deployment_id: &str, args: &DeployArgs, config: &Conf
 async fn get_deployment(deployment_id: &str, config: &Config) -> Result<()> {
     let deployment = deploy::get_deployment(deployment_id, config).await?;
     
-    let deploy_row = DeployRow {
-        id: deployment.id,
-        name: deployment.name,
-        repository_name: deployment.repository_name,
-        database_provider: deployment.database_provider,
-        database_version: deployment.database_version,
-        status: deployment.status,
-        fqdn: deployment.fqdn,
-    };
-    
     println!("{} Deployment Details", "📋".blue());
-    println!("{}", Table::new(vec![deploy_row]).with(Style::rounded()));
+    println!("  {} {}", "ID:".yellow(), deployment.id);
+    println!("  {} {}", "Name:".yellow(), deployment.name);
+    println!("  {} {}", "Repository:".yellow(), deployment.repository_name);
+    println!("  {} {}", "Provider:".yellow(), deployment.database_provider);
+    println!("  {} {}", "Version:".yellow(), deployment.database_version);
+    println!("  {} {}", "Status:".yellow(), deployment.status);
+    println!("  {} {}", "FQDN:".yellow(), deployment.fqdn);
+    println!("  {} {}", "Region:".yellow(), deployment.region);
+    println!("  {} {}", "Datacenter:".yellow(), deployment.datacenter);
+    println!("  {} {}", "Created:".yellow(), deployment.created_date);
+    
+    // Show database connection information
+    println!("  {} {}", "Username:".yellow(), deployment.database_username);
+    println!("  {} {}", "Password:".yellow(), deployment.database_password);
+    
+    // Construct database connection URI
+    let connection_uri = format!("postgresql://{}:{}@{}:5432/{}", 
+        deployment.database_username, 
+        deployment.database_password, 
+        deployment.fqdn,
+        deployment.repository_name
+    );
+    println!("  {} {}", "Connection URI:".yellow(), connection_uri);
+    
+    println!();
     Ok(())
 }
 
-async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Config) -> Result<()> {
+async fn delete_deployment(deployment_id: &str, args: &DeployArgs, _config: &Config) -> Result<()> {
     // Confirm deletion unless -y flag is used
     if !args.yes {
         print!("{} Are you sure you want to delete deployment {}? (y/N): ", 

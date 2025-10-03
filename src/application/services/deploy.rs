@@ -3,25 +3,36 @@ use reqwest::Client;
 
 use crate::application::auth;
 use crate::application::dto::deploy::{
-    CreateDeploymentRequest, GetDeploymentResponse, ListDeploymentsResponse,
+    CreateDeploymentRequest, CreateDeploymentResponse, GetDeploymentResponse, ListDeploymentsResponse,
     UpdateDeploymentRequest,
 };
 use crate::config::config::Config;
 use crate::domain::errors::deploy_error::{handle_api_response, DeployError};
 
-pub async fn create_deployment(request: CreateDeploymentRequest, config: &Config) -> Result<()> {
+pub async fn create_deployment(request: CreateDeploymentRequest, config: &Config) -> Result<CreateDeploymentResponse, DeployError> {
     let jwt_token = auth::get_auth_token()
-        .map_err(|e| DeployError::SessionError(format!("{}", e)))
-        .context("Failed to load JWT token")?;
+        .map_err(|e| DeployError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
         .post(format!("{}/deploy", config.api_url))
         .header("Authorization", format!("Bearer {}", jwt_token))
         .json(&request)
         .send()
-        .await?;
+        .await
+        .map_err(|e| DeployError::ApiError(format!("Network error: {}", e)))?;
 
-    handle_api_response(response).await
+    if !response.status().is_success() {
+        return Err(DeployError::ApiError(format!(
+            "API error: {} {}",
+            response.status(),
+            response.text().await.unwrap_or_default()
+        )));
+    }
+
+    response
+        .json()
+        .await
+        .map_err(|e| DeployError::ApiError(format!("Failed to parse response: {}", e)))
 }
 
 pub async fn update_deployment(
