@@ -40,7 +40,7 @@ tabled = "0.15"  # For tabular output
 colored = "2"    # For colored text
 dirs = "6.0.0"
 chrono = { version = "0.4.40", features = ["serde"] }
-keyring = { version = "3", features = ["apple-native", "windows-native"] }
+keyring = { version = "3", features = ["apple-native", "windows-native"], optional = true }
 
 [build-dependencies]
 mockall = "0.13.0"
@@ -71,6 +71,7 @@ targets = [
 # Platform-specific features
 [features]
 default = []
-apple-keyring = ["keyring/apple-native"]
-windows-keyring = ["keyring/windows-native"]
-linux-keyring = ["keyring/sync-secret-service"]
+apple-keyring = ["keyring", "keyring/apple-native"]
+windows-keyring = ["keyring", "keyring/windows-native"]
+linux-keyring = ["keyring", "keyring/sync-secret-service"]
+cross-compile = []  # Disable keyring for cross-compilation
