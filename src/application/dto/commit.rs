@@ -55,7 +55,8 @@ pub struct CheckoutCommitResponse {
 
 #[derive(Debug, Deserialize)]
 pub struct BookmarkSchema {
-    pub databases: Vec<Database>,
+    pub info: Option<String>,
+    pub databases: Option<Vec<Database>>,
 }
 
 #[derive(Debug, Deserialize)]
