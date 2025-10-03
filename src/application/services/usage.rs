@@ -1,12 +1,13 @@
+use crate::application::auth;
 use crate::application::dto::usage::UsageResponse;
-use crate::config::config::{self, Config};
+use crate::config::config::Config;
 use crate::domain::errors::usage_error::UsageError;
 use anyhow::Result;
 use reqwest::{Client, StatusCode};
 
 pub async fn get_usage(config: &Config) -> Result<UsageResponse, UsageError> {
-    let jwt_token = config::load_jwt_token()
-        .map_err(|e| UsageError::SessionError(e.to_string()))?;
+    let jwt_token = auth::get_auth_token()
+        .map_err(|e| UsageError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
         .get(format!("{}/usage", config.api_url))

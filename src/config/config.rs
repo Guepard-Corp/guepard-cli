@@ -26,7 +26,8 @@ pub fn load_config() -> Result<Config, ConfigError> {
     dotenv().ok();
 
     let api_url = env::var("PUBLIC_API")
-        .map_err(|_| ConfigError::MissingEnv("Missing PUBLIC_API in .env file".to_string()))?;
+        .unwrap_or_else(|_| "https://api.guepard.run".to_string());
+    
     // let api_token = env::var("API_TOKEN")
     //     .map_err(|_| ConfigError::MissingEnv("Missing API_TOKEN in .env file".to_string()))?;
 
@@ -65,7 +66,7 @@ pub fn save_jwt_token(jwt_token: &str) -> Result<(), ConfigError> {
 
     if !path.exists() {
         return Err(ConfigError::SessionError(
-            "No login session found. Run `guepard link` first.".to_string(),
+            "You need to log in first! Run `guepard login` to get started. 🐆".to_string(),
         ));
     }
 
@@ -108,7 +109,7 @@ pub fn load_session_id() -> Result<String, ConfigError> {
 
     if !path.exists() {
         return Err(ConfigError::SessionError(
-            "No login session found. Run `guepard link` first.".to_string(),
+            "You need to log in first! Run `guepard login` to get started. 🐆".to_string(),
         ));
     }
 
@@ -125,7 +126,7 @@ pub fn load_session_id() -> Result<String, ConfigError> {
             .map_err(|e| ConfigError::IoError(format!("Failed to remove expired session: {}", e)))?;
         delete_jwt_token().ok();
         return Err(ConfigError::SessionError(
-            "Session ID expired. Run `guepard link` to start a new login.".to_string(),
+            "Your login session has expired. Run `guepard login` to sign in again. 🐆".to_string(),
         ));
     }
 
@@ -141,7 +142,7 @@ pub fn load_jwt_token() -> Result<String, ConfigError> {
             .get_password()
             .map_err(|e| {
                 ConfigError::SessionError(format!(
-                    "No JWT token found. Run `guepard login` first. Error: {}",
+                    "You need to log in first! Run `guepard login` to get started. 🐆 Error: {}",
                     e
                 ))
             })
@@ -154,9 +155,9 @@ pub fn load_jwt_token() -> Result<String, ConfigError> {
             .join(".guepard/session.jwt");
             
         if !path.exists() {
-            return Err(ConfigError::SessionError(
-                "No JWT token found. Run `guepard login` first.".to_string(),
-            ));
+        return Err(ConfigError::SessionError(
+            "You need to log in first! Run `guepard login` to get started. 🐆".to_string(),
+        ));
         }
         
         fs::read_to_string(&path)

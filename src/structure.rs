@@ -46,17 +46,41 @@ pub enum SubCommand {
     /// Show usage information
     Usage,
     
-    /// Start login and get authentication URL
-    Link,
+    /// List deployments, branches, commits, etc.
+    List(ListArgs),
     
-    /// Complete login with verification code
-    Login(LoginArgs),
+    /// Interactive login process
+    Login,
     
     /// Log out and clear all credentials
     Logout,
 }
 
 // Git-like command arguments
+#[derive(Args, Debug)]
+pub struct ListArgs {
+    /// What to list (deployments, branches, commits)
+    #[clap(value_parser, default_value = "deployments")]
+    pub resource: String,
+    
+    /// Columns to display (comma-separated)
+    /// Available columns: id, name, repository, provider, version, status, fqdn, region, datacenter, created
+    #[clap(short = 'c', long)]
+    pub columns: Option<String>,
+    
+    /// Deployment ID (required for branches/commits)
+    #[clap(short = 'x', long)]
+    pub deployment_id: Option<String>,
+    
+    /// Show git graph style (for commits only)
+    #[clap(short = 'g', long)]
+    pub graph: bool,
+    
+    /// Show all commits including AUTO SNAPs (for commits only)
+    #[clap(short = 'a', long)]
+    pub all: bool,
+}
+
 #[derive(Args, Debug)]
 pub struct InitArgs {
     /// The path where to initialize the Guepard environment
@@ -176,12 +200,6 @@ pub struct CheckoutArgs {
     pub ephemeral: bool,
 }
 
-#[derive(Args, Debug)]
-pub struct LoginArgs {
-    /// The verification code from the login URL
-    #[clap(short = 'c', long, required = true)]
-    pub code: String,
-}
 
 // Original API command structures (preserved)
 #[derive(Subcommand, Debug)]

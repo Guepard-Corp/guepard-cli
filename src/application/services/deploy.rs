@@ -1,16 +1,17 @@
 use anyhow::{Context, Result};
 use reqwest::Client;
 
+use crate::application::auth;
 use crate::application::dto::deploy::{
     CreateDeploymentRequest, GetDeploymentResponse, ListDeploymentsResponse,
     UpdateDeploymentRequest,
 };
-use crate::config::config::{self, Config};
+use crate::config::config::Config;
 use crate::domain::errors::deploy_error::{handle_api_response, DeployError};
 
 pub async fn create_deployment(request: CreateDeploymentRequest, config: &Config) -> Result<()> {
-    let jwt_token = config::load_jwt_token()
-        .map_err(|e| DeployError::SessionError(e.to_string()))
+    let jwt_token = auth::get_auth_token()
+        .map_err(|e| DeployError::SessionError(format!("{}", e)))
         .context("Failed to load JWT token")?;
     let client = Client::new();
     let response = client
@@ -28,8 +29,8 @@ pub async fn update_deployment(
     request: UpdateDeploymentRequest,
     config: &Config,
 ) -> Result<()> {
-    let jwt_token = config::load_jwt_token()
-        .map_err(|e| DeployError::SessionError(e.to_string()))
+    let jwt_token = auth::get_auth_token()
+        .map_err(|e| DeployError::SessionError(format!("{}", e)))
         .context("Failed to load JWT token")?;
     let client = Client::new();
     let response = client
@@ -44,8 +45,8 @@ pub async fn update_deployment(
 }
 
 pub async fn list_deployments(config: &Config) -> Result<Vec<ListDeploymentsResponse>, DeployError> {
-    let jwt_token = config::load_jwt_token()
-        .map_err(|e| DeployError::SessionError(e.to_string()))?;
+    let jwt_token = auth::get_auth_token()
+        .map_err(|e| DeployError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
         .get(format!("{}/deploy", config.api_url))
@@ -70,8 +71,8 @@ pub async fn get_deployment(
     deployment_id: &str,
     config: &Config,
 ) -> Result<GetDeploymentResponse, DeployError> {
-    let jwt_token = config::load_jwt_token()
-        .map_err(|e| DeployError::SessionError(e.to_string()))?;
+    let jwt_token = auth::get_auth_token()
+        .map_err(|e| DeployError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
         .get(format!("{}/deploy/{}", config.api_url, deployment_id))
@@ -91,8 +92,8 @@ pub async fn get_deployment(
 }
 
 pub async fn delete_deployment(deployment_id: &str, config: &Config) -> Result<()> {
-    let jwt_token = config::load_jwt_token()
-        .map_err(|e| DeployError::SessionError(e.to_string()))
+    let jwt_token = auth::get_auth_token()
+        .map_err(|e| DeployError::SessionError(format!("{}", e)))
         .context("Failed to load JWT token")?;
     let client = Client::new();
     let response = client

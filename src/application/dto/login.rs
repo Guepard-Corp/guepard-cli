@@ -10,3 +10,8 @@ pub struct CompleteLoginRequest {
 pub struct CompleteLoginResponse {
     pub token: String,
 }
+
+#[derive(Deserialize, Debug)]
+pub struct StartLoginResponse {
+    pub url: String,
+}

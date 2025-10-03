@@ -1,13 +1,14 @@
+use crate::application::auth;
 use crate::application::dto::compute::{ListComputeResponse, LogsResponse, StatusErrorResponse, ComputeStatusResponse};
-use crate::config::config::{self, Config};
+use crate::config::config::Config;
 use crate::domain::errors::compute_error::ComputeError;
 
 use anyhow::Result;
 use reqwest::{Client, StatusCode};
 
 pub async fn list_compute(deployment_id: &str, config: &Config) -> Result<ListComputeResponse, ComputeError> {
-    let jwt_token = config::load_jwt_token()
-        .map_err(|e| ComputeError::SessionError(e.to_string()))?;
+    let jwt_token = auth::get_auth_token()
+        .map_err(|e| ComputeError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
         .get(format!("{}/deploy/{}/compute", config.api_url, deployment_id))
@@ -29,8 +30,8 @@ pub async fn list_compute(deployment_id: &str, config: &Config) -> Result<ListCo
 }
 
 pub async fn start_compute(deployment_id: &str, config: &Config) -> Result<(), ComputeError> {
-    let jwt_token = config::load_jwt_token()
-        .map_err(|e| ComputeError::SessionError(e.to_string()))?;
+    let jwt_token = auth::get_auth_token()
+        .map_err(|e| ComputeError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
         .post(format!("{}/deploy/{}/compute/start", config.api_url, deployment_id))
@@ -49,8 +50,8 @@ pub async fn start_compute(deployment_id: &str, config: &Config) -> Result<(), C
 }
 
 pub async fn stop_compute(deployment_id: &str, config: &Config) -> Result<(), ComputeError> {
-    let jwt_token = config::load_jwt_token()
-        .map_err(|e| ComputeError::SessionError(e.to_string()))?;
+    let jwt_token = auth::get_auth_token()
+        .map_err(|e| ComputeError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
         .post(format!("{}/deploy/{}/compute/stop", config.api_url, deployment_id))
@@ -69,8 +70,8 @@ pub async fn stop_compute(deployment_id: &str, config: &Config) -> Result<(), Co
 }
 
 pub async fn get_logs(deployment_id: &str, config: &Config) -> Result<LogsResponse, ComputeError> {
-    let jwt_token = config::load_jwt_token()
-        .map_err(|e| ComputeError::SessionError(e.to_string()))?;
+    let jwt_token = auth::get_auth_token()
+        .map_err(|e| ComputeError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
         .get(format!("{}/deploy/{}/compute/logs", config.api_url, deployment_id))
@@ -96,8 +97,8 @@ pub async fn get_logs(deployment_id: &str, config: &Config) -> Result<LogsRespon
 }
 
 pub async fn get_status(deployment_id: &str, config: &Config) -> Result<ComputeStatusResponse, ComputeError> {
-    let jwt_token = config::load_jwt_token()
-        .map_err(|e| ComputeError::SessionError(e.to_string()))?;
+    let jwt_token = auth::get_auth_token()
+        .map_err(|e| ComputeError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
         .get(format!("{}/deploy/{}/compute/status", config.api_url, deployment_id))

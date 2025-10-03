@@ -31,7 +31,7 @@ pub enum DeployError {
     #[error("Unexpected response: {0}")]
     Unexpected(String),
 
-    #[error("Session error: {0}")]
+    #[error("{0}")]
     SessionError(String),
 }
 

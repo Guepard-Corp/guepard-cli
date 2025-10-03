@@ -85,13 +85,16 @@ pub async fn list(deployment_id: &str, config: &Config) -> Result<()> {
         return Ok(());
     }
     
-    let rows: Vec<BranchRow> = branches.into_iter().map(|b| BranchRow {
-        id: b.id,
-        name: b.name,
-        status: b.status,
-        snapshot_id: b.snapshot_id,
-        environment_type: b.environment_type.unwrap_or("development".to_string()),
-        is_ephemeral: if b.is_ephemeral { "Yes".to_string() } else { "No".to_string() },
+    let rows: Vec<BranchRow> = branches.into_iter().map(|b| {
+        let id = b.id.clone();
+        BranchRow {
+            id,
+            name: b.branch_name.as_ref().map(|s| s.clone()).unwrap_or_else(|| b.id.clone()),
+            status: b.job_status.as_ref().map(|s| s.clone()).unwrap_or_default(),
+            snapshot_id: b.snapshot_id,
+            environment_type: "development".to_string(),
+            is_ephemeral: if b.is_ephemeral { "Yes".to_string() } else { "No".to_string() },
+        }
     }).collect();
     
     println!("{} Found {} branches for deployment: {}", "✅".green(), rows.len(), deployment_id);

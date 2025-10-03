@@ -1,13 +1,14 @@
+use crate::application::auth;
 use crate::application::dto::commit::{GetCommitResponse, CreateCommitRequest, CreateCommitResponse, CheckoutCommitResponse};
 use crate::application::dto::branch::BranchRequest;
-use crate::config::config::{self, Config};
+use crate::config::config::Config;
 use crate::domain::errors::bookmark_error::BookmarkError;
 use anyhow::Result;
 use reqwest::Client;
 
 pub async fn list_all_commits(deployment_id: &str, config: &Config) -> Result<Vec<GetCommitResponse>, BookmarkError> {
-    let jwt_token = config::load_jwt_token()
-        .map_err(|e| BookmarkError::SessionError(e.to_string()))?;
+    let jwt_token = auth::get_auth_token()
+        .map_err(|e| BookmarkError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
         .get(format!("{}/deploy/{}/snap", config.api_url, deployment_id))
@@ -26,8 +27,8 @@ pub async fn list_all_commits(deployment_id: &str, config: &Config) -> Result<Ve
 }
 
 pub async fn list_bookmark(deployment_id: &str, clone_id: &str, config: &Config) -> Result<Vec<GetCommitResponse>, BookmarkError> {
-    let jwt_token = config::load_jwt_token()
-        .map_err(|e| BookmarkError::SessionError(e.to_string()))?;
+    let jwt_token = auth::get_auth_token()
+        .map_err(|e| BookmarkError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
         .get(format!("{}/deploy/{}/{}/snap", config.api_url, deployment_id, clone_id))
@@ -51,8 +52,8 @@ pub async fn create_commit(
     request: CreateCommitRequest,
     config: &Config,
 ) -> Result<CreateCommitResponse, BookmarkError> {
-    let jwt_token = config::load_jwt_token()
-        .map_err(|e| BookmarkError::SessionError(e.to_string()))?;
+    let jwt_token = auth::get_auth_token()
+        .map_err(|e| BookmarkError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
         .put(format!("{}/deploy/{}/{}/snap", config.api_url, deployment_id, clone_id))
@@ -78,8 +79,8 @@ pub async fn checkout_bookmark(
     request: BranchRequest,
     config: &Config,
 ) -> Result<CheckoutCommitResponse, BookmarkError> {
-    let jwt_token = config::load_jwt_token()
-        .map_err(|e| BookmarkError::SessionError(e.to_string()))?;
+    let jwt_token = auth::get_auth_token()
+        .map_err(|e| BookmarkError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
         .post(format!(
