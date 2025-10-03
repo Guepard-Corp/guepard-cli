@@ -1,9 +1,8 @@
 use crate::application::auth;
 use crate::config::config::Config;
 use crate::domain::errors::deploy_error::DeployError;
-use anyhow::Context;
 use reqwest::Client;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct PerformanceProfile {

@@ -102,7 +102,7 @@ pub struct DeployArgs {
     #[clap(short = 'r', long)]
     pub region: Option<String>,
     
-    /// The instance type for the deployment
+    /// The deployment type (REPOSITORY or F2)
     #[clap(short = 'i', long)]
     pub instance_type: Option<String>,
     
