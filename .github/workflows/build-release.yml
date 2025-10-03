@@ -134,11 +134,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libssl-dev libdbus-1-dev pkg-config zip
-          # Install zig for reliable cross-compilation
-          wget https://ziglang.org/download/0.12.0/zig-linux-x86_64-0.12.0.tar.xz
-          tar -xf zig-linux-x86_64-0.12.0.tar.xz
-          sudo mv zig-linux-x86_64-0.12.0/zig /usr/local/bin/
-          sudo mv zig-linux-x86_64-0.12.0/lib /usr/local/lib/zig
+          # Install zig for reliable cross-compilation (using newer version with better macOS support)
+          wget https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz
+          tar -xf zig-linux-x86_64-0.13.0.tar.xz
+          sudo mv zig-linux-x86_64-0.13.0/zig /usr/local/bin/
+          sudo mv zig-linux-x86_64-0.13.0/lib /usr/local/lib/zig
+          
+          # Install cargo-zigbuild for reliable cross-compilation
+          cargo install cargo-zigbuild
 
       - name: Verify and install Rust targets
         run: |
@@ -150,23 +153,23 @@ jobs:
           echo "Verifying macOS targets are installed:"
           rustup target list --installed | grep apple-darwin
 
-      - name: Configure macOS cross-compilation environment
+      - name: Configure cargo for cross-compilation
         run: |
-          # Set up zig-based cross-compilation environment variables
-          echo "CC_x86_64_apple_darwin=zig cc" >> $GITHUB_ENV
-          echo "CXX_x86_64_apple_darwin=zig c++" >> $GITHUB_ENV
-          echo "AR_x86_64_apple_darwin=zig ar" >> $GITHUB_ENV
-          echo "CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER=zig cc" >> $GITHUB_ENV
-          echo "CC_aarch64_apple_darwin=zig cc" >> $GITHUB_ENV
-          echo "CXX_aarch64_apple_darwin=zig c++" >> $GITHUB_ENV
-          echo "AR_aarch64_apple_darwin=zig ar" >> $GITHUB_ENV
-          echo "CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER=zig cc" >> $GITHUB_ENV
-          echo "MACOSX_DEPLOYMENT_TARGET=10.7" >> $GITHUB_ENV
+          mkdir -p .cargo
+          cat > .cargo/config.toml << EOF
+          [target.x86_64-apple-darwin]
+          linker = "zig cc -target x86_64-apple-macos"
+          strip = { path = "false" }
+          
+          [target.aarch64-apple-darwin]
+          linker = "zig cc -target aarch64-apple-macos"
+          strip = { path = "false" }
+          EOF
 
       - name: Build macOS AMD64
         run: |
           echo "Building macOS AMD64..."
-          cargo build --release --target x86_64-apple-darwin
+          cargo zigbuild --release --target x86_64-apple-darwin
           mkdir -p dist/macos-amd64
           cp target/x86_64-apple-darwin/release/guepard dist/macos-amd64/
           tar -czf dist/guepard-cli-${{ needs.detect-platforms.outputs.version }}-macos-amd64.tar.gz -C dist macos-amd64/
@@ -174,7 +177,7 @@ jobs:
       - name: Build macOS ARM64
         run: |
           echo "Building macOS ARM64..."
-          cargo build --release --target aarch64-apple-darwin
+          cargo zigbuild --release --target aarch64-apple-darwin
           mkdir -p dist/macos-arm64
           cp target/aarch64-apple-darwin/release/guepard dist/macos-arm64/
           tar -czf dist/guepard-cli-${{ needs.detect-platforms.outputs.version }}-macos-arm64.tar.gz -C dist macos-arm64/
