@@ -133,12 +133,18 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libssl-dev libdbus-1-dev pkg-config zip
+          sudo apt-get install -y libssl-dev libdbus-1-dev pkg-config zip curl
           # Install zig for reliable cross-compilation (using newer version with better macOS support)
           wget https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz
           tar -xf zig-linux-x86_64-0.13.0.tar.xz
           sudo mv zig-linux-x86_64-0.13.0/zig /usr/local/bin/
           sudo mv zig-linux-x86_64-0.13.0/lib /usr/local/lib/zig
+          
+          # Download macOS SDK for cross-compilation
+          echo "Downloading macOS SDK..."
+          curl -L https://github.com/roblabla/MacOSX-SDKs/releases/download/13.1/MacOSX13.1.sdk.tar.xz | tar xJ
+          sudo mv MacOSX13.1.sdk /opt/macos-sdk
+          echo "SDKROOT=/opt/macos-sdk" >> $GITHUB_ENV
           
           # Install cargo-zigbuild for reliable cross-compilation
           cargo install cargo-zigbuild
@@ -168,15 +174,15 @@ jobs:
           # Configure Zig to find macOS frameworks
           [env]
           ZIG_LOCAL_CACHE_DIR = "/tmp/zig-cache"
+          SDKROOT = "/opt/macos-sdk"
           EOF
           
-          # Create macOS SDK symlink for Zig
-          mkdir -p /tmp/macos-sdk
-          echo "Creating macOS SDK symlink for Zig..."
+          echo "Configured cargo for cross-compilation with macOS SDK at /opt/macos-sdk"
 
       - name: Build macOS AMD64
         run: |
           echo "Building macOS AMD64..."
+          export SDKROOT=/opt/macos-sdk
           cargo zigbuild --release --target x86_64-apple-darwin --features cross-compile
           mkdir -p dist/macos-amd64
           cp target/x86_64-apple-darwin/release/guepard dist/macos-amd64/
@@ -185,6 +191,7 @@ jobs:
       - name: Build macOS ARM64
         run: |
           echo "Building macOS ARM64..."
+          export SDKROOT=/opt/macos-sdk
           cargo zigbuild --release --target aarch64-apple-darwin --features cross-compile
           mkdir -p dist/macos-arm64
           cp target/aarch64-apple-darwin/release/guepard dist/macos-arm64/
