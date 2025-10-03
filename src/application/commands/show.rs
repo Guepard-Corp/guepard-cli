@@ -54,9 +54,9 @@ pub async fn show_branches(args: &GetDeployArgs, config: &Config) -> Result<()> 
         } else { 
             format!("{: <10}", " ") 
         },
-        name: b.name,
+        name: b.branch_name.as_ref().map(|s| s.clone()).unwrap_or_else(|| b.id.clone()),
         id: b.id,
-        status: b.status,
+        status: b.job_status.as_ref().map(|s| s.clone()).unwrap_or_default(),
         snapshot_id: b.snapshot_id,
     }).collect();
     

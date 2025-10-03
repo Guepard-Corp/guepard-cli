@@ -1,8 +1,46 @@
-use crate::config::config::{self, Config};
+use crate::config::config::{self, Config, save_session_id};
 use crate::domain::errors::login_error::LoginError;
-use crate::application::dto::login::{CompleteLoginRequest, CompleteLoginResponse};
+use crate::application::dto::login::{CompleteLoginRequest, CompleteLoginResponse, StartLoginResponse};
 use anyhow::Context;
 use reqwest::Client;
+
+pub async fn start_login(config: &Config) -> Result<String, LoginError> {
+    let client = Client::new();
+    let response = client
+        .post(&format!("{}/start-login", config.api_url))
+        .send()
+        .await
+        .map_err(|e| LoginError::ApiError(format!("Network error: {}", e)))?;
+
+    if !response.status().is_success() {
+        return Err(LoginError::ApiError(format!(
+            "API error: {} {}",
+            response.status(),
+            response.text().await.unwrap_or_default()
+        )));
+    }
+
+    let result: StartLoginResponse = response
+        .json()
+        .await
+        .map_err(|e| LoginError::ApiError(format!("Invalid response: {}", e)))?;
+
+    // Extract session_id from URL
+    let session_id = result
+        .url
+        .split("session_id=")
+        .nth(1)
+        .ok_or_else(|| LoginError::ApiError("Missing session_id in URL".to_string()))?
+        .split('&')
+        .next()
+        .unwrap_or("")
+        .trim();
+
+    save_session_id(session_id)
+        .map_err(|e| LoginError::SessionError(e.to_string()))?;
+    
+    Ok(result.url)
+}
 
 pub async fn complete_login(config: &Config, verification_code: &str) -> anyhow::Result<String> {
     let session_id = config::load_session_id()

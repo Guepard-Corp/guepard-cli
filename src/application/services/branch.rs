@@ -1,5 +1,6 @@
+use crate::application::auth;
 use crate::application::dto::branch::{BranchRequest, BranchResponse, ListBranchesResponse};
-use crate::config::config::{self, Config};
+use crate::config::config::Config;
 use crate::domain::errors::branch_error::BranchError;
 use reqwest::Client;
 
@@ -9,8 +10,8 @@ pub async fn create_branch(
     request: BranchRequest,
     config: &Config,
 ) -> Result<BranchResponse, BranchError> {
-    let jwt_token = config::load_jwt_token()
-        .map_err(|e| BranchError::SessionError(e.to_string()))?;
+    let jwt_token = auth::get_auth_token()
+        .map_err(|e| BranchError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
         .post(format!(
@@ -39,8 +40,8 @@ pub async fn create_branch(
 }
 
 pub async fn list_branches(deployment_id: &str, config: &Config) -> Result<Vec<ListBranchesResponse>, BranchError> {
-    let jwt_token = config::load_jwt_token()
-        .map_err(|e| BranchError::SessionError(e.to_string()))?;
+    let jwt_token = auth::get_auth_token()
+        .map_err(|e| BranchError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
         .get(format!("{}/deploy/{}/branch", config.api_url, deployment_id))
@@ -60,8 +61,8 @@ pub async fn list_branches(deployment_id: &str, config: &Config) -> Result<Vec<L
 }
 
 pub async fn checkout_branch(deployment_id: &str, branch_id: &str, config: &Config) -> Result<BranchResponse, BranchError> {
-    let jwt_token = config::load_jwt_token()
-        .map_err(|e| BranchError::SessionError(e.to_string()))?;
+    let jwt_token = auth::get_auth_token()
+        .map_err(|e| BranchError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
         .post(format!(

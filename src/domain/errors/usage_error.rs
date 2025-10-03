@@ -17,6 +17,6 @@ pub enum UsageError {
     #[error("Unexpected error: {0}")]
     Unexpected(String),
 
-    #[error("Session error: {0}")]
+    #[error("{0}")]
     SessionError(String),
 }

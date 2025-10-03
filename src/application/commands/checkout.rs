@@ -66,12 +66,15 @@ async fn list_branches_for_checkout(deployment_id: &str, config: &Config) -> Res
         return Ok(());
     }
     
-    let rows: Vec<CheckoutRow> = branches.into_iter().map(|b| CheckoutRow {
-        id: b.id,
-        name: b.name,
-        status: b.status,
-        snapshot_id: b.snapshot_id,
-        environment_type: b.environment_type.unwrap_or("development".to_string()),
+    let rows: Vec<CheckoutRow> = branches.into_iter().map(|b| {
+        let id = b.id.clone();
+        CheckoutRow {
+            id,
+            name: b.branch_name.as_ref().map(|s| s.clone()).unwrap_or_else(|| b.id.clone()),
+            status: b.job_status.as_ref().map(|s| s.clone()).unwrap_or_default(),
+            snapshot_id: b.snapshot_id,
+            environment_type: "development".to_string(),
+        }
     }).collect();
     
     println!("{} Use 'guepard checkout -x {} -c <branch_id>' to checkout a branch", "💡".yellow(), deployment_id);

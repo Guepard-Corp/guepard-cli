@@ -1,7 +1,7 @@
 use clap::Parser;
-use guepard_cli::application::commands::{init, deploy, commit, branch, log, rev_parse, checkout, compute, show, usage, link, login, logout};
+use guepard_cli::application::commands::{init, deploy, commit, branch, log, rev_parse, checkout, compute, show, usage, login, logout, list};
 use guepard_cli::config::config::{load_config, Config};
-use guepard_cli::domain::errors::{bookmark_error::BookmarkError, branch_error::BranchError, compute_error::ComputeError, deploy_error::DeployError, link_error::LinkError, usage_error::UsageError};
+use guepard_cli::domain::errors::{bookmark_error::BookmarkError, branch_error::BranchError, compute_error::ComputeError, deploy_error::DeployError, login_error::LoginError, usage_error::UsageError};
 use guepard_cli::structure::{SubCommand, CLI};
 
 #[tokio::main]
@@ -19,8 +19,8 @@ async fn main() {
 
     let mut exit_code = 0;
     if let Err(err) = run(sub_commands, &config).await {
-        if let Some(link_error) = err.downcast_ref::<LinkError>() {
-            eprintln!("❌ Link Error: {}", link_error);
+        if let Some(login_error) = err.downcast_ref::<LoginError>() {
+            eprintln!("❌ {}", login_error);
             exit_code = 7;
         } else if let Some(deploy_error) = err.downcast_ref::<DeployError>() {
             eprintln!("❌ Deployment Error: {}", deploy_error);
@@ -35,7 +35,7 @@ async fn main() {
             eprintln!("❌ Compute Error: {}", compute_error);
             exit_code = 5;
         } else if let Some(usage_error) = err.downcast_ref::<UsageError>() {
-            eprintln!("❌ Usage Error: {}", usage_error);
+            eprintln!("❌ {}", usage_error);
             exit_code = 6;
         } else {
             eprintln!("{}", err);
@@ -59,8 +59,8 @@ async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
         SubCommand::Compute(cmd) => compute::compute(cmd, config).await,
         SubCommand::Show(cmd) => show::show(cmd, config).await,
         SubCommand::Usage => usage::usage(config).await,
-        SubCommand::Link => link::execute(config).await.map_err(Into::into),
-        SubCommand::Login(args) => login::execute(config, &args.code).await,
+        SubCommand::List(args) => list::list(args, config).await,
+        SubCommand::Login => login::execute(config).await,
         SubCommand::Logout => logout::logout(config).await,
     }
 }
