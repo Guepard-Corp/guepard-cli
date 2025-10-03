@@ -62,10 +62,6 @@ jobs:
             license "Guepard (c) 2025"
 
             on_macos do
-              on_arm do
-                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-v\${VERSION}-macos-arm64.tar.gz"
-                sha256 "${{ env.MACOS_ARM64_SHA256 }}"
-              end
               on_intel do
                 url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-v\${VERSION}-macos-amd64.tar.gz"
                 sha256 "${{ env.MACOS_AMD64_SHA256 }}"
