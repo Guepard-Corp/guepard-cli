@@ -164,12 +164,20 @@ jobs:
           [target.aarch64-apple-darwin]
           linker = "zig cc -target aarch64-apple-macos"
           strip = { path = "false" }
+          
+          # Configure Zig to find macOS frameworks
+          [env]
+          ZIG_LOCAL_CACHE_DIR = "/tmp/zig-cache"
           EOF
+          
+          # Create macOS SDK symlink for Zig
+          mkdir -p /tmp/macos-sdk
+          echo "Creating macOS SDK symlink for Zig..."
 
       - name: Build macOS AMD64
         run: |
           echo "Building macOS AMD64..."
-          cargo zigbuild --release --target x86_64-apple-darwin
+          cargo zigbuild --release --target x86_64-apple-darwin --features cross-compile
           mkdir -p dist/macos-amd64
           cp target/x86_64-apple-darwin/release/guepard dist/macos-amd64/
           tar -czf dist/guepard-cli-${{ needs.detect-platforms.outputs.version }}-macos-amd64.tar.gz -C dist macos-amd64/
@@ -177,7 +185,7 @@ jobs:
       - name: Build macOS ARM64
         run: |
           echo "Building macOS ARM64..."
-          cargo zigbuild --release --target aarch64-apple-darwin
+          cargo zigbuild --release --target aarch64-apple-darwin --features cross-compile
           mkdir -p dist/macos-arm64
           cp target/aarch64-apple-darwin/release/guepard dist/macos-arm64/
           tar -czf dist/guepard-cli-${{ needs.detect-platforms.outputs.version }}-macos-arm64.tar.gz -C dist macos-arm64/
