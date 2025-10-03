@@ -4,26 +4,8 @@ use crate::structure::DeployArgs;
 use crate::application::dto::deploy::{CreateDeploymentRequest, UpdateDeploymentRequest};
 use crate::application::services::{deploy, performance};
 use colored::Colorize;
-use tabled::{Table, Tabled, settings::Style};
 use std::io::{self, Write};
 
-#[derive(Tabled)]
-struct DeployRow {
-    #[tabled(rename = "Deployment ID")]
-    id: String,
-    #[tabled(rename = "Name")]
-    name: String,
-    #[tabled(rename = "Repository")]
-    repository_name: String,
-    #[tabled(rename = "Provider")]
-    database_provider: String,
-    #[tabled(rename = "Version")]
-    database_version: String,
-    #[tabled(rename = "Status")]
-    status: String,
-    #[tabled(rename = "FQDN")]
-    fqdn: String,
-}
 
 pub async fn deploy(args: &DeployArgs, config: &Config) -> Result<()> {
     if let Some(deployment_id) = &args.deployment_id {
@@ -106,6 +88,33 @@ async fn create_deployment(args: &DeployArgs, config: &Config) -> Result<()> {
         println!("  {} {}", "Connection URI:".yellow(), connection_string);
     }
     
+    // Show helpful connection information
+    println!();
+    println!("{} Database Connection", "🔗".blue());
+    println!("  {} {}", "Host:".yellow(), deployment.fqdn);
+    println!("  {} {}", "Port:".yellow(), deployment.port.map(|p| p.to_string()).unwrap_or_else(|| "5432".to_string()));
+    println!("  {} {}", "Database:".yellow(), deployment.repository_name);
+    println!("  {} {}", "Username:".yellow(), deployment.database_username);
+    println!("  {} {}", "Password:".yellow(), deployment.database_password);
+    
+    // Construct and show the connection URI
+    let port = deployment.port.map(|p| p.to_string()).unwrap_or_else(|| "5432".to_string());
+    let connection_uri = format!("postgresql://{}:{}@{}:{}/{}", 
+        deployment.database_username,
+        deployment.database_password,
+        deployment.fqdn, 
+        port,
+        deployment.repository_name
+    );
+    println!();
+    println!("{} Ready-to-use Connection URI:", "💡".green());
+    println!("{}", connection_uri.cyan().bold());
+    println!();
+    println!("{} Connect with psql:", "📝".yellow());
+    println!("{} psql '{}'", "  $".dimmed(), connection_uri);
+    println!();
+    println!("{} Connect with any PostgreSQL client using the URI above", "ℹ️".blue());
+    
     println!();
     
     println!("{} Use 'guepard deploy -x {}' to get more details", "💡".yellow(), deployment.id);
@@ -139,6 +148,11 @@ async fn get_deployment(deployment_id: &str, config: &Config) -> Result<()> {
     println!("  {} {}", "Created:".yellow(), deployment.created_date);
     
     // Show database connection information
+    println!();
+    println!("{} Database Connection", "🔗".blue());
+    println!("  {} {}", "Host:".yellow(), deployment.fqdn);
+    println!("  {} {}", "Port:".yellow(), "5432");
+    println!("  {} {}", "Database:".yellow(), deployment.repository_name);
     println!("  {} {}", "Username:".yellow(), deployment.database_username);
     println!("  {} {}", "Password:".yellow(), deployment.database_password);
     
@@ -149,13 +163,20 @@ async fn get_deployment(deployment_id: &str, config: &Config) -> Result<()> {
         deployment.fqdn,
         deployment.repository_name
     );
-    println!("  {} {}", "Connection URI:".yellow(), connection_uri);
+    println!();
+    println!("{} Ready-to-use Connection URI:", "💡".green());
+    println!("{}", connection_uri.cyan().bold());
+    println!();
+    println!("{} Connect with psql:", "📝".yellow());
+    println!("{} psql '{}'", "  $".dimmed(), connection_uri);
+    println!();
+    println!("{} Connect with any PostgreSQL client using the URI above", "ℹ️".blue());
     
     println!();
     Ok(())
 }
 
-async fn delete_deployment(deployment_id: &str, args: &DeployArgs, _config: &Config) -> Result<()> {
+async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Config) -> Result<()> {
     // Confirm deletion unless -y flag is used
     if !args.yes {
         print!("{} Are you sure you want to delete deployment {}? (y/N): ", 
@@ -171,11 +192,10 @@ async fn delete_deployment(deployment_id: &str, args: &DeployArgs, _config: &Con
         }
     }
     
-    // TODO: Implement actual deletion API call when available
-    // deploy::delete_deployment(deployment_id, config).await?;
+    // Call the actual delete API
+    deploy::delete_deployment(deployment_id, config).await?;
     
     println!("{} Deployment {} deleted successfully!", "✅".green(), deployment_id);
-    println!("{} Note: Deletion API not yet implemented", "ℹ️".blue());
     
     Ok(())
 }
