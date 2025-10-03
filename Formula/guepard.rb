@@ -1,5 +1,5 @@
 class Guepard < Formula
-  desc "Guepard CLI - Git-like filesystem for databases"
+  desc "Guepard CLI - Git for Data"
   homepage "https://www.guepard.run"
   url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${VERSION}/guepard-cli-v${VERSION}-macos-arm64.tar.gz"
   version "${VERSION}"
