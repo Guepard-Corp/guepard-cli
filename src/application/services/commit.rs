@@ -56,7 +56,7 @@ pub async fn create_commit(
         .map_err(|e| BookmarkError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
-        .put(format!("{}/deploy/{}/{}/snap", config.api_url, deployment_id, clone_id))
+        .post(format!("{}/deploy/{}/{}/snap", config.api_url, deployment_id, clone_id))
         .header("Authorization", format!("Bearer {}", jwt_token))
         .json(&request)
         .send()
