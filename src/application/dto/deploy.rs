@@ -62,7 +62,7 @@ pub struct GetDeploymentResponse {
     pub last_modified_date: Option<String>,
     pub node_id: String,
     pub db_role_id: String,
-    pub branch_id: String,
+    pub branch_id: Option<String>,
     pub region: String,
     pub datacenter: String,
 }

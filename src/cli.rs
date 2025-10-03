@@ -50,7 +50,7 @@ async fn main() {
 async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
     match sub_commands {
         SubCommand::Init(args) => init::init(args, config).await,
-        SubCommand::Deploy(args) => deploy::deploy(args, config).await,
+                SubCommand::Deploy(args) => deploy::deploy(args, config).await,
         SubCommand::Commit(args) => commit::commit(args, config).await,
         SubCommand::Branch(args) => branch::branch(args, config).await,
         SubCommand::Log => log::log(config).await,

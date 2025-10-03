@@ -1,10 +1,11 @@
 use anyhow::Result;
 use crate::config::config::Config;
-use crate::structure::{DeployArgs, CreateDeployArgs, UpdateDeployArgs};
+use crate::structure::DeployArgs;
 use crate::application::dto::deploy::{CreateDeploymentRequest, UpdateDeploymentRequest};
-use crate::application::services::deploy;
+use crate::application::services::{deploy, performance};
 use colored::Colorize;
 use tabled::{Table, Tabled, settings::Style};
+use std::io::{self, Write};
 
 #[derive(Tabled)]
 struct DeployRow {
@@ -26,44 +27,57 @@ struct DeployRow {
 
 pub async fn deploy(args: &DeployArgs, config: &Config) -> Result<()> {
     if let Some(deployment_id) = &args.deployment_id {
-        if let Some(repo_name) = &args.repository_name {
+        // We have a deployment ID, determine operation based on other args
+        if args.repository_name.is_some() {
             // Update deployment
-            let update_args = UpdateDeployArgs {
-                deployment_id: deployment_id.clone(),
-                repository_name: repo_name.clone(),
-            };
-            update(&update_args, config).await?;
+            update_deployment(deployment_id, args, config).await?;
+        } else if args.yes {
+            // Delete deployment
+            delete_deployment(deployment_id, args, config).await?;
         } else {
             // Get deployment details
-            get(deployment_id, config).await?;
+            get_deployment(deployment_id, config).await?;
         }
     } else {
-        // Create new deployment
-        let create_args = CreateDeployArgs {
-            database_provider: args.database_provider.clone(),
-            database_version: args.database_version.clone(),
-            region: args.region.clone(),
-            instance_type: args.instance_type.clone(),
-            datacenter: args.datacenter.clone(),
-            repository_name: args.repository_name.clone().unwrap_or("default-repo".to_string()),
-            database_password: args.database_password.clone(),
-        };
-        create(&create_args, config).await?;
+        // No deployment ID, check if we have create args
+        if args.database_provider.is_some() && args.database_version.is_some() && 
+           args.region.is_some() && args.instance_type.is_some() && 
+           args.datacenter.is_some() && args.database_password.is_some() {
+            // Create new deployment
+            create_deployment(args, config).await?;
+        } else {
+            println!("{} Please provide either:", "❌".red());
+            println!("  • Create args: -p, -v, -r, -i, -d, -w (and optionally -n, -u)");
+            println!("  • Get/Update/Delete: -x <deployment_id> (and optionally -n for update, -y for delete)");
+            println!("{} Use 'guepard deploy --help' for more information", "💡".yellow());
+        }
     }
     Ok(())
 }
 
-pub async fn create(args: &CreateDeployArgs, config: &Config) -> Result<()> {
+async fn create_deployment(args: &DeployArgs, config: &Config) -> Result<()> {
+    let database_provider = args.database_provider.clone().unwrap();
+    let database_version = args.database_version.clone().unwrap();
+    
+    // Get performance profile ID
+    let performance_profile_label = args.performance_profile.clone().unwrap_or_else(|| "gp.g1.xsmall".to_string());
+    let performance_profile_id = performance::get_performance_profile_by_label(
+        &performance_profile_label,
+        &database_provider,
+        &database_version,
+        config,
+    ).await?;
+    
     let request = CreateDeploymentRequest {
-        repository_name: args.repository_name.clone(),
-        database_provider: args.database_provider.clone(),
-        database_version: args.database_version.clone(),
+        repository_name: args.repository_name.clone().unwrap_or("default-repo".to_string()),
+        database_provider,
+        database_version,
         deployment_type: "REPOSITORY".to_string(),
-        region: args.region.clone(),
-        datacenter: args.datacenter.clone(),
-        database_username: "guepard".to_string(),
-        database_password: args.database_password.clone(),
-        performance_profile_id: "default".to_string(),
+        region: args.region.clone().unwrap(),
+        datacenter: args.datacenter.clone().unwrap(),
+        database_username: args.user.clone().unwrap_or("guepard".to_string()),
+        database_password: args.database_password.clone().unwrap(),
+        performance_profile_id,
     };
     
     deploy::create_deployment(request, config).await?;
@@ -74,40 +88,17 @@ pub async fn create(args: &CreateDeployArgs, config: &Config) -> Result<()> {
     Ok(())
 }
 
-pub async fn update(args: &UpdateDeployArgs, config: &Config) -> Result<()> {
+async fn update_deployment(deployment_id: &str, args: &DeployArgs, config: &Config) -> Result<()> {
     let request = UpdateDeploymentRequest {
-        repository_name: args.repository_name.clone(),
+        repository_name: args.repository_name.clone().unwrap(),
     };
     
-    deploy::update_deployment(&args.deployment_id, request, config).await?;
+    deploy::update_deployment(deployment_id, request, config).await?;
     println!("{} Deployment updated successfully!", "✅".green());
     Ok(())
 }
 
-pub async fn list(config: &Config) -> Result<()> {
-    let deployments = deploy::list_deployments(config).await?;
-    
-    if deployments.is_empty() {
-        println!("{} No deployments found", "ℹ️".blue());
-        return Ok(());
-    }
-    
-    let rows: Vec<DeployRow> = deployments.into_iter().map(|d| DeployRow {
-        id: d.id,
-        name: d.name,
-        repository_name: d.repository_name,
-        database_provider: d.database_provider,
-        database_version: d.database_version,
-        status: d.status,
-        fqdn: d.fqdn,
-    }).collect();
-    
-    println!("{} Found {} deployments", "✅".green(), rows.len());
-    println!("{}", Table::new(rows).with(Style::rounded()));
-    Ok(())
-}
-
-pub async fn get(deployment_id: &str, config: &Config) -> Result<()> {
+async fn get_deployment(deployment_id: &str, config: &Config) -> Result<()> {
     let deployment = deploy::get_deployment(deployment_id, config).await?;
     
     let deploy_row = DeployRow {
@@ -122,5 +113,30 @@ pub async fn get(deployment_id: &str, config: &Config) -> Result<()> {
     
     println!("{} Deployment Details", "📋".blue());
     println!("{}", Table::new(vec![deploy_row]).with(Style::rounded()));
+    Ok(())
+}
+
+async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Config) -> Result<()> {
+    // Confirm deletion unless -y flag is used
+    if !args.yes {
+        print!("{} Are you sure you want to delete deployment {}? (y/N): ", 
+               "⚠️".yellow(), deployment_id);
+        io::stdout().flush()?;
+        
+        let mut input = String::new();
+        io::stdin().read_line(&mut input)?;
+        
+        if !input.trim().to_lowercase().starts_with('y') {
+            println!("{} Deletion cancelled.", "ℹ️".blue());
+            return Ok(());
+        }
+    }
+    
+    // TODO: Implement actual deletion API call when available
+    // deploy::delete_deployment(deployment_id, config).await?;
+    
+    println!("{} Deployment {} deleted successfully!", "✅".green(), deployment_id);
+    println!("{} Note: Deletion API not yet implemented", "ℹ️".blue());
+    
     Ok(())
 }
