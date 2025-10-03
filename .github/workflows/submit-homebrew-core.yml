@@ -54,7 +54,7 @@ jobs:
           mkdir -p Formula
           cat > Formula/guepard.rb << EOF
           class Guepard < Formula
-            desc "Guepard CLI - Git-like filesystem for databases"
+            desc "Guepard CLI - Git for Data"
             homepage "https://www.guepard.run"
             url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-v\${VERSION}-macos-arm64.tar.gz"
             version "\${VERSION}"
@@ -101,7 +101,7 @@ jobs:
           ## Formula Details
           - **Name**: guepard
           - **Version**: ${{ github.event.inputs.version }}
-          - **Description**: Guepard CLI - Git-like filesystem for databases
+          - **Description**: Guepard CLI - Git for Data
           - **Homepage**: https://www.guepard.run
           - **License**: Guepard (c) 2025
 
@@ -144,9 +144,9 @@ jobs:
           \`\`\`
           guepard ${{ github.event.inputs.version }} (new formula)
 
-          Guepard CLI provides a Git-like filesystem for databases, enabling version control 
-          and management capabilities for database schemas and data. It supports familiar 
-          commands like init, commit, branch, checkout, and more.
+          Guepard CLI - Git for Data. Provides version control and management 
+          capabilities for databases with familiar Git-like commands like init, 
+          commit, branch, checkout, and more.
 
           Features:
           - Git-like interface with familiar commands
