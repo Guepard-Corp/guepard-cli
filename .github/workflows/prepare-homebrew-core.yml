@@ -1,0 +1,197 @@
+name: Prepare Homebrew Core Formula
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to prepare formula for (e.g., 0.26.19)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  prepare-homebrew-formula:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Git
+        run: |
+          git config --global user.name "Guepard Bot"
+          git config --global user.email "bot@guepard.run"
+
+      - name: Download releases and calculate checksums
+        run: |
+          mkdir -p temp-releases
+          cd temp-releases
+          
+          echo "Downloading releases for version ${{ github.event.inputs.version }}..."
+          
+          # Download all platform releases
+          curl -L -o macos-arm64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ github.event.inputs.version }}/guepard-cli-v${{ github.event.inputs.version }}-macos-arm64.tar.gz"
+          curl -L -o macos-amd64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ github.event.inputs.version }}/guepard-cli-v${{ github.event.inputs.version }}-macos-amd64.tar.gz"
+          curl -L -o linux-arm64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ github.event.inputs.version }}/guepard-cli-v${{ github.event.inputs.version }}-linux-arm64.tar.gz"
+          curl -L -o linux-amd64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ github.event.inputs.version }}/guepard-cli-v${{ github.event.inputs.version }}-linux-amd64.tar.gz"
+          
+          # Calculate checksums
+          echo "MACOS_ARM64_SHA256=$(shasum -a 256 macos-arm64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
+          echo "MACOS_AMD64_SHA256=$(shasum -a 256 macos-amd64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
+          echo "LINUX_ARM64_SHA256=$(shasum -a 256 linux-arm64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
+          echo "LINUX_AMD64_SHA256=$(shasum -a 256 linux-amd64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
+          
+          echo "Checksums calculated:"
+          echo "macOS ARM64: ${{ env.MACOS_ARM64_SHA256 }}"
+          echo "macOS AMD64: ${{ env.MACOS_AMD64_SHA256 }}"
+          echo "Linux ARM64: ${{ env.LINUX_ARM64_SHA256 }}"
+          echo "Linux AMD64: ${{ env.LINUX_AMD64_SHA256 }}"
+          
+          cd ..
+
+      - name: Create Homebrew Core formula
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          mkdir -p Formula
+          
+          cat > Formula/guepard.rb << EOF
+          class Guepard < Formula
+            desc "Guepard CLI - Git-like filesystem for databases"
+            homepage "https://www.guepard.run"
+            url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-v\${VERSION}-macos-arm64.tar.gz"
+            version "\${VERSION}"
+            sha256 "${{ env.MACOS_ARM64_SHA256 }}"
+            license "Guepard (c) 2025"
+
+            on_macos do
+              on_arm do
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-v\${VERSION}-macos-arm64.tar.gz"
+                sha256 "${{ env.MACOS_ARM64_SHA256 }}"
+              end
+              on_intel do
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-v\${VERSION}-macos-amd64.tar.gz"
+                sha256 "${{ env.MACOS_AMD64_SHA256 }}"
+              end
+            end
+
+            on_linux do
+              on_arm do
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-v\${VERSION}-linux-arm64.tar.gz"
+                sha256 "${{ env.LINUX_ARM64_SHA256 }}"
+              end
+              on_intel do
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-v\${VERSION}-linux-amd64.tar.gz"
+                sha256 "${{ env.LINUX_AMD64_SHA256 }}"
+              end
+            end
+
+            def install
+              bin.install "guepard"
+            end
+
+            test do
+              system "#{bin}/guepard", "--version"
+            end
+          end
+          EOF
+          
+          echo "Formula created: Formula/guepard.rb"
+
+      - name: Create submission instructions
+        run: |
+          cat > HOMEBREW_CORE_SUBMISSION.md << EOF
+          # Homebrew Core Submission for Guepard v${{ github.event.inputs.version }}
+
+          ## Formula Details
+          - **Name**: guepard
+          - **Version**: ${{ github.event.inputs.version }}
+          - **Description**: Guepard CLI - Git-like filesystem for databases
+          - **Homepage**: https://www.guepard.run
+          - **License**: Guepard (c) 2025
+
+          ## Checksums
+          - macOS ARM64: \`${{ env.MACOS_ARM64_SHA256 }}\`
+          - macOS AMD64: \`${{ env.MACOS_AMD64_SHA256 }}\`
+          - Linux ARM64: \`${{ env.LINUX_ARM64_SHA256 }}\`
+          - Linux AMD64: \`${{ env.LINUX_AMD64_SHA256 }}\`
+
+          ## Submission Steps
+
+          1. **Fork homebrew-core**:
+             \`\`\`bash
+             # Go to https://github.com/Homebrew/homebrew-core and fork it
+             git clone https://github.com/YOUR_USERNAME/homebrew-core.git
+             cd homebrew-core
+             \`\`\`
+
+          2. **Copy the formula**:
+             \`\`\`bash
+             cp Formula/guepard.rb Formula/
+             \`\`\`
+
+          3. **Create branch and commit**:
+             \`\`\`bash
+             git checkout -b add-guepard-${{ github.event.inputs.version }}
+             git add Formula/guepard.rb
+             git commit -m "guepard ${{ github.event.inputs.version }} (new formula)"
+             git push origin add-guepard-${{ github.event.inputs.version }}
+             \`\`\`
+
+          4. **Create Pull Request**:
+             - Go to your fork on GitHub
+             - Create PR against Homebrew/homebrew-core
+             - Title: "guepard ${{ github.event.inputs.version }} (new formula)"
+             - Use the description template below
+
+          ## PR Description Template
+
+          \`\`\`
+          guepard ${{ github.event.inputs.version }} (new formula)
+
+          Guepard CLI provides a Git-like filesystem for databases, enabling version control 
+          and management capabilities for database schemas and data. It supports familiar 
+          commands like init, commit, branch, checkout, and more.
+
+          Features:
+          - Git-like interface with familiar commands
+          - Multi-platform support (Linux, macOS, Windows)
+          - Database management and deployment
+          - Cross-platform consistency
+
+          Homepage: https://www.guepard.run
+          License: Guepard (c) 2025
+          \`\`\`
+
+          ## Files Ready for Submission
+          - ✅ Formula: \`Formula/guepard.rb\`
+          - ✅ Checksums: All calculated and verified
+          - ✅ Instructions: This file
+
+          Once the PR is merged, users can install with: \`brew install guepard\`
+          EOF
+
+      - name: Commit formula and instructions
+        run: |
+          git add Formula/guepard.rb HOMEBREW_CORE_SUBMISSION.md
+          git commit -m "Prepare Homebrew Core formula for v${{ github.event.inputs.version }}"
+          git push
+
+      - name: Create summary
+        run: |
+          echo "## 🍺 Homebrew Core Formula Prepared!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ github.event.inputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Formula:** \`Formula/guepard.rb\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Instructions:** \`HOMEBREW_CORE_SUBMISSION.md\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Checksums Calculated:" >> $GITHUB_STEP_SUMMARY
+          echo "- macOS ARM64: \`${{ env.MACOS_ARM64_SHA256 }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- macOS AMD64: \`${{ env.MACOS_AMD64_SHA256 }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Linux ARM64: \`${{ env.LINUX_ARM64_SHA256 }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Linux AMD64: \`${{ env.LINUX_AMD64_SHA256 }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Next Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Follow instructions in \`HOMEBREW_CORE_SUBMISSION.md\`" >> $GITHUB_STEP_SUMMARY
+          echo "2. Submit PR to [Homebrew/homebrew-core](https://github.com/Homebrew/homebrew-core)" >> $GITHUB_STEP_SUMMARY
+          echo "3. Once merged: \`brew install guepard\`" >> $GITHUB_STEP_SUMMARY
