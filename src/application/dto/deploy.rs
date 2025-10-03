@@ -31,6 +31,8 @@ pub struct CreateDeploymentResponse {
     pub fqdn: String,
     pub port: Option<i32>,
     pub connection_string: Option<String>,
+    pub database_username: String,
+    pub database_password: String,
     pub region: String,
     pub datacenter: String,
     pub created_date: String,
