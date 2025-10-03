@@ -288,48 +288,35 @@ jobs:
             fi
           done
 
+      - name: Generate Release Body
+        run: |
+          # Read the template file
+          template=$(cat RELEASE_TEMPLATE.md)
+          
+          # Replace placeholders with actual values
+          template=$(echo "$template" | sed "s/{{VERSION}}/${{ needs.detect-platforms.outputs.version }}/g")
+          template=$(echo "$template" | sed "s/{{PLATFORMS}}/${{ needs.detect-platforms.outputs.platforms }}/g")
+          template=$(echo "$template" | sed "s/{{LINUX_AMD64_SHA256}}/${{ env.LINUX_AMD64_SHA256 }}/g")
+          template=$(echo "$template" | sed "s/{{LINUX_ARM64_SHA256}}/${{ env.LINUX_ARM64_SHA256 }}/g")
+          template=$(echo "$template" | sed "s/{{MACOS_AMD64_SHA256}}/${{ env.MACOS_AMD64_SHA256 }}/g")
+          template=$(echo "$template" | sed "s/{{MACOS_ARM64_SHA256}}/${{ env.MACOS_ARM64_SHA256 }}/g")
+          template=$(echo "$template" | sed "s/{{WINDOWS_AMD64_SHA256}}/${{ env.WINDOWS_AMD64_SHA256 }}/g")
+          
+          # Write the processed template to a file
+          echo "$template" > release_body.md
+          
+          # Also set as environment variable for the next step
+          echo "RELEASE_BODY<<EOF" >> $GITHUB_ENV
+          echo "$template" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: dist/*
           tag_name: ${{ github.ref_name }}
           name: Guepard CLI ${{ needs.detect-platforms.outputs.version }}
-          body: |
-            ## Guepard CLI ${{ needs.detect-platforms.outputs.version }}
-
-            ### Platforms Released
-            ${{ needs.detect-platforms.outputs.platforms }}
-
-            ### Installation
-
-            #### macOS (Homebrew)
-            ```bash
-            brew tap guepard-corp/guepard-cli
-            brew install guepard
-            ```
-
-            #### Linux (Homebrew)
-            ```bash
-            brew tap guepard-corp/guepard-cli
-            brew install guepard
-            ```
-
-            #### Windows (Chocolatey)
-            ```powershell
-            choco install guepard
-            ```
-
-            ### SHA256 Checksums
-            - Linux AMD64: `${{ env.LINUX_AMD64_SHA256 }}`
-            - Linux ARM64: `${{ env.LINUX_ARM64_SHA256 }}`
-            - macOS AMD64: `${{ env.MACOS_AMD64_SHA256 }}`
-            - macOS ARM64: `${{ env.MACOS_ARM64_SHA256 }}`
-            - Windows AMD64: `${{ env.WINDOWS_AMD64_SHA256 }}`
-
-            ### What's New
-            - Multi-platform support
-            - Git-like filesystem for databases
-            - Familiar command interface
+          body: ${{ env.RELEASE_BODY }}
           draft: false
           prerelease: false
         env:
