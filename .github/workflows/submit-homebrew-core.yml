@@ -51,6 +51,7 @@ jobs:
       - name: Create Homebrew Core formula
         run: |
           VERSION="${{ github.event.inputs.version }}"
+          mkdir -p Formula
           cat > Formula/guepard.rb << EOF
           class Guepard < Formula
             desc "Guepard CLI - Git-like filesystem for databases"
