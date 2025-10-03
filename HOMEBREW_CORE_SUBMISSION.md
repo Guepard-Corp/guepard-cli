@@ -3,7 +3,7 @@
 ## Formula Details
 - **Name**: guepard
 - **Version**: v0.26.19
-- **Description**: Guepard CLI - Git-like filesystem for databases
+- **Description**: Guepard CLI - Git for Data
 - **Homepage**: https://www.guepard.run
 - **License**: Guepard (c) 2025
 
@@ -46,9 +46,9 @@
 ```
 guepard v0.26.19 (new formula)
 
-Guepard CLI provides a Git-like filesystem for databases, enabling version control 
-and management capabilities for database schemas and data. It supports familiar 
-commands like init, commit, branch, checkout, and more.
+Guepard CLI - Git for Data. Provides version control and management 
+capabilities for databases with familiar Git-like commands like init, 
+commit, branch, checkout, and more.
 
 Features:
 - Git-like interface with familiar commands
