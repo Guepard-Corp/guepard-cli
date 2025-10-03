@@ -16,12 +16,8 @@ jobs:
   update-homebrew:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout homebrew tap
+      - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          repository: Guepard-Corp/homebrew-guepard-cli
-          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          path: homebrew-tap
 
       - name: Download macOS releases
         run: |
@@ -40,21 +36,32 @@ jobs:
           VERSION="${{ github.event.inputs.version }}"
           cat > homebrew-tap/Formula/guepard.rb << EOF
           class Guepard < Formula
-            desc "Guepard CLI - Git-like filesystem for databases"
+            desc "Guepard CLI (guepard) - Git, but for Data"
             homepage "https://www.guepard.run"
-            url "https://github.com/Guepard-Corp/guepard-cli/releases/download/\${VERSION}/guepard-cli-\${VERSION}-macos-arm64.tar.gz"
+            url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-\${VERSION}-macos-arm64.tar.gz"
             version "\${VERSION}"
             sha256 "${{ env.MACOS_ARM64_SHA256 }}"
             license "Guepard (c) 2025"
 
             on_macos do
               on_arm do
-                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/\${VERSION}/guepard-cli-\${VERSION}-macos-arm64.tar.gz"
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-\${VERSION}-macos-arm64.tar.gz"
                 sha256 "${{ env.MACOS_ARM64_SHA256 }}"
               end
               on_intel do
-                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/\${VERSION}/guepard-cli-\${VERSION}-macos-amd64.tar.gz"
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-\${VERSION}-macos-amd64.tar.gz"
                 sha256 "${{ env.MACOS_AMD64_SHA256 }}"
+              end
+            end
+
+            on_linux do
+              on_arm do
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-\${VERSION}-linux-arm64.tar.gz"
+                sha256 "placeholder_linux_arm64"
+              end
+              on_intel do
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-\${VERSION}-linux-amd64.tar.gz"
+                sha256 "placeholder_linux_amd64"
               end
             end
 
@@ -70,9 +77,8 @@ jobs:
 
       - name: Commit and push Homebrew formula
         run: |
-          cd homebrew-tap
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add Formula/guepard.rb
+          git add homebrew-tap/Formula/guepard.rb
           git commit -m "Update guepard to ${{ github.event.inputs.version }} (macOS)"
           git push
