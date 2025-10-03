@@ -11,9 +11,9 @@
     <docsUrl>https://docs.guepard.run</docsUrl>
     <bugTrackerUrl>https://github.com/Guepard-Corp/guepard-cli/issues</bugTrackerUrl>
     <tags>database filesystem cli git versioning</tags>
-    <summary>Guepard CLI - Git-like filesystem for databases</summary>
+    <summary>Guepard CLI - Git, but for Data</summary>
     <description>
-Guepard CLI provides a Git-like filesystem for databases, offering version control 
+Guepard CLI - Git, but for Data. It provides version control 
 and management capabilities for database schemas and data. It supports familiar 
 commands like init, commit, branch, checkout, and more.
 

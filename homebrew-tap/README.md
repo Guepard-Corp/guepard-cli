@@ -1,6 +1,6 @@
 # Guepard Homebrew Tap
 
-This tap provides the Guepard CLI (`gfs`) - a Git-like filesystem for databases.
+This tap provides the Guepard CLI (`guepard`) - Git, but for Data.
 
 ## Installation
 
@@ -8,41 +8,41 @@ This tap provides the Guepard CLI (`gfs`) - a Git-like filesystem for databases.
 # Add the tap
 brew tap guepard-corp/guepard-cli
 
-# Install gfs
-brew install gfs
+# Install guepard
+brew install guepard
 ```
 
 ## Usage
 
-After installation, you can use `gfs` commands:
+After installation, you can use `guepard` commands:
 
 ```bash
 # Initialize a new Guepard repository
-gfs init .
+guepard init .
 
 # Deploy with database configuration
-gfs deploy --database_provider=MySQL --database_version=8
+guepard deploy --database_provider=MySQL --database_version=8
 
 # Create a commit
-gfs commit -m "Initial version"
+guepard commit -m "Initial version"
 
 # List branches
-gfs branch
+guepard branch
 
 # Create a new branch
-gfs branch develop
+guepard branch develop
 
 # Switch to a branch
-gfs checkout develop
+guepard checkout develop
 
 # View commit history
-gfs log
+guepard log
 
 # Manage compute instances
-gfs compute status
-gfs compute start
-gfs compute stop
-gfs compute restart
+guepard compute status
+guepard compute start
+guepard compute stop
+guepard compute restart
 ```
 
 ## Documentation

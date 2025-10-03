@@ -1,9 +1,9 @@
 name: guepard
 base: core22
 version: '0.25.2'
-summary: Guepard CLI - Git-like filesystem for databases
+summary: Guepard CLI - Git, but for Data
 description: |
-  Guepard CLI provides a Git-like filesystem for databases, offering version control 
+  Guepard CLI - Git, but for Data. It provides version control 
   and management capabilities for database schemas and data. It supports familiar 
   commands like init, commit, branch, checkout, and more.
   
