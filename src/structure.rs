@@ -91,40 +91,48 @@ pub struct InitArgs {
 #[derive(Args, Debug)]
 pub struct DeployArgs {
     /// The database provider (e.g., PostgreSQL, MySQL)
-    #[clap(short = 'p', long, required = true)]
-    pub database_provider: String,
+    #[clap(short = 'p', long)]
+    pub database_provider: Option<String>,
     
     /// The version of the database
-    #[clap(short = 'v', long, required = true)]
-    pub database_version: String,
+    #[clap(short = 'v', long)]
+    pub database_version: Option<String>,
     
     /// The region where the deployment will be created
-    #[clap(short = 'r', long, required = true)]
-    pub region: String,
+    #[clap(short = 'r', long)]
+    pub region: Option<String>,
     
     /// The instance type for the deployment
-    #[clap(short = 'i', long, required = true)]
-    pub instance_type: String,
+    #[clap(short = 'i', long)]
+    pub instance_type: Option<String>,
     
     /// The datacenter for the deployment
-    #[clap(short = 'd', long, required = true)]
-    pub datacenter: String,
+    #[clap(short = 'd', long)]
+    pub datacenter: Option<String>,
     
     /// The name of the repository
     #[clap(short = 'n', long)]
     pub repository_name: Option<String>,
     
     /// The password for the database
-    #[clap(short = 'w', long, required = true)]
-    pub database_password: String,
+    #[clap(short = 'w', long)]
+    pub database_password: Option<String>,
     
-    /// The ID of the deployment (for updates)
+    /// The ID of the deployment (for get/update/delete operations)
     #[clap(short = 'x', long)]
     pub deployment_id: Option<String>,
     
     /// The username for the database
     #[clap(short = 'u', long)]
     pub user: Option<String>,
+    
+    /// Confirm deletion without prompting
+    #[clap(short = 'y', long)]
+    pub yes: bool,
+    
+    /// Performance profile label name (e.g., gp.g1.xsmall)
+    #[clap(short = 'f', long)]
+    pub performance_profile: Option<String>,
 }
 
 #[derive(Args, Debug)]
@@ -221,9 +229,9 @@ pub enum ComputeCommand {
 #[derive(Subcommand, Debug)]
 pub enum ShowCommand {
     /// Show branch details
-    Branches(GetDeployArgs),
+    Branches(ShowDeployArgs),
     /// Show commit details (snapshots)
-    Commits(GetDeployArgs),
+    Commits(ShowDeployArgs),
 }
 
 #[derive(Args, Debug)]
@@ -234,7 +242,7 @@ pub struct GetComputeArgs {
 }
 
 #[derive(Args, Debug)]
-pub struct GetDeployArgs {
+pub struct ShowDeployArgs {
     /// The ID of the deployment
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
@@ -273,46 +281,4 @@ pub struct CheckoutBranchArgs {
     /// The ID of the branch
     #[clap(short = 'c', long, required = true)]
     pub branch_id: String,
-}
-
-#[derive(Args, Debug)]
-pub struct CreateDeployArgs {
-    /// The database provider (e.g., PostgreSQL, MySQL)
-    #[clap(short = 'p', long, required = true)]
-    pub database_provider: String,
-
-    /// The version of the database
-    #[clap(short = 'v', long, required = true)]
-    pub database_version: String,
-
-    /// The region where the deployment will be created
-    #[clap(short = 'r', long, required = true)]
-    pub region: String,
-
-    /// The instance type for the deployment
-    #[clap(short = 'i', long, required = true)]
-    pub instance_type: String,
-
-    /// The datacenter for the deployment
-    #[clap(short = 'd', long, required = true)]
-    pub datacenter: String,
-
-    /// The name of the repository
-    #[clap(short = 'n', long, required = true)]
-    pub repository_name: String,
-
-    /// The password for the database
-    #[clap(short = 'w', long, required = true)]
-    pub database_password: String,
-}
-
-#[derive(Args, Debug)]
-pub struct UpdateDeployArgs {
-    /// The ID of the deployment
-    #[clap(short = 'x', long, required = true)]
-    pub deployment_id: String,
-
-    /// The name of the repository
-    #[clap(short = 'n', long, required = true)]
-    pub repository_name: String,
 }

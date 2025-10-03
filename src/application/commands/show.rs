@@ -1,7 +1,7 @@
 use anyhow::Result;
 use crate::config::config::Config;
-use crate::structure::{ShowCommand, GetDeployArgs};
-use crate::application::services::show;
+use crate::structure::{ShowCommand, ShowDeployArgs};
+use crate::application::services::branch;
 use colored::Colorize;
 use tabled::{Table, Tabled, settings::Style};
 
@@ -40,7 +40,7 @@ pub async fn show(cmd: &ShowCommand, config: &Config) -> Result<()> {
     }
 }
 
-pub async fn show_branches(args: &GetDeployArgs, config: &Config) -> Result<()> {
+pub async fn show_branches(args: &ShowDeployArgs, config: &Config) -> Result<()> {
     let (branches, active_branch_id) = show::list_branches_with_active(&args.deployment_id, config).await?;
     
     if branches.is_empty() {
@@ -65,7 +65,7 @@ pub async fn show_branches(args: &GetDeployArgs, config: &Config) -> Result<()> 
     Ok(())
 }
 
-pub async fn show_commits(args: &GetDeployArgs, config: &Config) -> Result<()> {
+pub async fn show_commits(args: &ShowDeployArgs, config: &Config) -> Result<()> {
     let (commits, active_snapshot_id) = show::list_commits_with_active(&args.deployment_id, config).await?;
     
     if commits.is_empty() {
