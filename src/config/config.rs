@@ -5,7 +5,7 @@ use keyring::Entry;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs::{self, File};
-use log::{debug, error};
+use log::debug;
 use crate::domain::errors::config_error::ConfigError;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
@@ -81,7 +81,7 @@ pub fn save_jwt_token(jwt_token: &str) -> Result<(), ConfigError> {
     #[cfg(not(feature = "keyring"))]
     {
         // Fallback: store JWT in session file (less secure but works for cross-compilation)
-        let mut data: SessionData = {
+        let _data: SessionData = {
             let file = File::open(&path)
                 .map_err(|e| ConfigError::IoError(format!("Failed to open session file: {}", e)))?;
             serde_json::from_reader(file)

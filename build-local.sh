@@ -80,14 +80,45 @@ fi
 if [[ "$PLATFORMS" == *"macos"* ]]; then
     echo -e "${GREEN}🍎 Building macOS...${NC}"
     
+    # Check if we're on macOS (native build) or Linux (cross-compile)
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        echo "Native macOS build detected"
+        BUILD_CMD="cargo build --release"
+    else
+        echo "Cross-compilation from Linux detected"
+        # Install zig and cargo-zigbuild if not present
+        if ! command -v zig &> /dev/null; then
+            echo "Installing Zig for cross-compilation..."
+            wget https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz
+            tar -xf zig-linux-x86_64-0.13.0.tar.xz
+            sudo mv zig-linux-x86_64-0.13.0/zig /usr/local/bin/
+            sudo mv zig-linux-x86_64-0.13.0/lib /usr/local/lib/zig
+        fi
+        
+        if ! command -v cargo-zigbuild &> /dev/null; then
+            echo "Installing cargo-zigbuild..."
+            cargo install cargo-zigbuild
+        fi
+        
+        # Download macOS SDK if not present
+        if [ ! -d "/opt/macos-sdk" ]; then
+            echo "Downloading macOS SDK..."
+            curl -L https://github.com/roblabla/MacOSX-SDKs/releases/download/13.1/MacOSX13.1.sdk.tar.xz | tar xJ
+            sudo mv MacOSX13.1.sdk /opt/macos-sdk
+        fi
+        
+        export SDKROOT=/opt/macos-sdk
+        BUILD_CMD="cargo zigbuild --release --features cross-compile"
+    fi
+    
     echo "Building macOS AMD64..."
-    cargo build --release --target x86_64-apple-darwin
+    $BUILD_CMD --target x86_64-apple-darwin
     mkdir -p dist/macos-amd64
     cp target/x86_64-apple-darwin/release/guepard dist/macos-amd64/
     tar -czf dist/guepard-cli-$VERSION-macos-amd64.tar.gz -C dist macos-amd64/
     
     echo "Building macOS ARM64..."
-    cargo build --release --target aarch64-apple-darwin
+    $BUILD_CMD --target aarch64-apple-darwin
     mkdir -p dist/macos-arm64
     cp target/aarch64-apple-darwin/release/guepard dist/macos-arm64/
     tar -czf dist/guepard-cli-$VERSION-macos-arm64.tar.gz -C dist macos-arm64/
