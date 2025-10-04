@@ -24,7 +24,7 @@ pub struct CreateCommitResponse {
     pub snapshot_comment: String,
     pub snapshot_schema: BookmarkSchema,
     pub customer_id: String,
-    pub dataset_id: String, // clone_id = branch_id
+    pub dataset_id: String, // branch_id
     pub deployment_id: String, // repository_id
     pub parent_id: Option<String>,
     pub is_ephemeral: bool,

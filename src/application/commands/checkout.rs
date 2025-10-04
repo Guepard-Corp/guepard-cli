@@ -21,7 +21,7 @@ struct CheckoutRow {
 
 pub async fn checkout(args: &CheckoutArgs, config: &Config) -> Result<()> {
     if let Some(deployment_id) = &args.deployment_id {
-        if let Some(branch_id) = &args.clone_id {
+        if let Some(branch_id) = &args.branch_id {
             // Checkout specific branch
             let checkout_args = CheckoutBranchArgs {
                 deployment_id: deployment_id.clone(),

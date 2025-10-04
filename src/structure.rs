@@ -24,7 +24,7 @@ pub enum SubCommand {
     Branch(BranchArgs),
     
     /// Show commit history
-    Log,
+    Log(LogArgs),
     
     /// Switch branches or checkout snapshots
     Checkout(CheckoutArgs),
@@ -131,9 +131,10 @@ pub struct CommitArgs {
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
     
-    /// The clone ID
-    #[clap(short = 'c', long, required = true)]
-    pub clone_id: String,
+    /// The branch IDstart compute
+    /// 
+    #[clap(short = 'b', long, required = true)]
+    pub branch_id: String,
 }
 
 #[derive(Args, Debug)]
@@ -168,6 +169,13 @@ pub struct BranchArgs {
 }
 
 #[derive(Args, Debug)]
+pub struct LogArgs {
+    /// The ID of the deployment
+    #[clap(short = 'x', long, required = true)]
+    pub deployment_id: String,
+}
+
+#[derive(Args, Debug)]
 pub struct CheckoutArgs {
     /// The branch name or commit hash to checkout
     #[clap(value_parser, required = true)]
@@ -179,7 +187,7 @@ pub struct CheckoutArgs {
     
     /// The ID of the branch
     #[clap(short = 'c', long)]
-    pub clone_id: Option<String>,
+    pub branch_id: Option<String>,
     
     /// The ID of the snapshot
     #[clap(short = 's', long)]
@@ -205,9 +213,9 @@ pub struct ComputeArgs {
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
     
-    /// Action to perform: status, start, stop, restart, list, logs
-    #[clap(short = 'a', long, default_value = "list")]
-    pub action: String,
+    /// Action to perform: start, stop, status (optional - defaults to info)
+    #[clap(value_parser)]
+    pub action: Option<String>,
 }
 
 // Additional structs for original API compatibility

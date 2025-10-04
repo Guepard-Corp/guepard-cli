@@ -26,12 +26,12 @@ pub async fn list_all_commits(deployment_id: &str, config: &Config) -> Result<Ve
     }
 }
 
-pub async fn list_bookmark(deployment_id: &str, clone_id: &str, config: &Config) -> Result<Vec<GetCommitResponse>, BookmarkError> {
+pub async fn list_bookmark(deployment_id: &str, branch_id: &str, config: &Config) -> Result<Vec<GetCommitResponse>, BookmarkError> {
     let jwt_token = auth::get_auth_token()
         .map_err(|e| BookmarkError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
-        .get(format!("{}/deploy/{}/{}/snap", config.api_url, deployment_id, clone_id))
+        .get(format!("{}/deploy/{}/{}/snap", config.api_url, deployment_id, branch_id))
         .header("Authorization", format!("Bearer {}", jwt_token))
         .send()
         .await
@@ -48,7 +48,7 @@ pub async fn list_bookmark(deployment_id: &str, clone_id: &str, config: &Config)
 
 pub async fn create_commit(
     deployment_id: &str,
-    clone_id: &str,
+    branch_id: &str,
     request: CreateCommitRequest,
     config: &Config,
 ) -> Result<CreateCommitResponse, BookmarkError> {
@@ -56,7 +56,7 @@ pub async fn create_commit(
         .map_err(|e| BookmarkError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
-        .post(format!("{}/deploy/{}/{}/snap", config.api_url, deployment_id, clone_id))
+        .post(format!("{}/deploy/{}/{}/snap", config.api_url, deployment_id, branch_id))
         .header("Authorization", format!("Bearer {}", jwt_token))
         .json(&request)
         .send()
@@ -74,7 +74,7 @@ pub async fn create_commit(
 
 pub async fn checkout_bookmark(
     deployment_id: &str,
-    clone_id: &str,
+    branch_id: &str,
     snapshot_id: &str,
     request: BranchRequest,
     config: &Config,
@@ -85,7 +85,7 @@ pub async fn checkout_bookmark(
     let response = client
         .post(format!(
             "{}/deploy/{}/{}/{}/branch",
-            config.api_url, deployment_id, clone_id, snapshot_id
+            config.api_url, deployment_id, branch_id, snapshot_id
         ))
         .header("Authorization", format!("Bearer {}", jwt_token))
         .json(&request)
