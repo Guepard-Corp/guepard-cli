@@ -1,7 +1,7 @@
 use anyhow::Result;
 use crate::config::config::Config;
 use crate::structure::CommitArgs;
-use crate::application::services::commit;
+use crate::application::services::{commit, compute};
 use crate::application::dto::commit::CreateCommitRequest;
 use colored::Colorize;
 use tabled::{Table, Tabled, settings::Style};
@@ -25,7 +25,7 @@ pub async fn commit(args: &CommitArgs, config: &Config) -> Result<()> {
     
     let commit = commit::create_commit(
         &args.deployment_id,
-        &args.clone_id,
+        &args.branch_id,
         request,
         config,
     ).await?;

@@ -32,10 +32,12 @@ pub async fn list_compute(deployment_id: &str, config: &Config) -> Result<ListCo
 pub async fn start_compute(deployment_id: &str, config: &Config) -> Result<(), ComputeError> {
     let jwt_token = auth::get_auth_token()
         .map_err(|e| ComputeError::SessionError(format!("{}", e)))?;
+    
     let client = Client::new();
     let response = client
-        .post(format!("{}/deploy/{}/compute/start", config.api_url, deployment_id))
+        .post(format!("{}/deploy/{}/start", config.api_url, deployment_id))
         .header("Authorization", format!("Bearer {}", jwt_token))
+        .header("Content-Type", "application/json")
         .send()
         .await
         .map_err(ComputeError::RequestFailed)?;
@@ -54,7 +56,7 @@ pub async fn stop_compute(deployment_id: &str, config: &Config) -> Result<(), Co
         .map_err(|e| ComputeError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
-        .post(format!("{}/deploy/{}/compute/stop", config.api_url, deployment_id))
+        .post(format!("{}/deploy/{}/stop", config.api_url, deployment_id))
         .header("Authorization", format!("Bearer {}", jwt_token))
         .send()
         .await

@@ -52,7 +52,7 @@ async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
             SubCommand::Deploy(args) => deploy::deploy(args, config).await,
         SubCommand::Commit(args) => commit::commit(args, config).await,
         SubCommand::Branch(args) => branch::branch(args, config).await,
-        SubCommand::Log => log::log(config).await,
+        SubCommand::Log(args) => log::log(args, config).await,
         SubCommand::Checkout(args) => checkout::checkout(args, config).await,
                 SubCommand::Compute(args) => compute::compute(args, config).await,
         SubCommand::Usage => usage::usage(config).await,

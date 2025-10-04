@@ -10,7 +10,7 @@ struct ComputeRow {
     #[tabled(rename = "Deployment ID")]
     id: String,
     #[tabled(rename = "Branch ID")]
-    clone_id: String,
+    branch_id: String,
     #[tabled(rename = "Name")]
     name: String,
     #[tabled(rename = "FQDN")]
@@ -32,17 +32,20 @@ struct StatusRow {
 }
 
 pub async fn compute(args: &ComputeArgs, config: &Config) -> Result<()> {
-    match args.action.as_str() {
-        "status" => status(args, config).await,
-        "start" => start(args, config).await,
-        "stop" => stop(args, config).await,
-        "restart" => restart(args, config).await,
-        "list" => list(args, config).await,
-        "logs" => logs(args, config).await,
-        _ => {
-            println!("{} Unknown action: {}", "❌".red(), args.action);
-            println!("Available actions: status, start, stop, restart, list, logs");
+    match args.action.as_deref() {
+        Some("status") => status(args, config).await,
+        Some("start") => start(args, config).await,
+        Some("stop") => stop(args, config).await,
+        Some("restart") => restart(args, config).await,
+        Some("logs") => logs(args, config).await,
+        Some(action) => {
+            println!("{} Unknown action: {}", "❌".red(), action);
+            println!("Available actions: start, stop, status, logs");
             Ok(())
+        }
+        None => {
+            // Default action: show compute info (like list)
+            list(args, config).await
         }
     }
 }
@@ -92,7 +95,7 @@ pub async fn list(args: &ComputeArgs, config: &Config) -> Result<()> {
     
     let compute_row = ComputeRow {
         id: result.id,
-        clone_id: result.clone_id,
+        branch_id: result.branch_id,
         name: result.name,
         fqdn: result.fqdn,
         port: result.port.to_string(),
