@@ -35,9 +35,8 @@ pub enum SubCommand {
     /// Switch branches or checkout snapshots
     Checkout(CheckoutArgs),
     
-    /// Compute instance management
-    #[clap(subcommand)]
-    Compute(ComputeCommand),
+            /// Compute instance management
+            Compute(ComputeArgs),
     
     /// Show details about deployments, branches, etc.
     #[clap(subcommand)]
@@ -213,21 +212,15 @@ pub struct CheckoutArgs {
 }
 
 
-// Original API command structures (preserved)
-#[derive(Subcommand, Debug)]
-pub enum ComputeCommand {
-    /// Show the current status of the database compute instance
-    Status(GetComputeArgs),
-    /// Start the database compute instance
-    Start(GetComputeArgs),
-    /// Stop the database compute instance
-    Stop(GetComputeArgs),
-    /// Restart the database compute instance
-    Restart(GetComputeArgs),
-    /// List all compute instances for a deployment
-    List(GetComputeArgs),
-    /// View logs for a compute instance
-    Logs(GetComputeArgs),
+#[derive(Args, Debug)]
+pub struct ComputeArgs {
+    /// The ID of the deployment
+    #[clap(short = 'x', long, required = true)]
+    pub deployment_id: String,
+    
+    /// Action to perform: status, start, stop, restart, list, logs
+    #[clap(short = 'a', long, default_value = "list")]
+    pub action: String,
 }
 
 #[derive(Subcommand, Debug)]
@@ -238,12 +231,6 @@ pub enum ShowCommand {
     Commits(ShowDeployArgs),
 }
 
-#[derive(Args, Debug)]
-pub struct GetComputeArgs {
-    /// The ID of the deployment
-    #[clap(short = 'x', long, required = true)]
-    pub deployment_id: String,
-}
 
 #[derive(Args, Debug)]
 pub struct ShowDeployArgs {

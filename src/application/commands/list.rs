@@ -314,6 +314,17 @@ async fn display_git_graph(commits: &[crate::application::dto::commit::GetCommit
         }
     };
     
+    // Get current compute snapshot to show pin
+    let current_compute_snapshot = match crate::application::services::compute::list_compute(deployment_id, config).await {
+        Ok(compute_result) => {
+            // Find the branch that compute is attached to and get its snapshot
+            branches.iter()
+                .find(|b| b.id == compute_result.attached_branch)
+                .map(|b| b.snapshot_id.clone())
+        },
+        Err(_) => None,
+    };
+    
     // Create a mapping from dataset_id to branch name
     let mut branch_names: std::collections::HashMap<String, String> = std::collections::HashMap::new();
     for branch in &branches {
@@ -477,10 +488,21 @@ async fn display_git_graph(commits: &[crate::application::dto::commit::GetCommit
         // Check if this is the last commit for this branch
         let is_last_commit = last_commits_per_branch.get(&branch_id).map(|last_commit| last_commit.id == commit.id).unwrap_or(false);
         
+        // Check if this is the current compute snapshot
+        let is_current_compute = current_compute_snapshot.as_ref().map(|snapshot_id| snapshot_id == &commit.id).unwrap_or(false);
+        
         let hash_display = if is_last_commit {
-            format!("{} ({})", &commit.id[..8].yellow(), branch_name.blue())
+            if is_current_compute {
+                format!("{} ({}) 📌", &commit.id[..8].yellow(), branch_name.blue())
+            } else {
+                format!("{} ({})", &commit.id[..8].yellow(), branch_name.blue())
+            }
         } else {
-            commit.id[..8].to_string().yellow().to_string()
+            if is_current_compute {
+                format!("{} 📌", commit.id[..8].to_string().yellow())
+            } else {
+                commit.id[..8].to_string().yellow().to_string()
+            }
         };
         
         // Format with proper table padding - right-align the date
