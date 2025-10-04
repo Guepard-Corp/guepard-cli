@@ -56,7 +56,7 @@ async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
         SubCommand::Log => log::log(config).await,
         SubCommand::RevParse => rev_parse::rev_parse(config).await,
         SubCommand::Checkout(args) => checkout::checkout(args, config).await,
-        SubCommand::Compute(cmd) => compute::compute(cmd, config).await,
+                SubCommand::Compute(args) => compute::compute(args, config).await,
         SubCommand::Show(cmd) => show::show(cmd, config).await,
         SubCommand::Usage => usage::usage(config).await,
         SubCommand::List(args) => list::list(args, config).await,

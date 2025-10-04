@@ -1,7 +1,7 @@
 use anyhow::Result;
 use crate::config::config::Config;
-use crate::structure::{ComputeCommand, GetComputeArgs};
-use crate::application::services::compute;
+use crate::structure::ComputeArgs;
+use crate::application::services::{compute, branch};
 use colored::Colorize;
 use tabled::{Table, Tabled, settings::Style};
 
@@ -9,20 +9,18 @@ use tabled::{Table, Tabled, settings::Style};
 struct ComputeRow {
     #[tabled(rename = "Deployment ID")]
     id: String,
-    #[tabled(rename = "Repository")]
-    repository_name: String,
-    #[tabled(rename = "Snapshot ID")]
-    snapshot_id: String,
+    #[tabled(rename = "Branch ID")]
+    clone_id: String,
     #[tabled(rename = "Name")]
     name: String,
     #[tabled(rename = "FQDN")]
     fqdn: String,
-    #[tabled(rename = "Provider")]
-    database_provider: String,
-    #[tabled(rename = "Version")]
-    database_version: String,
-    #[tabled(rename = "Ephemeral")]
-    is_ephemeral: String,
+    #[tabled(rename = "Port")]
+    port: String,
+    #[tabled(rename = "Attached Branch")]
+    attached_branch: String,
+    #[tabled(rename = "Current Snapshot")]
+    current_snapshot: String,
 }
 
 #[derive(Tabled)]
@@ -33,18 +31,23 @@ struct StatusRow {
     message: String,
 }
 
-pub async fn compute(cmd: &ComputeCommand, config: &Config) -> Result<()> {
-    match cmd {
-        ComputeCommand::Status(args) => status(args, config).await,
-        ComputeCommand::Start(args) => start(args, config).await,
-        ComputeCommand::Stop(args) => stop(args, config).await,
-        ComputeCommand::Restart(args) => restart(args, config).await,
-        ComputeCommand::List(args) => list(args, config).await,
-        ComputeCommand::Logs(args) => logs(args, config).await,
+pub async fn compute(args: &ComputeArgs, config: &Config) -> Result<()> {
+    match args.action.as_str() {
+        "status" => status(args, config).await,
+        "start" => start(args, config).await,
+        "stop" => stop(args, config).await,
+        "restart" => restart(args, config).await,
+        "list" => list(args, config).await,
+        "logs" => logs(args, config).await,
+        _ => {
+            println!("{} Unknown action: {}", "❌".red(), args.action);
+            println!("Available actions: status, start, stop, restart, list, logs");
+            Ok(())
+        }
     }
 }
 
-pub async fn status(args: &GetComputeArgs, config: &Config) -> Result<()> {
+pub async fn status(args: &ComputeArgs, config: &Config) -> Result<()> {
     let result = compute::get_status(&args.deployment_id, config).await?;
     
     let status_row = StatusRow {
@@ -57,37 +60,44 @@ pub async fn status(args: &GetComputeArgs, config: &Config) -> Result<()> {
     Ok(())
 }
 
-pub async fn start(args: &GetComputeArgs, config: &Config) -> Result<()> {
+pub async fn start(args: &ComputeArgs, config: &Config) -> Result<()> {
     compute::start_compute(&args.deployment_id, config).await?;
     println!("{} Compute instance started successfully!", "✅".green());
     Ok(())
 }
 
-pub async fn stop(args: &GetComputeArgs, config: &Config) -> Result<()> {
+pub async fn stop(args: &ComputeArgs, config: &Config) -> Result<()> {
     compute::stop_compute(&args.deployment_id, config).await?;
     println!("{} Compute instance stopped successfully!", "✅".green());
     Ok(())
 }
 
-pub async fn restart(args: &GetComputeArgs, config: &Config) -> Result<()> {
+pub async fn restart(args: &ComputeArgs, config: &Config) -> Result<()> {
     stop(args, config).await?;
     start(args, config).await?;
     println!("{} Compute instance restarted successfully!", "✅".green());
     Ok(())
 }
 
-pub async fn list(args: &GetComputeArgs, config: &Config) -> Result<()> {
+pub async fn list(args: &ComputeArgs, config: &Config) -> Result<()> {
     let result = compute::list_compute(&args.deployment_id, config).await?;
+    
+    // Get branch information to find the current snapshot
+    let branches = branch::list_branches(&args.deployment_id, config).await?;
+    let current_snapshot = branches
+        .iter()
+        .find(|b| b.id == result.attached_branch)
+        .map(|b| b.snapshot_id.clone())
+        .unwrap_or_else(|| "Unknown".to_string());
     
     let compute_row = ComputeRow {
         id: result.id,
-        repository_name: result.repository_name,
-        snapshot_id: result.snapshot_id,
+        clone_id: result.clone_id,
         name: result.name,
         fqdn: result.fqdn,
-        database_provider: result.database_provider,
-        database_version: result.database_version,
-        is_ephemeral: if result.is_ephemeral { "Yes".to_string() } else { "No".to_string() },
+        port: result.port.to_string(),
+        attached_branch: result.attached_branch,
+        current_snapshot,
     };
     
     println!("{} Compute instance details for deployment: {}", "🖥️".blue(), args.deployment_id);
@@ -95,7 +105,7 @@ pub async fn list(args: &GetComputeArgs, config: &Config) -> Result<()> {
     Ok(())
 }
 
-pub async fn logs(args: &GetComputeArgs, config: &Config) -> Result<()> {
+pub async fn logs(args: &ComputeArgs, config: &Config) -> Result<()> {
     let result = compute::get_logs(&args.deployment_id, config).await?;
     
     println!("{} Compute logs for deployment: {}", "📋".blue(), args.deployment_id);
