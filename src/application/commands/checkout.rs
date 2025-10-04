@@ -47,10 +47,10 @@ pub async fn checkout_branch(args: &CheckoutBranchArgs, config: &Config) -> Resu
     
     let checkout_row = CheckoutRow {
         id: branch.id,
-        name: branch.name,
-        status: branch.status,
-        snapshot_id: branch.snapshot_id,
-        environment_type: branch.environment_type.unwrap_or("development".to_string()),
+        name: branch.label_name,
+        status: branch.job_status,
+        snapshot_id: branch.branch_id,
+        environment_type: "development".to_string(),
     };
     
     println!("{} Checked out branch successfully!", "✅".green());
