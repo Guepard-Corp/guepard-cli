@@ -14,9 +14,6 @@ pub struct CLI {
 
 #[derive(Subcommand, Debug)]
 pub enum SubCommand {
-    /// Initialize a new Guepard environment
-    Init(InitArgs),
-    
     /// Deploy database instances
     Deploy(DeployArgs),
     
@@ -29,18 +26,11 @@ pub enum SubCommand {
     /// Show commit history
     Log,
     
-    /// Find .gfs directory
-    RevParse,
-    
     /// Switch branches or checkout snapshots
     Checkout(CheckoutArgs),
     
-            /// Compute instance management
-            Compute(ComputeArgs),
-    
-    /// Show details about deployments, branches, etc.
-    #[clap(subcommand)]
-    Show(ShowCommand),
+    /// Compute instance management
+    Compute(ComputeArgs),
     
     /// Show usage information
     Usage,
@@ -78,13 +68,6 @@ pub struct ListArgs {
     /// Show all commits including AUTO SNAPs (for commits only)
     #[clap(short = 'a', long)]
     pub all: bool,
-}
-
-#[derive(Args, Debug)]
-pub struct InitArgs {
-    /// The path where to initialize the Guepard environment
-    #[clap(value_parser, default_value = ".")]
-    pub path: String,
 }
 
 #[derive(Args, Debug)]
@@ -225,22 +208,6 @@ pub struct ComputeArgs {
     /// Action to perform: status, start, stop, restart, list, logs
     #[clap(short = 'a', long, default_value = "list")]
     pub action: String,
-}
-
-#[derive(Subcommand, Debug)]
-pub enum ShowCommand {
-    /// Show branch details
-    Branches(ShowDeployArgs),
-    /// Show commit details (snapshots)
-    Commits(ShowDeployArgs),
-}
-
-
-#[derive(Args, Debug)]
-pub struct ShowDeployArgs {
-    /// The ID of the deployment
-    #[clap(short = 'x', long, required = true)]
-    pub deployment_id: String,
 }
 
 // Additional structs for original API compatibility

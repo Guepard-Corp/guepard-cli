@@ -1,13 +1,10 @@
-pub mod init;
 pub mod commit;
 pub mod log;
-pub mod rev_parse;
 pub mod checkout;
 pub mod branch;
 pub mod deploy;
 pub mod compute;
 pub mod usage;
-pub mod show;
 pub mod login;
 pub mod logout;
 pub mod list;

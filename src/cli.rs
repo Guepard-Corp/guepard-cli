@@ -1,5 +1,5 @@
 use clap::Parser;
-use guepard_cli::application::commands::{init, deploy, commit, branch, log, rev_parse, checkout, compute, show, usage, login, logout, list};
+use guepard_cli::application::commands::{deploy, commit, branch, log, checkout, compute, usage, login, logout, list};
 use guepard_cli::config::config::{load_config, Config};
 use guepard_cli::domain::errors::{bookmark_error::BookmarkError, branch_error::BranchError, compute_error::ComputeError, deploy_error::DeployError, login_error::LoginError, usage_error::UsageError};
 use guepard_cli::structure::{SubCommand, CLI};
@@ -48,16 +48,13 @@ async fn main() {
 }
 
 async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
-    match sub_commands {
-        SubCommand::Init(args) => init::init(args, config).await,
-                SubCommand::Deploy(args) => deploy::deploy(args, config).await,
+        match sub_commands {
+            SubCommand::Deploy(args) => deploy::deploy(args, config).await,
         SubCommand::Commit(args) => commit::commit(args, config).await,
         SubCommand::Branch(args) => branch::branch(args, config).await,
         SubCommand::Log => log::log(config).await,
-        SubCommand::RevParse => rev_parse::rev_parse(config).await,
         SubCommand::Checkout(args) => checkout::checkout(args, config).await,
                 SubCommand::Compute(args) => compute::compute(args, config).await,
-        SubCommand::Show(cmd) => show::show(cmd, config).await,
         SubCommand::Usage => usage::usage(config).await,
         SubCommand::List(args) => list::list(args, config).await,
         SubCommand::Login => login::execute(config).await,
