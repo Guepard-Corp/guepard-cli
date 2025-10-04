@@ -2,6 +2,7 @@ use anyhow::Result;
 use crate::config::config::Config;
 use crate::structure::ComputeArgs;
 use crate::application::services::{compute, branch};
+use crate::domain::errors::compute_error::ComputeError;
 use colored::Colorize;
 use tabled::{Table, Tabled, settings::Style};
 
@@ -51,15 +52,27 @@ pub async fn compute(args: &ComputeArgs, config: &Config) -> Result<()> {
 }
 
 pub async fn status(args: &ComputeArgs, config: &Config) -> Result<()> {
-    let result = compute::get_status(&args.deployment_id, config).await?;
-    
-    let status_row = StatusRow {
-        status: result.status,
-        message: result.message.unwrap_or("No additional information".to_string()),
-    };
-    
-    println!("{} Compute Status for deployment: {}", "📊".blue(), args.deployment_id);
-    println!("{}", Table::new(vec![status_row]).with(Style::rounded()));
+    match compute::get_status(&args.deployment_id, config).await {
+        Ok(result) => {
+            let status_row = StatusRow {
+                status: "Healthy".to_string(),
+                message: result.message,
+            };
+            
+            println!("{} Compute Status for deployment: {}", "📊".blue(), args.deployment_id);
+            println!("{}", Table::new(vec![status_row]).with(Style::rounded()));
+        }
+        Err(ComputeError::NotHealthy(message)) => {
+            let status_row = StatusRow {
+                status: "Not Healthy".to_string(),
+                message,
+            };
+            
+            println!("{} Compute Status for deployment: {}", "📊".blue(), args.deployment_id);
+            println!("{}", Table::new(vec![status_row]).with(Style::rounded()));
+        }
+        Err(e) => return Err(e.into()),
+    }
     Ok(())
 }
 

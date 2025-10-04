@@ -35,7 +35,7 @@ pub async fn start_compute(deployment_id: &str, config: &Config) -> Result<(), C
     
     let client = Client::new();
     let response = client
-        .post(format!("{}/deploy/{}/start", config.api_url, deployment_id))
+        .get(format!("{}/deploy/{}/start", config.api_url, deployment_id))
         .header("Authorization", format!("Bearer {}", jwt_token))
         .header("Content-Type", "application/json")
         .send()
@@ -56,7 +56,7 @@ pub async fn stop_compute(deployment_id: &str, config: &Config) -> Result<(), Co
         .map_err(|e| ComputeError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
-        .post(format!("{}/deploy/{}/stop", config.api_url, deployment_id))
+        .get(format!("{}/deploy/{}/stop", config.api_url, deployment_id))
         .header("Authorization", format!("Bearer {}", jwt_token))
         .send()
         .await
@@ -103,7 +103,7 @@ pub async fn get_status(deployment_id: &str, config: &Config) -> Result<ComputeS
         .map_err(|e| ComputeError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
-        .get(format!("{}/deploy/{}/compute/status", config.api_url, deployment_id))
+        .get(format!("{}/deploy/{}/status", config.api_url, deployment_id))
         .header("Authorization", format!("Bearer {}", jwt_token))
         .send()
         .await

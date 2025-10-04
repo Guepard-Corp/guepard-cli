@@ -5,8 +5,13 @@ pub fn get_version() -> &'static str {
 }
 
 #[derive(Parser, Debug)]
-#[clap(version = get_version(), about, long_about = None)]
-#[clap(propagate_version = true)]
+#[clap(
+    version = get_version(), 
+    about = "🐆 Guepard CLI - Git for databases",
+    long_about = "Guepard CLI provides Git-like capabilities for your databases. 
+Create snapshots, manage branches, and deploy database instances with ease.",
+    propagate_version = true
+)]
 pub struct CLI {
     #[clap(subcommand)]
     pub sub_commands: SubCommand,
@@ -14,34 +19,34 @@ pub struct CLI {
 
 #[derive(Subcommand, Debug)]
 pub enum SubCommand {
-    /// Deploy database instances
+    /// 🚀 Deploy database instances
     Deploy(DeployArgs),
     
-    /// Create snapshots (bookmarks)
+    /// 📸 Create snapshots (like git commit)
     Commit(CommitArgs),
     
-    /// List and manage branches
+    /// 🌿 List and manage branches
     Branch(BranchArgs),
     
-    /// Show commit history
+    /// 📋 Show commit history
     Log(LogArgs),
     
-    /// Switch branches or checkout snapshots
+    /// 🔄 Switch branches or checkout snapshots
     Checkout(CheckoutArgs),
     
-    /// Compute instance management
+    /// 💻 Manage compute instances (start/stop/status)
     Compute(ComputeArgs),
     
-    /// Show usage information
+    /// 📊 Show usage information
     Usage,
     
-    /// List deployments, branches, commits, etc.
+    /// 📋 List deployments, branches, commits, etc.
     List(ListArgs),
     
-    /// Interactive login process
+    /// 🔐 Login to Guepard (interactive)
     Login,
     
-    /// Log out and clear all credentials
+    /// 🚪 Logout and clear credentials
     Logout,
 }
 
@@ -72,67 +77,66 @@ pub struct ListArgs {
 
 #[derive(Args, Debug)]
 pub struct DeployArgs {
-    /// The database provider (e.g., PostgreSQL, MySQL)
+    /// Database type: PostgreSQL, MySQL, MongoDB
     #[clap(short = 'p', long)]
     pub database_provider: Option<String>,
     
-    /// The version of the database
+    /// Database version (e.g., 16 for PostgreSQL)
     #[clap(short = 'v', long)]
     pub database_version: Option<String>,
     
-    /// The region where the deployment will be created
+    /// Region: us-west, us-east, eu-west, asia-pacific
     #[clap(short = 'r', long)]
     pub region: Option<String>,
     
-    /// The deployment type (REPOSITORY or F2)
+    /// Type: REPOSITORY (for versioning) or F2 (for compute)
     #[clap(short = 'i', long)]
     pub instance_type: Option<String>,
     
-    /// The datacenter for the deployment
+    /// Cloud provider: aws, gcp, azure
     #[clap(short = 'd', long)]
     pub datacenter: Option<String>,
     
-    /// The name of the repository
+    /// Repository name (will be auto-generated if not provided)
     #[clap(short = 'n', long)]
     pub repository_name: Option<String>,
     
-    /// The password for the database
+    /// Database password (required for creation)
     #[clap(short = 'w', long)]
     pub database_password: Option<String>,
     
-    /// The ID of the deployment (for get/update/delete operations)
+    /// Deployment ID (for get/update/delete operations)
     #[clap(short = 'x', long)]
     pub deployment_id: Option<String>,
     
-    /// The username for the database
+    /// Database username (defaults to 'guepard')
     #[clap(short = 'u', long)]
     pub user: Option<String>,
     
-    /// Confirm deletion without prompting
+    /// Skip confirmation prompts
     #[clap(short = 'y', long)]
     pub yes: bool,
     
-    /// Performance profile label name (e.g., gp.g1.xsmall)
+    /// Performance profile: gp.g1.xsmall, gp.g1.small, etc.
     #[clap(short = 'f', long)]
     pub performance_profile: Option<String>,
     
-    /// Interactive mode - guide through deployment creation
+    /// Interactive mode - guided setup
     #[clap(short = 'I', long)]
     pub interactive: bool,
 }
 
 #[derive(Args, Debug)]
 pub struct CommitArgs {
-    /// The commit message
+    /// Commit message (like git commit -m)
     #[clap(short = 'm', long, required = true)]
     pub message: String,
     
-    /// The deployment ID
+    /// Deployment ID
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
     
-    /// The branch IDstart compute
-    /// 
+    /// Branch ID (will use current branch if not provided)
     #[clap(short = 'b', long, required = true)]
     pub branch_id: String,
 }
@@ -209,11 +213,11 @@ pub struct CheckoutArgs {
 
 #[derive(Args, Debug)]
 pub struct ComputeArgs {
-    /// The ID of the deployment
+    /// Deployment ID
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
     
-    /// Action to perform: start, stop, status (optional - defaults to info)
+    /// Action: start, stop, status (defaults to info if not provided)
     #[clap(value_parser)]
     pub action: Option<String>,
 }

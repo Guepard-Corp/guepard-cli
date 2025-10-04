@@ -1,7 +1,7 @@
 use anyhow::Result;
 use crate::config::config::Config;
 use crate::structure::CommitArgs;
-use crate::application::services::{commit, compute};
+use crate::application::services::commit;
 use crate::application::dto::commit::CreateCommitRequest;
 use colored::Colorize;
 use tabled::{Table, Tabled, settings::Style};
