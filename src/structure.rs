@@ -178,6 +178,10 @@ pub struct BranchArgs {
     /// Whether the branch is ephemeral
     #[clap(short = 'e', long)]
     pub ephemeral: bool,
+    
+    /// The source branch ID to create from
+    #[clap(short = 'b', long)]
+    pub source_branch_id: Option<String>,
 }
 
 #[derive(Args, Debug)]
@@ -206,9 +210,9 @@ pub struct CheckoutArgs {
     #[clap(short = 'k', long)]
     pub checkout: bool,
     
-    /// Whether ephemeral
-    #[clap(short = 'e', long)]
-    pub ephemeral: bool,
+    /// The source branch ID to create from
+    #[clap(short = 'b', long)]
+    pub source_branch_id: Option<String>,
 }
 
 
@@ -249,6 +253,14 @@ pub struct CreateBranchArgs {
     /// The ID of the snapshot
     #[clap(short = 's', long, required = true)]
     pub snapshot_id: String,
+
+    /// The name of the branch
+    #[clap(short = 'n', long, required = true)]
+    pub branch_name: String,
+
+    /// The source branch ID to create from
+    #[clap(short = 'b', long, required = true)]
+    pub source_branch_id: String,
 
     /// Whether to discard changes
     #[clap(short = 'd', long, required = true)]

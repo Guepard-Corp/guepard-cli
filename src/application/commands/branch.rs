@@ -24,11 +24,16 @@ struct BranchRow {
 
 pub async fn branch(args: &BranchArgs, config: &Config) -> Result<()> {
     if let Some(deployment_id) = &args.deployment_id {
-        if let Some(_name) = &args.name {
+        if let Some(name) = &args.name {
             // Create branch
+            let source_branch_id = args.source_branch_id.clone()
+                .unwrap_or_else(|| "a7d373a3-4244-47b7-aacb-ad366f2520f6".to_string()); // Default to main branch
+            
             let create_args = CreateBranchArgs {
                 deployment_id: deployment_id.clone(),
                 snapshot_id: args.snapshot_id.clone().unwrap(),
+                branch_name: name.clone(),
+                source_branch_id,
                 discard_changes: args.discard_changes.clone().unwrap_or("false".to_string()),
                 checkout: args.checkout,
                 ephemeral: args.ephemeral,
@@ -51,6 +56,7 @@ pub async fn branch(args: &BranchArgs, config: &Config) -> Result<()> {
 
 pub async fn create(args: &CreateBranchArgs, config: &Config) -> Result<()> {
     let request = BranchRequest {
+        branch_name: Some(args.branch_name.clone()),
         discard_changes: Some(args.discard_changes.clone()),
         checkout: args.checkout,
         ephemeral: args.ephemeral,
@@ -58,6 +64,7 @@ pub async fn create(args: &CreateBranchArgs, config: &Config) -> Result<()> {
     
     let branch = branch::create_branch(
         &args.deployment_id,
+        &args.source_branch_id,
         &args.snapshot_id,
         request,
         config,
@@ -65,11 +72,11 @@ pub async fn create(args: &CreateBranchArgs, config: &Config) -> Result<()> {
     
     let branch_row = BranchRow {
         id: branch.id,
-        name: branch.name,
-        status: branch.status,
-        snapshot_id: branch.snapshot_id,
-        environment_type: branch.environment_type.unwrap_or("development".to_string()),
-        is_ephemeral: if branch.is_ephemeral { "Yes".to_string() } else { "No".to_string() },
+        name: branch.label_name,
+        status: branch.job_status,
+        snapshot_id: branch.branch_id,
+        environment_type: "development".to_string(),
+        is_ephemeral: "No".to_string(), // Default since not available in response
     };
     
     println!("{} Branch created successfully!", "✅".green());
@@ -107,11 +114,11 @@ pub async fn checkout(args: &CheckoutBranchArgs, config: &Config) -> Result<()> 
     
     let branch_row = BranchRow {
         id: branch.id,
-        name: branch.name,
-        status: branch.status,
-        snapshot_id: branch.snapshot_id,
-        environment_type: branch.environment_type.unwrap_or("development".to_string()),
-        is_ephemeral: if branch.is_ephemeral { "Yes".to_string() } else { "No".to_string() },
+        name: branch.label_name,
+        status: branch.job_status,
+        snapshot_id: branch.branch_id,
+        environment_type: "development".to_string(),
+        is_ephemeral: "No".to_string(), // Default since not available in response
     };
     
     println!("{} Checked out branch successfully!", "✅".green());
