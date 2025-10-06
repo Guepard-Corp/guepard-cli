@@ -23,12 +23,17 @@ jobs:
         run: |
           echo "Available releases:"
           curl -s https://api.github.com/repos/Guepard-Corp/guepard-cli/releases | jq -r '.[].tag_name' | head -10
+          echo ""
+          echo "You can use any of these versions (with or without 'v' prefix)"
 
       - name: Set version
         id: ver
         run: |
-          VERSION="${{ github.event.inputs.version }}"
+          INPUT_VERSION="${{ github.event.inputs.version }}"
+          # Remove 'v' prefix if present
+          VERSION="${INPUT_VERSION#v}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Processing version: ${VERSION}"
 
       - name: Download all platform releases
         run: |
