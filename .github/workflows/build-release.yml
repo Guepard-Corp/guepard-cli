@@ -89,8 +89,8 @@ jobs:
 
       - name: Commit version bump
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config --local user.email "action@guepard.run"
+          git config --local user.name "Guepard Action"
           git add Cargo.toml Cargo.lock
           git commit -m "Bump version to ${{ steps.version.outputs.new_version }}"
 
