@@ -1,54 +1,108 @@
 name: Build and Release
 
 on:
-  push:
-    tags:
-      - 'v*-linux'
-      - 'v*-macos'
-      - 'v*-windows'
-      - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 permissions:
   contents: write
   packages: write
 
 jobs:
+  bump-version-and-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.new_version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install cargo-edit
+        run: cargo install cargo-edit
+
+      - name: Get current version
+        id: current_version
+        run: |
+          CURRENT_VERSION=$(cargo pkgid | sed 's/.*://')
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $CURRENT_VERSION"
+
+      - name: Bump version
+        id: version
+        run: |
+          RELEASE_TYPE="${{ github.event.inputs.release_type }}"
+          CURRENT_VERSION="${{ steps.current_version.outputs.current_version }}"
+          
+          echo "Bumping $RELEASE_TYPE version from $CURRENT_VERSION"
+          
+          case $RELEASE_TYPE in
+            patch)
+              cargo version patch
+              ;;
+            minor)
+              cargo version minor
+              ;;
+            major)
+              cargo version major
+              ;;
+          esac
+          
+          NEW_VERSION=$(cargo pkgid | sed 's/.*://')
+          TAG="v$NEW_VERSION"
+          
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+          echo "Tag: $TAG"
+
+      - name: Commit version bump
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add Cargo.toml Cargo.lock
+          git commit -m "Bump version to ${{ steps.version.outputs.new_version }}"
+
+      - name: Create and push tag
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          git tag "$TAG"
+          git push origin main
+          git push origin "$TAG"
+
   detect-platforms:
+    needs: bump-version-and-tag
     runs-on: ubuntu-latest
     outputs:
       platforms: ${{ steps.detect.outputs.platforms }}
-      version: ${{ steps.detect.outputs.version }}
+      version: ${{ needs.bump-version-and-tag.outputs.version }}
     steps:
-      - name: Detect platforms from tag
+      - name: Set platforms and version
         id: detect
         run: |
-          TAG="${{ github.ref_name }}"
-          VERSION=$(echo "$TAG" | sed 's/-.*$//')
-          
-          PLATFORMS=""
-          
-          # Check for specific platform tags
-          if [[ "$TAG" == *"-linux"* ]]; then
-            PLATFORMS="$PLATFORMS linux"
-          fi
-          if [[ "$TAG" == *"-macos"* ]]; then
-            PLATFORMS="$PLATFORMS macos"
-          fi
-          if [[ "$TAG" == *"-windows"* ]]; then
-            PLATFORMS="$PLATFORMS windows"
-          fi
-          
-          # If no platform specified in tag, build all
-          if [[ -z "$PLATFORMS" ]]; then
-            PLATFORMS="linux macos windows"
-          fi
-          
-          # Trim leading space
-          PLATFORMS=$(echo "$PLATFORMS" | sed 's/^ *//')
+          # Build all platforms for manual releases
+          PLATFORMS="linux macos windows"
+          VERSION="${{ needs.bump-version-and-tag.outputs.version }}"
           
           echo "platforms=$PLATFORMS" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Detected platforms: '$PLATFORMS'"
+          echo "Platforms: '$PLATFORMS'"
           echo "Version: $VERSION"
 
   build-linux:
@@ -235,7 +289,7 @@ jobs:
           path: dist/guepard-cli-${{ needs.detect-platforms.outputs.version }}-windows-amd64.zip
 
   create-release:
-    needs: [detect-platforms, build-linux, build-macos, build-windows]
+    needs: [bump-version-and-tag, detect-platforms, build-linux, build-macos, build-windows]
     if: always() && needs.detect-platforms.result == 'success'
     runs-on: ubuntu-latest
     steps:
@@ -300,7 +354,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: dist/*
-          tag_name: ${{ github.ref_name }}
+          tag_name: ${{ needs.bump-version-and-tag.outputs.tag }}
           name: Guepard CLI ${{ needs.detect-platforms.outputs.version }}
           body: ${{ env.RELEASE_BODY }}
           draft: false
