@@ -7,7 +7,7 @@ on:
 
 jobs:
   publish-choco:
-    name: Build and publish Chocolatey
+    name: Publish Chocolatey using release asset
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -23,26 +23,11 @@ jobs:
           VERSION="${TAG#v}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: x86_64-pc-windows-gnu
-          override: true
-
-      - name: Install system deps for Windows cross
+      - name: Download Windows release asset
         run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-mingw-w64-x86-64 zip
-
-      - name: Build Windows exe
-        run: |
-          echo "Building Windows AMD64..."
-          cargo build --release --target x86_64-pc-windows-gnu
-          mkdir -p dist/windows-amd64
-          cp target/x86_64-pc-windows-gnu/release/guepard.exe dist/windows-amd64/
-          cd dist
-          zip -r guepard-cli-${{ steps.ver.outputs.version }}-windows-amd64.zip windows-amd64/
+          mkdir -p dist
+          curl -L -o dist/guepard-cli-${{ steps.ver.outputs.version }}-windows-amd64.zip \
+            "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-${{ steps.ver.outputs.version }}-windows-amd64.zip"
 
       - name: Compute Windows zip checksum
         id: sha
@@ -66,7 +51,11 @@ jobs:
       - name: Setup Chocolatey
         run: |
           sudo apt-get update
-          sudo apt-get install -y nuget mono-devel
+          sudo apt-get install -y mono-devel curl
+          # Fetch latest NuGet.exe and create a wrapper so `nuget` works via mono
+          sudo curl -L -o /usr/local/bin/nuget.exe https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
+          sudo sh -c 'printf "%s\n" "#!/usr/bin/env bash" "exec mono /usr/local/bin/nuget.exe \"$@\"" > /usr/local/bin/nuget'
+          sudo chmod +x /usr/local/bin/nuget
 
       - name: Pack Chocolatey package (nuspec)
         run: |
@@ -83,4 +72,4 @@ jobs:
             exit 1
           fi
           nupkg=$(ls dist/*.nupkg | head -n1)
-          mono /usr/lib/nuget/NuGet.exe push "$nupkg" -ApiKey "$CHOCO_API_KEY" -Source https://push.chocolatey.org/
+          nuget push "$nupkg" -ApiKey "$CHOCO_API_KEY" -Source https://push.chocolatey.org/
