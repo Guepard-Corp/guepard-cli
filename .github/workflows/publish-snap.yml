@@ -1,0 +1,76 @@
+name: Publish Snap
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  publish-snap:
+    name: Build and publish Snap
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: ver
+        run: |
+          TAG="${GITHUB_REF##*/}"
+          VERSION="${TAG#v}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: |
+          sudo snap install lxd
+          sudo /snap/bin/lxd init --auto
+          sudo snap install snapcraft --classic
+          sudo apt-get update
+          sudo apt-get install -y musl-tools build-essential pkg-config libssl-dev
+
+      - name: Build Linux binary (x86_64)
+        run: |
+          cargo build --release
+          mkdir -p dist
+          cp target/release/guepard dist/guepard
+          tar -czf "dist/guepard-cli-${{ steps.ver.outputs.version }}-linux-amd64.tar.gz" -C dist guepard
+
+      - name: Compute checksum
+        id: sha
+        run: |
+          SHASUM=$(sha256sum "dist/guepard-cli-${{ steps.ver.outputs.version }}-linux-amd64.tar.gz" | awk '{print $1}')
+          echo "sha=${SHASUM}" >> "$GITHUB_OUTPUT"
+
+      - name: Update snapcraft.yaml
+        run: |
+          FILE="snap/snapcraft.yaml"
+          sed -i "s/^version: .*/version: '${{ steps.ver.outputs.version }}'/" "$FILE"
+          sed -i "s#^\s*source: .*#    source: dist/guepard-cli-${{ steps.ver.outputs.version }}-linux-amd64.tar.gz#" "$FILE"
+          sed -i "s#^\s*source-checksum: .*#    source-checksum: sha256/${{ steps.sha.outputs.sha }}#" "$FILE"
+
+      - name: Login to Snap Store
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        run: |
+          if [ -z "$SNAPCRAFT_STORE_CREDENTIALS" ]; then
+            echo "SNAPCRAFT_STORE_CREDENTIALS secret is missing" >&2
+            exit 1
+          fi
+          snapcraft whoami || true
+
+      - name: Build snap with LXD
+        run: |
+          snapcraft --use-lxd
+
+      - name: Upload and release to stable
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        run: |
+          SNAP_FILE=$(ls -1 *.snap | head -n1)
+          snapcraft upload "$SNAP_FILE" --release=stable

@@ -2,9 +2,9 @@
 
 $ErrorActionPreference = 'Stop'
 
-$packageName = 'gfs'
+$packageName = 'guepard'
 $binDir = Join-Path $env:ChocolateyInstall "bin"
-$exePath = Join-Path $binDir "gfs.exe"
+$exePath = Join-Path $binDir "guepard.exe"
 
 if (Test-Path $exePath) {
     Remove-Item $exePath -Force
