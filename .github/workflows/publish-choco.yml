@@ -1,0 +1,86 @@
+name: Publish Chocolatey
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  publish-choco:
+    name: Build and publish Chocolatey
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: ver
+        run: |
+          TAG="${GITHUB_REF##*/}"
+          VERSION="${TAG#v}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-pc-windows-gnu
+          override: true
+
+      - name: Install system deps for Windows cross
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-x86-64 zip
+
+      - name: Build Windows exe
+        run: |
+          echo "Building Windows AMD64..."
+          cargo build --release --target x86_64-pc-windows-gnu
+          mkdir -p dist/windows-amd64
+          cp target/x86_64-pc-windows-gnu/release/guepard.exe dist/windows-amd64/
+          cd dist
+          zip -r guepard-cli-${{ steps.ver.outputs.version }}-windows-amd64.zip windows-amd64/
+
+      - name: Compute Windows zip checksum
+        id: sha
+        run: |
+          SHASUM=$(sha256sum "dist/guepard-cli-${{ steps.ver.outputs.version }}-windows-amd64.zip" | awk '{print $1}')
+          echo "sha=${SHASUM}" >> "$GITHUB_OUTPUT"
+
+      - name: Update nuspec and install.ps1
+        run: |
+          NUSPEC="chocolatey/guepard.nuspec"
+          PS1="chocolatey/tools/chocolateyInstall.ps1"
+          # Update version in nuspec
+          sed -i "s#<version>.*</version>#<version>${{ steps.ver.outputs.version }}</version>#" "$NUSPEC"
+          # Update release notes header (best effort)
+          sed -i "s#Version .*:#Version ${{ steps.ver.outputs.version }}:#" "$NUSPEC"
+          # Update URL and checksum in install script
+          sed -i "s#guepard-cli-.*-windows-amd64.zip#guepard-cli-${{ steps.ver.outputs.version }}-windows-amd64.zip#" "$PS1"
+          sed -i "s#releases/download/v.*#/releases/download/v${{ steps.ver.outputs.version }}#" "$PS1"
+          sed -i "s#^\$checksum = '.*'#\$checksum = '${{ steps.sha.outputs.sha }}'#" "$PS1"
+
+      - name: Setup Chocolatey
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nuget mono-devel
+
+      - name: Pack Chocolatey package (nuspec)
+        run: |
+          cd chocolatey
+          nuget pack guepard.nuspec -BasePath . -OutputDirectory ../dist
+
+      - name: Push to Chocolatey
+        if: ${{ success() }}
+        env:
+          CHOCO_API_KEY: ${{ secrets.CHOCO_API_KEY }}
+        run: |
+          if [ -z "$CHOCO_API_KEY" ]; then
+            echo "CHOCO_API_KEY secret is missing" >&2
+            exit 1
+          fi
+          nupkg=$(ls dist/*.nupkg | head -n1)
+          mono /usr/lib/nuget/NuGet.exe push "$nupkg" -ApiKey "$CHOCO_API_KEY" -Source https://push.chocolatey.org/

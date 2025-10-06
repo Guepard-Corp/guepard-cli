@@ -1,0 +1,92 @@
+name: Publish Homebrew
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  publish-homebrew:
+    name: Update Homebrew tap
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: ver
+        run: |
+          TAG="${GITHUB_REF##*/}"
+          VERSION="${TAG#v}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Download all platform releases
+        run: |
+          mkdir -p release-assets
+          cd release-assets
+          curl -L -o macos-arm64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-v${{ steps.ver.outputs.version }}-macos-arm64.tar.gz"
+          curl -L -o macos-amd64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-v${{ steps.ver.outputs.version }}-macos-amd64.tar.gz"
+          curl -L -o linux-arm64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-v${{ steps.ver.outputs.version }}-linux-arm64.tar.gz"
+          curl -L -o linux-amd64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-v${{ steps.ver.outputs.version }}-linux-amd64.tar.gz"
+
+      - name: Calculate SHA256 checksums
+        run: |
+          echo "MACOS_ARM64_SHA256=$(shasum -a 256 release-assets/macos-arm64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
+          echo "MACOS_AMD64_SHA256=$(shasum -a 256 release-assets/macos-amd64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
+          echo "LINUX_ARM64_SHA256=$(shasum -a 256 release-assets/linux-arm64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
+          echo "LINUX_AMD64_SHA256=$(shasum -a 256 release-assets/linux-amd64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
+
+      - name: Update Homebrew formula
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          cat > homebrew-tap/Formula/guepard.rb << EOF
+          class Guepard < Formula
+            desc "Guepard CLI (guepard) - Git, but for Data"
+            homepage "https://www.guepard.run"
+            url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-v\${VERSION}-macos-arm64.tar.gz"
+            version "\${VERSION}"
+            sha256 "${{ env.MACOS_ARM64_SHA256 }}"
+            license "Guepard (c) 2025"
+
+            on_macos do
+              on_arm do
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-v\${VERSION}-macos-arm64.tar.gz"
+                sha256 "${{ env.MACOS_ARM64_SHA256 }}"
+              end
+              on_intel do
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-v\${VERSION}-macos-amd64.tar.gz"
+                sha256 "${{ env.MACOS_AMD64_SHA256 }}"
+              end
+            end
+
+            on_linux do
+              on_arm do
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-v\${VERSION}-linux-arm64.tar.gz"
+                sha256 "${{ env.LINUX_ARM64_SHA256 }}"
+              end
+              on_intel do
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-v\${VERSION}-linux-amd64.tar.gz"
+                sha256 "${{ env.LINUX_AMD64_SHA256 }}"
+              end
+            end
+
+            def install
+              bin.install "guepard"
+            end
+
+            test do
+              system "#{bin}/guepard", "--version"
+            end
+          end
+          EOF
+
+      - name: Commit and push Homebrew formula
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add homebrew-tap/Formula/guepard.rb
+          git commit -m "Update guepard to ${{ steps.ver.outputs.version }}"
+          git push
