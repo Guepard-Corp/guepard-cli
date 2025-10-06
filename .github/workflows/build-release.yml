@@ -165,11 +165,11 @@ jobs:
           cat > .cargo/config.toml << EOF
           [target.x86_64-apple-darwin]
           linker = "zig cc -target x86_64-apple-macos"
-          strip = { path = "false" }
+          strip = false
           
           [target.aarch64-apple-darwin]
           linker = "zig cc -target aarch64-apple-macos"
-          strip = { path = "false" }
+          strip = false
           
           # Configure Zig to find macOS frameworks
           [env]
