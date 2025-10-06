@@ -159,25 +159,11 @@ jobs:
           echo "Verifying macOS targets are installed:"
           rustup target list --installed | grep apple-darwin
 
-      - name: Configure cargo for cross-compilation
+      - name: Configure cross-compilation environment
         run: |
-          mkdir -p .cargo
-          cat > .cargo/config.toml << EOF
-          [target.x86_64-apple-darwin]
-          linker = "zig cc -target x86_64-apple-macos"
-          strip = { path = "false" }
-          
-          [target.aarch64-apple-darwin]
-          linker = "zig cc -target aarch64-apple-macos"
-          strip = { path = "false" }
-          
-          # Configure Zig to find macOS frameworks
-          [env]
-          ZIG_LOCAL_CACHE_DIR = "/tmp/zig-cache"
-          SDKROOT = "/opt/macos-sdk"
-          EOF
-          
-          echo "Configured cargo for cross-compilation with macOS SDK at /opt/macos-sdk"
+          echo "SDKROOT=/opt/macos-sdk" >> $GITHUB_ENV
+          echo "ZIG_LOCAL_CACHE_DIR=/tmp/zig-cache" >> $GITHUB_ENV
+          echo "Configured environment for cross-compilation with macOS SDK at /opt/macos-sdk"
 
       - name: Build macOS AMD64
         run: |

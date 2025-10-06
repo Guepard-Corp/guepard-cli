@@ -23,23 +23,19 @@ jobs:
           VERSION="${TAG#v}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-
       - name: Install dependencies
         run: |
           sudo snap install lxd
           sudo /snap/bin/lxd init --auto
           sudo snap install snapcraft --classic
           sudo apt-get update
-          sudo apt-get install -y musl-tools build-essential pkg-config libssl-dev
+          sudo apt-get install -y jq curl
 
-      - name: Build Linux binary (x86_64)
+      - name: Download Linux amd64 release asset
         run: |
-          cargo build --release
           mkdir -p dist
-          cp target/release/guepard dist/guepard
-          tar -czf "dist/guepard-cli-${{ steps.ver.outputs.version }}-linux-amd64.tar.gz" -C dist guepard
+          curl -L -o "dist/guepard-cli-${{ steps.ver.outputs.version }}-linux-amd64.tar.gz" \
+            "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-${{ steps.ver.outputs.version }}-linux-amd64.tar.gz"
 
       - name: Compute checksum
         id: sha
