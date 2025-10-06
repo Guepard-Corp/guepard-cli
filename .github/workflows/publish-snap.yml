@@ -1,9 +1,12 @@
 name: Publish Snap
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 0.26.15)'
+        required: true
+        type: string
 
 jobs:
   publish-snap:
@@ -16,11 +19,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Extract version from tag
+      - name: List available releases
+        run: |
+          echo "Available releases:"
+          curl -s https://api.github.com/repos/Guepard-Corp/guepard-cli/releases | jq -r '.[].tag_name' | head -10
+
+      - name: Set version
         id: ver
         run: |
-          TAG="${GITHUB_REF##*/}"
-          VERSION="${TAG#v}"
+          VERSION="${{ github.event.inputs.version }}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies

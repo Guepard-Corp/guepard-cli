@@ -1,26 +1,33 @@
 name: Publish Homebrew
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 0.26.15)'
+        required: true
+        type: string
 
 jobs:
   publish-homebrew:
-    name: Update Homebrew tap
+    name: Generate Homebrew formula
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Extract version from tag
+      - name: List available releases
+        run: |
+          echo "Available releases:"
+          curl -s https://api.github.com/repos/Guepard-Corp/guepard-cli/releases | jq -r '.[].tag_name' | head -10
+
+      - name: Set version
         id: ver
         run: |
-          TAG="${GITHUB_REF##*/}"
-          VERSION="${TAG#v}"
+          VERSION="${{ github.event.inputs.version }}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Download all platform releases
@@ -39,10 +46,11 @@ jobs:
           echo "LINUX_ARM64_SHA256=$(shasum -a 256 release-assets/linux-arm64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
           echo "LINUX_AMD64_SHA256=$(shasum -a 256 release-assets/linux-amd64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
 
-      - name: Update Homebrew formula
+      - name: Generate Homebrew formula
         run: |
           VERSION="${{ steps.ver.outputs.version }}"
-          cat > homebrew-tap/Formula/guepard.rb << EOF
+          mkdir -p dist
+          cat > dist/guepard.rb << EOF
           class Guepard < Formula
             desc "Guepard CLI (guepard) - Git, but for Data"
             homepage "https://www.guepard.run"
@@ -83,10 +91,11 @@ jobs:
           end
           EOF
 
-      - name: Commit and push Homebrew formula
+      - name: Display generated formula
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add homebrew-tap/Formula/guepard.rb
-          git commit -m "Update guepard to ${{ steps.ver.outputs.version }}"
-          git push
+          echo "Generated Homebrew formula for version ${{ steps.ver.outputs.version }}:"
+          echo "=========================================="
+          cat dist/guepard.rb
+          echo "=========================================="
+          echo ""
+          echo "Copy the formula above and use it to update Homebrew Core manually."
