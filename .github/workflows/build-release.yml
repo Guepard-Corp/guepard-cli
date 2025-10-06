@@ -55,7 +55,7 @@ jobs:
       - name: Get current version
         id: current_version
         run: |
-          CURRENT_VERSION=$(cargo pkgid | sed 's/.*://')
+          CURRENT_VERSION=$(grep -m1 '^version\s*=\s*"' Cargo.toml | sed -E 's/.*"([^"]+)".*/\1/')
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
           echo "Current version: $CURRENT_VERSION"
 
@@ -69,17 +69,17 @@ jobs:
           
           case $RELEASE_TYPE in
             patch)
-              cargo version patch
+              cargo set-version --bump patch
               ;;
             minor)
-              cargo version minor
+              cargo set-version --bump minor
               ;;
             major)
-              cargo version major
+              cargo set-version --bump major
               ;;
           esac
           
-          NEW_VERSION=$(cargo pkgid | sed 's/.*://')
+          NEW_VERSION=$(grep -m1 '^version\s*=\s*"' Cargo.toml | sed -E 's/.*"([^"]+)".*/\1/')
           TAG="v$NEW_VERSION"
           
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT

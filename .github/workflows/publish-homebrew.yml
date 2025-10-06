@@ -10,10 +10,10 @@ on:
 
 jobs:
   publish-homebrew:
-    name: Generate Homebrew formula
+    name: Generate and publish Homebrew formulas
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
 
     steps:
       - name: Checkout code
@@ -34,68 +34,115 @@ jobs:
         run: |
           mkdir -p release-assets
           cd release-assets
-          curl -L -o macos-arm64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-v${{ steps.ver.outputs.version }}-macos-arm64.tar.gz"
-          curl -L -o macos-amd64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-v${{ steps.ver.outputs.version }}-macos-amd64.tar.gz"
-          curl -L -o linux-arm64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-v${{ steps.ver.outputs.version }}-linux-arm64.tar.gz"
-          curl -L -o linux-amd64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-v${{ steps.ver.outputs.version }}-linux-amd64.tar.gz"
+          curl -L -o macos-arm64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-${{ steps.ver.outputs.version }}-macos-arm64.tar.gz" || true
+          curl -L -o macos-amd64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-${{ steps.ver.outputs.version }}-macos-amd64.tar.gz" || true
+          curl -L -o linux-arm64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-${{ steps.ver.outputs.version }}-linux-arm64.tar.gz" || true
+          curl -L -o linux-amd64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-${{ steps.ver.outputs.version }}-linux-amd64.tar.gz" || true
 
       - name: Calculate SHA256 checksums
         run: |
-          echo "MACOS_ARM64_SHA256=$(shasum -a 256 release-assets/macos-arm64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
-          echo "MACOS_AMD64_SHA256=$(shasum -a 256 release-assets/macos-amd64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
-          echo "LINUX_ARM64_SHA256=$(shasum -a 256 release-assets/linux-arm64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
-          echo "LINUX_AMD64_SHA256=$(shasum -a 256 release-assets/linux-amd64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
+          [ -f release-assets/macos-arm64.tar.gz ] && echo "MACOS_ARM64_SHA256=$(shasum -a 256 release-assets/macos-arm64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
+          [ -f release-assets/macos-amd64.tar.gz ] && echo "MACOS_AMD64_SHA256=$(shasum -a 256 release-assets/macos-amd64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
+          [ -f release-assets/linux-arm64.tar.gz ] && echo "LINUX_ARM64_SHA256=$(shasum -a 256 release-assets/linux-arm64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
+          [ -f release-assets/linux-amd64.tar.gz ] && echo "LINUX_AMD64_SHA256=$(shasum -a 256 release-assets/linux-amd64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
 
-      - name: Generate Homebrew formula
+      - name: Generate Homebrew formulas (bash)
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
         run: |
-          VERSION="${{ steps.ver.outputs.version }}"
-          mkdir -p dist
-          cat > dist/guepard.rb << EOF
-          class Guepard < Formula
-            desc "Guepard CLI (guepard) - Git, but for Data"
-            homepage "https://www.guepard.run"
-            url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-v\${VERSION}-macos-arm64.tar.gz"
-            version "\${VERSION}"
-            sha256 "${{ env.MACOS_ARM64_SHA256 }}"
-            license "Guepard (c) 2025"
+          set -euo pipefail
+          TAG="v${VERSION}"
+          : "${MACOS_ARM64_SHA256?MACOS_ARM64_SHA256 missing}"
+          mkdir -p Formula homebrew-tap/Formula
 
-            on_macos do
-              on_arm do
-                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-v\${VERSION}-macos-arm64.tar.gz"
-                sha256 "${{ env.MACOS_ARM64_SHA256 }}"
-              end
-              on_intel do
-                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-v\${VERSION}-macos-amd64.tar.gz"
-                sha256 "${{ env.MACOS_AMD64_SHA256 }}"
-              end
-            end
+          # Core formula (defaults to macOS ARM64; adds macOS Intel override only)
+          cat > Formula/guepard.rb <<'RUBY'
+class Guepard < Formula
+  desc "Guepard CLI - Git for Data"
+  homepage "https://www.guepard.run"
+  url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-VERSION-macos-arm64.tar.gz"
+  version "VERSION"
+  sha256 "MACOS_ARM64_SHA256"
+  license "Guepard (c) 2025"
 
-            on_linux do
-              on_arm do
-                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-v\${VERSION}-linux-arm64.tar.gz"
-                sha256 "${{ env.LINUX_ARM64_SHA256 }}"
-              end
-              on_intel do
-                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v\${VERSION}/guepard-cli-v\${VERSION}-linux-amd64.tar.gz"
-                sha256 "${{ env.LINUX_AMD64_SHA256 }}"
-              end
-            end
+  on_macos do
+    on_intel do
+      url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-VERSION-macos-amd64.tar.gz"
+      sha256 "MACOS_AMD64_SHA256"
+    end
+  end
 
-            def install
-              bin.install "guepard"
-            end
+  on_linux do
+    on_arm do
+      url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-VERSION-linux-arm64.tar.gz"
+      sha256 "LINUX_ARM64_SHA256"
+    end
+    on_intel do
+      url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-VERSION-linux-amd64.tar.gz"
+      sha256 "LINUX_AMD64_SHA256"
+    end
+  end
 
-            test do
-              system "#{bin}/guepard", "--version"
-            end
-          end
-          EOF
+  def install
+    bin.install "guepard"
+  end
 
-      - name: Display generated formula
+  test do
+    system "#{bin}/guepard", "--version"
+  end
+end
+RUBY
+
+          # Tap formula (same arch rules)
+          cat > homebrew-tap/Formula/guepard.rb <<'RUBY'
+class Guepard < Formula
+  desc "Guepard CLI (guepard) - Git, but for Data"
+  homepage "https://www.guepard.run"
+  url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-VERSION-macos-arm64.tar.gz"
+  version "VERSION"
+  sha256 "MACOS_ARM64_SHA256"
+  license "Guepard (c) 2025"
+
+  on_macos do
+    on_intel do
+      url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-VERSION-macos-amd64.tar.gz"
+      sha256 "MACOS_AMD64_SHA256"
+    end
+  end
+
+  on_linux do
+    on_arm do
+      url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-VERSION-linux-arm64.tar.gz"
+      sha256 "LINUX_ARM64_SHA256"
+    end
+    on_intel do
+      url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-VERSION-linux-amd64.tar.gz"
+      sha256 "LINUX_AMD64_SHA256"
+    end
+  end
+
+  def install
+    bin.install "guepard"
+  end
+
+  test do
+    system "#{bin}/guepard", "--version"
+  end
+end
+RUBY
+
+          # Substitute placeholders
+          sed -i.bak "s/V_TAG/${TAG}/g; s/VERSION/${VERSION}/g" Formula/guepard.rb homebrew-tap/Formula/guepard.rb
+          sed -i.bak "s/MACOS_ARM64_SHA256/${MACOS_ARM64_SHA256}/g" Formula/guepard.rb homebrew-tap/Formula/guepard.rb
+          sed -i.bak "s/MACOS_AMD64_SHA256/${MACOS_AMD64_SHA256:-}/g" Formula/guepard.rb homebrew-tap/Formula/guepard.rb || true
+          sed -i.bak "s/LINUX_ARM64_SHA256/${LINUX_ARM64_SHA256:-}/g" Formula/guepard.rb homebrew-tap/Formula/guepard.rb || true
+          sed -i.bak "s/LINUX_AMD64_SHA256/${LINUX_AMD64_SHA256:-}/g" Formula/guepard.rb homebrew-tap/Formula/guepard.rb || true
+          rm -f Formula/*.bak homebrew-tap/Formula/*.bak
+
+      - name: Commit and push formulas to repo
         run: |
-          echo "Generated Homebrew formula for version ${{ steps.ver.outputs.version }}:"
-          echo "=========================================="
-          cat dist/guepard.rb
-          echo "=========================================="
-          echo ""
-          echo "Copy the formula above and use it to update Homebrew Core manually."
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add Formula/guepard.rb homebrew-tap/Formula/guepard.rb
+          git commit -m "chore(homebrew): update formulas for v${{ steps.ver.outputs.version }}"
+          git push origin main
