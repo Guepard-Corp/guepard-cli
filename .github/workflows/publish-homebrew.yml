@@ -65,25 +65,25 @@ jobs:
           class Guepard < Formula
             desc "Guepard CLI - Git for Data"
             homepage "https://www.guepard.run"
-            url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-VERSION-macos-arm64.tar.gz"
+            url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-V_TAG-macos-arm64.tar.gz"
             version "VERSION"
             sha256 "MACOS_ARM64_SHA256"
             license "Guepard (c) 2025"
 
             on_macos do
               on_intel do
-                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-VERSION-macos-amd64.tar.gz"
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-V_TAG-macos-amd64.tar.gz"
                 sha256 "MACOS_AMD64_SHA256"
               end
             end
 
             on_linux do
               on_arm do
-                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-VERSION-linux-arm64.tar.gz"
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-V_TAG-linux-arm64.tar.gz"
                 sha256 "LINUX_ARM64_SHA256"
               end
               on_intel do
-                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-VERSION-linux-amd64.tar.gz"
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-V_TAG-linux-amd64.tar.gz"
                 sha256 "LINUX_AMD64_SHA256"
               end
             end
