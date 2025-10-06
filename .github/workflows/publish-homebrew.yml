@@ -35,31 +35,34 @@ jobs:
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Processing version: ${VERSION}"
 
-      - name: Download all platform releases
+      - name: Read checksums from GitHub release body
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mkdir -p release-assets
-          cd release-assets
-          curl -L -o macos-arm64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-v${{ steps.ver.outputs.version }}-macos-arm64.tar.gz" || true
-          curl -L -o macos-amd64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-v${{ steps.ver.outputs.version }}-macos-amd64.tar.gz" || true
-          curl -L -o linux-arm64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-v${{ steps.ver.outputs.version }}-linux-arm64.tar.gz" || true
-          curl -L -o linux-amd64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-v${{ steps.ver.outputs.version }}-linux-amd64.tar.gz" || true
-          
-          echo "Downloaded files:"
-          ls -la *.tar.gz || echo "No tar.gz files found"
+          set -euo pipefail
+          TAG="v${VERSION}"
+          echo "Fetching release $TAG..."
+          BODY=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/Guepard-Corp/guepard-cli/releases/tags/${TAG}" | jq -r '.body')
 
-      - name: Calculate SHA256 checksums
-        run: |
-          echo "Calculating SHA256 checksums..."
-          [ -f release-assets/macos-arm64.tar.gz ] && echo "MACOS_ARM64_SHA256=$(shasum -a 256 release-assets/macos-arm64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
-          [ -f release-assets/macos-amd64.tar.gz ] && echo "MACOS_AMD64_SHA256=$(shasum -a 256 release-assets/macos-amd64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
-          [ -f release-assets/linux-arm64.tar.gz ] && echo "LINUX_ARM64_SHA256=$(shasum -a 256 release-assets/linux-arm64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
-          [ -f release-assets/linux-amd64.tar.gz ] && echo "LINUX_AMD64_SHA256=$(shasum -a 256 release-assets/linux-amd64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
-          
+          echo "Release body fetched. Parsing checksums..."
+          # Extract backticked sha values from the template section
+          macos_amd64=$(echo "$BODY" | sed -n 's/.*macOS AMD64: `\([^`]*\)`.*/\1/p' | head -1)
+          macos_arm64=$(echo "$BODY" | sed -n 's/.*macOS ARM64: `\([^`]*\)`.*/\1/p' | head -1)
+          linux_amd64=$(echo "$BODY" | sed -n 's/.*Linux AMD64: `\([^`]*\)`.*/\1/p' | head -1)
+          linux_arm64=$(echo "$BODY" | sed -n 's/.*Linux ARM64: `\([^`]*\)`.*/\1/p' | head -1)
+
+          if [ -n "$macos_arm64" ]; then echo "MACOS_ARM64_SHA256=$macos_arm64" >> $GITHUB_ENV; fi
+          if [ -n "$macos_amd64" ]; then echo "MACOS_AMD64_SHA256=$macos_amd64" >> $GITHUB_ENV; fi
+          if [ -n "$linux_arm64" ]; then echo "LINUX_ARM64_SHA256=$linux_arm64" >> $GITHUB_ENV; fi
+          if [ -n "$linux_amd64" ]; then echo "LINUX_AMD64_SHA256=$linux_amd64" >> $GITHUB_ENV; fi
+
           echo "SHA256 values:"
-          echo "MACOS_ARM64_SHA256=${MACOS_ARM64_SHA256:-NOT_FOUND}"
-          echo "MACOS_AMD64_SHA256=${MACOS_AMD64_SHA256:-NOT_FOUND}"
-          echo "LINUX_ARM64_SHA256=${LINUX_ARM64_SHA256:-NOT_FOUND}"
-          echo "LINUX_AMD64_SHA256=${LINUX_AMD64_SHA256:-NOT_FOUND}"
+          echo "MACOS_ARM64_SHA256=${macos_arm64:-NOT_FOUND}"
+          echo "MACOS_AMD64_SHA256=${macos_amd64:-NOT_FOUND}"
+          echo "LINUX_ARM64_SHA256=${linux_arm64:-NOT_FOUND}"
+          echo "LINUX_AMD64_SHA256=${linux_amd64:-NOT_FOUND}"
 
       - name: Generate Homebrew formulas (bash)
         env:
@@ -75,25 +78,25 @@ jobs:
           class Guepard < Formula
             desc "Guepard CLI - Git for Data"
             homepage "https://www.guepard.run"
-            url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-V_TAG-macos-arm64.tar.gz"
+            url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-VERSION-macos-arm64.tar.gz"
             version "VERSION"
             sha256 "MACOS_ARM64_SHA256"
             license "Guepard (c) 2025"
 
             on_macos do
               on_intel do
-                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-V_TAG-macos-amd64.tar.gz"
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-VERSION-macos-amd64.tar.gz"
                 sha256 "MACOS_AMD64_SHA256"
               end
             end
 
             on_linux do
               on_arm do
-                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-V_TAG-linux-arm64.tar.gz"
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-VERSION-linux-arm64.tar.gz"
                 sha256 "LINUX_ARM64_SHA256"
               end
               on_intel do
-                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-V_TAG-linux-amd64.tar.gz"
+                url "https://github.com/Guepard-Corp/guepard-cli/releases/download/V_TAG/guepard-cli-VERSION-linux-amd64.tar.gz"
                 sha256 "LINUX_AMD64_SHA256"
               end
             end
