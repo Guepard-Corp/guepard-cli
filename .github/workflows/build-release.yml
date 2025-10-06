@@ -11,6 +11,21 @@ on:
           - patch
           - minor
           - major
+      linux:
+        description: 'Build Linux'
+        required: false
+        type: boolean
+        default: true
+      macos:
+        description: 'Build macOS'
+        required: false
+        type: boolean
+        default: true
+      windows:
+        description: 'Build Windows'
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -96,13 +111,29 @@ jobs:
       - name: Set platforms and version
         id: detect
         run: |
-          # Build all platforms for manual releases
-          PLATFORMS="linux macos windows"
+          # Build platform list from boolean inputs
+          PLATFORMS=""
+          
+          if [ "${{ github.event.inputs.linux }}" = "true" ]; then
+            PLATFORMS="$PLATFORMS linux"
+          fi
+          
+          if [ "${{ github.event.inputs.macos }}" = "true" ]; then
+            PLATFORMS="$PLATFORMS macos"
+          fi
+          
+          if [ "${{ github.event.inputs.windows }}" = "true" ]; then
+            PLATFORMS="$PLATFORMS windows"
+          fi
+          
+          # Trim leading space
+          PLATFORMS=$(echo "$PLATFORMS" | sed 's/^ *//')
+          
           VERSION="${{ needs.bump-version-and-tag.outputs.version }}"
           
           echo "platforms=$PLATFORMS" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Platforms: '$PLATFORMS'"
+          echo "Selected platforms: '$PLATFORMS'"
           echo "Version: $VERSION"
 
   build-linux:
