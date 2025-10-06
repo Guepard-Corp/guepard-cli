@@ -39,17 +39,27 @@ jobs:
         run: |
           mkdir -p release-assets
           cd release-assets
-          curl -L -o macos-arm64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-${{ steps.ver.outputs.version }}-macos-arm64.tar.gz" || true
-          curl -L -o macos-amd64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-${{ steps.ver.outputs.version }}-macos-amd64.tar.gz" || true
-          curl -L -o linux-arm64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-${{ steps.ver.outputs.version }}-linux-arm64.tar.gz" || true
-          curl -L -o linux-amd64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-${{ steps.ver.outputs.version }}-linux-amd64.tar.gz" || true
+          curl -L -o macos-arm64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-v${{ steps.ver.outputs.version }}-macos-arm64.tar.gz" || true
+          curl -L -o macos-amd64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-v${{ steps.ver.outputs.version }}-macos-amd64.tar.gz" || true
+          curl -L -o linux-arm64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-v${{ steps.ver.outputs.version }}-linux-arm64.tar.gz" || true
+          curl -L -o linux-amd64.tar.gz "https://github.com/Guepard-Corp/guepard-cli/releases/download/v${{ steps.ver.outputs.version }}/guepard-cli-v${{ steps.ver.outputs.version }}-linux-amd64.tar.gz" || true
+          
+          echo "Downloaded files:"
+          ls -la *.tar.gz || echo "No tar.gz files found"
 
       - name: Calculate SHA256 checksums
         run: |
+          echo "Calculating SHA256 checksums..."
           [ -f release-assets/macos-arm64.tar.gz ] && echo "MACOS_ARM64_SHA256=$(shasum -a 256 release-assets/macos-arm64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
           [ -f release-assets/macos-amd64.tar.gz ] && echo "MACOS_AMD64_SHA256=$(shasum -a 256 release-assets/macos-amd64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
           [ -f release-assets/linux-arm64.tar.gz ] && echo "LINUX_ARM64_SHA256=$(shasum -a 256 release-assets/linux-arm64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
           [ -f release-assets/linux-amd64.tar.gz ] && echo "LINUX_AMD64_SHA256=$(shasum -a 256 release-assets/linux-amd64.tar.gz | cut -d' ' -f1)" >> $GITHUB_ENV
+          
+          echo "SHA256 values:"
+          echo "MACOS_ARM64_SHA256=${MACOS_ARM64_SHA256:-NOT_FOUND}"
+          echo "MACOS_AMD64_SHA256=${MACOS_AMD64_SHA256:-NOT_FOUND}"
+          echo "LINUX_ARM64_SHA256=${LINUX_ARM64_SHA256:-NOT_FOUND}"
+          echo "LINUX_AMD64_SHA256=${LINUX_AMD64_SHA256:-NOT_FOUND}"
 
       - name: Generate Homebrew formulas (bash)
         env:
