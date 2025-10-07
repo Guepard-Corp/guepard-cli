@@ -45,6 +45,11 @@ keyring = { version = "3", features = ["apple-native", "windows-native"], option
 [build-dependencies]
 mockall = "0.13.0"
 
+[dev-dependencies]
+mockall = "0.13.0"
+tokio-test = "0.4.3"
+http = "1.0"
+
 # Multi-platform build configuration
 [package.metadata.deb]
 copyright = "Guepard (c) 2025"
