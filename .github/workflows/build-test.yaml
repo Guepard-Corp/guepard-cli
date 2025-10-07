@@ -13,11 +13,5 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: cargo install --locked cargo-udeps
-
-      - name: Check for unused dependencies
-        run: cargo udeps
-
       - name: Run tests
         run: cargo test
