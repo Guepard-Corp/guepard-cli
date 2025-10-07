@@ -1,6 +1,24 @@
+![Guepard](/resources/guepard-cover.png)
+
+<div align="center">
+    <h1>Guepard Platform 🐆 The turbocharged Git for databases</h1>
+    <br />  
+    <p align="center">
+    <a href="https://youtu.be/WlOkLnoY2h8?si=hb6-7kLhlOvVL1u6">
+        <img src="https://img.shields.io/badge/Watch-YouTube-%23ffcb51?logo=youtube&logoColor=black" alt="Watch on YouTube" />
+    </a>
+    <a href="https://discord.gg/NYsNzQGvZT">
+        <img src="https://img.shields.io/badge/Join-Community-%23ffcb51?logo=discord&logoColor=black" alt="Join our Community" />
+    </a>
+    <a href="https://github.com/Guepard-Corp/guepard-engine-v2/actions/workflows/build_and_test.yml" target="_blank">
+        <img src="https://img.shields.io/github/actions/workflow/status/Guepard-Corp/guepard-cli/build-release.yml?branch=main" alt="Build">
+    </a>
+    </p>
+</div>
+
 # Guepard CLI
 
-A Git-like filesystem CLI for databases, providing version control and management capabilities for database schemas and data.
+A CLI to interact with Guepard Platform, providing version control and management capabilities for database schemas and data.
 
 ## Features
 
@@ -143,7 +161,8 @@ The project supports cross-compilation to all target platforms. Use the build sc
 
 This project is licensed under the Guepard License - see the [LICENSE](LICENSE) file for details.
 
-## Support
+## **📩 Contact & Community**
+Have questions, feedback, or just want to say hi? We’d love to hear from you! We ❤️ contributions!
 
 - Documentation: [https://docs.guepard.run](https://docs.guepard.run)
 - Issues: [GitHub Issues](https://github.com/Guepard-Corp/guepard-cli/issues)
