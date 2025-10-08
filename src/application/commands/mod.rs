@@ -8,3 +8,4 @@ pub mod usage;
 pub mod login;
 pub mod logout;
 pub mod list;
+pub mod config;

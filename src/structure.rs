@@ -48,6 +48,9 @@ pub enum SubCommand {
     
     /// 🚪 Logout and clear credentials
     Logout,
+    
+    /// ⚙️ Configure API endpoint and other settings
+    Config(ConfigArgs),
 }
 
 // Git-like command arguments
@@ -298,4 +301,19 @@ pub struct LoginArgs {
     /// Direct access token input (skip interactive login)
     #[clap(short = 'c', long)]
     pub code: Option<String>,
+}
+
+#[derive(Args, Debug)]
+pub struct ConfigArgs {
+    /// Get current configuration
+    #[clap(long)]
+    pub get: bool,
+    
+    /// Set API endpoint URL
+    #[clap(short = 'a', long)]
+    pub api_url: Option<String>,
+    
+    /// Show current configuration
+    #[clap(long)]
+    pub show: bool,
 }
