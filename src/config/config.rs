@@ -224,3 +224,34 @@ pub fn delete_session() -> Result<(), ConfigError> {
     debug!("Session deletion completed");
     Ok(())
 }
+
+pub fn is_logged_in() -> bool {
+    // Check if session file exists
+    let session_path = match dirs::home_dir() {
+        Some(home) => home.join(".guepard/session.json"),
+        None => return false,
+    };
+
+    if !session_path.exists() {
+        return false;
+    }
+
+    // Check if JWT token exists
+    #[cfg(feature = "keyring")]
+    {
+        let entry = match Entry::new("guepard-cli", "session") {
+            Ok(entry) => entry,
+            Err(_) => return false,
+        };
+        entry.get_password().is_ok()
+    }
+    
+    #[cfg(not(feature = "keyring"))]
+    {
+        let jwt_path = match dirs::home_dir() {
+            Some(home) => home.join(".guepard/session.jwt"),
+            None => return false,
+        };
+        jwt_path.exists()
+    }
+}
