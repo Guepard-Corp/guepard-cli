@@ -56,7 +56,7 @@ pub async fn status(args: &ComputeArgs, config: &Config) -> Result<()> {
         Ok(result) => {
             let status_row = StatusRow {
                 status: "Healthy".to_string(),
-                message: result.message,
+                message: result.message.unwrap_or_else(|| "Compute instance is running".to_string()),
             };
             
             println!("{} Compute Status for deployment: {}", "📊".blue(), args.deployment_id);
@@ -108,7 +108,7 @@ pub async fn list(args: &ComputeArgs, config: &Config) -> Result<()> {
     
     let compute_row = ComputeRow {
         id: result.id,
-        branch_id: result.branch_id,
+        branch_id: result.branch_id.unwrap_or(result.attached_branch.clone()),
         name: result.name,
         fqdn: result.fqdn,
         port: result.port.to_string(),

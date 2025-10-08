@@ -3,7 +3,7 @@ use serde::{Deserialize};
 #[derive(Debug, Deserialize)]
 pub struct ListComputeResponse {
     pub id: String, // deployment_id
-    pub branch_id: String, // Branch ID Compute is on
+    pub branch_id: Option<String>, // Branch ID Compute is on (optional for backward compatibility)
     pub name: String, // Compute name
     pub fqdn: String,
     pub connection_string: String,
@@ -25,5 +25,5 @@ pub struct StatusErrorResponse {
 
 #[derive(Debug, Deserialize)]
 pub struct ComputeStatusResponse {
-    pub message: String,
+    pub message: Option<String>,
 }
