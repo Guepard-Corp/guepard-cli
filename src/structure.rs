@@ -177,6 +177,26 @@ pub struct LogArgs {
     /// The ID of the deployment
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
+    
+    /// Number of lines to show (default: 50)
+    #[clap(short = 'n', long, default_value = "50")]
+    pub lines: usize,
+    
+    /// Follow mode - stream logs in real-time
+    #[clap(short = 'f', long)]
+    pub follow: bool,
+    
+    /// Show only stdout logs
+    #[clap(long)]
+    pub stdout_only: bool,
+    
+    /// Show only stderr logs
+    #[clap(long)]
+    pub stderr_only: bool,
+    
+    /// Show timestamps
+    #[clap(short = 't', long)]
+    pub timestamps: bool,
 }
 
 #[derive(Args, Debug)]
