@@ -57,7 +57,7 @@ async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
                 SubCommand::Compute(args) => compute::compute(args, config).await,
         SubCommand::Usage => usage::usage(config).await,
         SubCommand::List(args) => list::list(args, config).await,
-        SubCommand::Login => login::execute(config).await,
+        SubCommand::Login(args) => login::execute(args, config).await,
         SubCommand::Logout => logout::logout(config).await,
     }
 }

@@ -44,7 +44,7 @@ pub enum SubCommand {
     List(ListArgs),
     
     /// 🔐 Login to Guepard (interactive)
-    Login,
+    Login(LoginArgs),
     
     /// 🚪 Logout and clear credentials
     Logout,
@@ -263,4 +263,11 @@ pub struct CheckoutBranchArgs {
     /// The ID of the branch
     #[clap(short = 'c', long, required = true)]
     pub branch_id: String,
+}
+
+#[derive(Args, Debug)]
+pub struct LoginArgs {
+    /// Direct access token input (skip interactive login)
+    #[clap(short = 'c', long)]
+    pub code: Option<String>,
 }
