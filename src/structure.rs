@@ -197,6 +197,14 @@ pub struct LogArgs {
     /// Show timestamps
     #[clap(short = 't', long)]
     pub timestamps: bool,
+    
+    /// Filter logs from this date (format: YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)
+    #[clap(long)]
+    pub since: Option<String>,
+    
+    /// Filter logs until this date (format: YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)
+    #[clap(long)]
+    pub until: Option<String>,
 }
 
 #[derive(Args, Debug)]
