@@ -75,12 +75,12 @@ Build on a Linux machine or VM.
 ## Package Manager Comparison
 
 | Platform | Package Manager | Status | User Command |
-|----------|----------------|--------|--------------|
-| macOS | Homebrew | ✅ Live | `brew install gfs` |
-| Linux | Snap | 🔄 Ready | `snap install gfs` |
-| Windows | Chocolatey | 🔄 Ready | `choco install gfs` |
-| Linux | APT/YUM | ❌ Not setup | Manual download |
-| Windows | Scoop | ❌ Not setup | Manual download |
+|----------|-----------------|--------|--------------|
+| macOS    | Homebrew        | ✅ Live | `brew install gfs` |
+| Linux    | Snap | 🔄 Ready | `snap install gfs` |
+| Windows  | Chocolatey      | 🔄 Ready | `choco install gfs` |
+| Linux    | APT/YUM         | ❌ Not setup | Manual download |
+| Windows  | Scoop           | ❌ Not setup | Manual download |
 
 ## Current Installation Methods
 
