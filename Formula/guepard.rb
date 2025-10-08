@@ -1,26 +1,26 @@
 class Guepard < Formula
   desc "Guepard CLI - Git for Data"
   homepage "https://www.guepard.run"
-  url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.27.13/guepard-cli-0.27.13-macos-arm64.tar.gz"
-  version "0.27.13"
-  sha256 "bb653db14f07b8ef2f667024ac8959400be88a0b12d847477efe9426be11d07a"
+  url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.27.17/guepard-cli-0.27.17-macos-arm64.tar.gz"
+  version "0.27.17"
+  sha256 "c32041855705f9d7b616d5e5e54117cd46adbb30b1e37e7360ca3dd1498f29ba"
   license "Guepard (c) 2025"
 
   on_macos do
     on_intel do
-      url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.27.13/guepard-cli-0.27.13-macos-amd64.tar.gz"
-      sha256 "b0d4a3042de1d317cd1454b751d591bf5861978a31270ca1e1ab34bef074b8c4"
+      url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.27.17/guepard-cli-0.27.17-macos-amd64.tar.gz"
+      sha256 "f28c051eab075dda7f708cef79bca8868f22f7be064a9c629cdbcec94c9712b4"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.27.13/guepard-cli-0.27.13-linux-arm64.tar.gz"
-      sha256 "5dd70049b42a1c7d4dd667578c3be4b2a2f182ddec29edbbf7e89dcc076b5783"
+      url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.27.17/guepard-cli-0.27.17-linux-arm64.tar.gz"
+      sha256 "fb6ecd29a106233a06694a4c41f66fdddfe77fff9be4d0f15b9b60957e784810"
     end
     on_intel do
-      url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.27.13/guepard-cli-0.27.13-linux-amd64.tar.gz"
-      sha256 "aa24a1f8b4c409c282547dc22e42030937dd4fd65c46962f6d3d76ae9248c133"
+      url "https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.27.17/guepard-cli-0.27.17-linux-amd64.tar.gz"
+      sha256 "b21d4a014b92c3c0669992e9faae79274d82caa373689e4bb5c76039ac4e560f"
     end
   end
 
