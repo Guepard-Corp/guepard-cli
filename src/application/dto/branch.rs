@@ -22,18 +22,19 @@ pub struct CheckoutResponse {
 #[derive(Debug, Deserialize)]
 pub struct BranchResponse {
     pub id: String,  // Branch ID (UUID)
-    pub account_id: String,
-    pub label_name: String,
-    pub job_status: String,
-    pub compute_status: String,
-    pub deployment_id: String,
+    pub account_id: Option<String>,
+    pub label_name: Option<String>,
+    pub job_status: Option<String>,
+    pub deployment_id: Option<String>,
     pub branch_id: Option<String>,
-    pub performance_profile_id: String,
+    pub snapshot_id: Option<String>,
+    pub is_ephemeral: Option<bool>,
+    pub is_masked: Option<bool>,
+    pub is_purged: Option<bool>,
     pub updated_at: Option<String>,
     pub created_at: Option<String>,
     pub created_by: Option<String>,
     pub updated_by: Option<String>,
-    pub port: i32,
 }
 
 /// matches the GET /deploy/{deployment_id}/branch response.
