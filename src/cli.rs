@@ -1,5 +1,5 @@
 use clap::Parser;
-use guepard_cli::application::commands::{deploy, commit, branch, log, checkout, compute, usage, login, logout, list};
+use guepard_cli::application::commands::{deploy, commit, branch, log, checkout, compute, usage, login, logout, list, config};
 use guepard_cli::config::config::{load_config, Config};
 use guepard_cli::domain::errors::{bookmark_error::BookmarkError, branch_error::BranchError, compute_error::ComputeError, deploy_error::DeployError, login_error::LoginError, usage_error::UsageError};
 use guepard_cli::structure::{SubCommand, CLI};
@@ -59,5 +59,6 @@ async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
         SubCommand::List(args) => list::list(args, config).await,
         SubCommand::Login(args) => login::execute(args, config).await,
         SubCommand::Logout => logout::logout(config).await,
+        SubCommand::Config(args) => config::config(args).await.map_err(|e| anyhow::anyhow!("{}", e)),
     }
 }

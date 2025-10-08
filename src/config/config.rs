@@ -25,7 +25,10 @@ pub struct SessionData {
 pub fn load_config() -> Result<Config, ConfigError> {
     dotenv().ok();
 
-    let api_url = env::var("PUBLIC_API")
+    // First check config file, then environment variable, then default
+    let api_url = load_config_data()
+        .map(|config| config.api_url)
+        .or_else(|_| env::var("PUBLIC_API"))
         .unwrap_or_else(|_| "https://api.guepard.run".to_string());
     
     // let api_token = env::var("API_TOKEN")
@@ -226,24 +229,14 @@ pub fn delete_session() -> Result<(), ConfigError> {
 }
 
 pub fn is_logged_in() -> bool {
-    // Check if session file exists
-    let session_path = match dirs::home_dir() {
-        Some(home) => home.join(".guepard/session.json"),
-        None => return false,
-    };
-
-    if !session_path.exists() {
-        return false;
-    }
-
-    // Check if JWT token exists
+    // Check if JWT token exists (this is the primary indicator of login status)
     #[cfg(feature = "keyring")]
     {
         let entry = match Entry::new("guepard-cli", "session") {
             Ok(entry) => entry,
             Err(_) => return false,
         };
-        entry.get_password().is_ok()
+        return entry.get_password().is_ok();
     }
     
     #[cfg(not(feature = "keyring"))]
@@ -252,6 +245,51 @@ pub fn is_logged_in() -> bool {
             Some(home) => home.join(".guepard/session.jwt"),
             None => return false,
         };
-        jwt_path.exists()
+        return jwt_path.exists();
     }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ConfigData {
+    pub api_url: String,
+}
+
+pub fn save_config_data(config_data: &ConfigData) -> Result<(), ConfigError> {
+    let path = dirs::home_dir()
+        .ok_or_else(|| ConfigError::IoError("Home directory not found".to_string()))?
+        .join(".guepard/config.json");
+
+    fs::create_dir_all(path.parent().unwrap())
+        .map_err(|e| ConfigError::IoError(format!("Failed to create .guepard directory: {}", e)))?;
+
+    let file = File::create(&path)
+        .map_err(|e| ConfigError::IoError(format!("Failed to create config file: {}", e)))?;
+    serde_json::to_writer_pretty(&file, config_data)
+        .map_err(|e| ConfigError::IoError(format!("Failed to write config file: {}", e)))?;
+
+    #[cfg(unix)]
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o600))
+        .map_err(|e| ConfigError::IoError(format!("Failed to set permissions: {}", e)))?;
+
+    Ok(())
+}
+
+pub fn load_config_data() -> Result<ConfigData, ConfigError> {
+    let path = dirs::home_dir()
+        .ok_or_else(|| ConfigError::IoError("Home directory not found".to_string()))?
+        .join(".guepard/config.json");
+
+    if !path.exists() {
+        // Return default config if file doesn't exist
+        return Ok(ConfigData {
+            api_url: "https://api.guepard.run".to_string(),
+        });
+    }
+
+    let file = File::open(&path)
+        .map_err(|e| ConfigError::IoError(format!("Failed to open config file: {}", e)))?;
+    let config_data: ConfigData = serde_json::from_reader(file)
+        .map_err(|e| ConfigError::IoError(format!("Invalid config data: {}", e)))?;
+
+    Ok(config_data)
 }
