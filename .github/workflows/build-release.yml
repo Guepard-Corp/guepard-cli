@@ -362,7 +362,7 @@ jobs:
       - name: Generate Release Body
         run: |
           # Read the template file
-          template=$(cat RELEASE_TEMPLATE.md)
+          template=$(cat docs/RELEASE_TEMPLATE.md)
           
           # Replace placeholders with actual values
           template=$(echo "$template" | sed "s/{{VERSION}}/${{ needs.detect-platforms.outputs.version }}/g")
