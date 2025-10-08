@@ -1,12 +1,19 @@
 use crate::config::config::Config;
 use crate::application::services::login;
 use crate::domain::errors::login_error::LoginError;
+use crate::structure::LoginArgs;
 use anyhow::Result;
 use colored::Colorize;
 use std::io::{self, Write};
 use std::process::Command;
 
-pub async fn execute(config: &Config) -> Result<()> {
+pub async fn execute(args: &LoginArgs, config: &Config) -> Result<()> {
+    // If code is provided, save it directly
+    if let Some(token) = &args.code {
+        return execute_direct_login(token, config).await;
+    }
+    
+    // Otherwise, proceed with interactive login
     // Step 1: Start login and get URL
     println!("{}", "Starting login process... 🐆".cyan());
     
@@ -55,12 +62,32 @@ pub async fn execute(config: &Config) -> Result<()> {
     );
     println!(
         "{}",
-        "To get started, run: `guepard --help`".yellow()
+        "To get started, run: `guepard --help`"
+    );
+    
+    Ok(())
+}
+
+async fn execute_direct_login(token: &str, _config: &Config) -> Result<()> {
+    println!("{}", "Saving access token directly... 🐆".cyan());
+    
+    // Save the token directly without API calls
+    crate::config::config::save_jwt_token_direct(token)
+        .map_err(|e| LoginError::SessionError(e.to_string()))?;
+    
+    println!(
+        "{} {}",
+        "Login successful.".green(),
+        "Happy coding! 🐆".yellow().bold()
+    );
+    println!(
+        "You can now use the Guepard CLI to interact with your Guepard account.🐆"
     );
     println!(
         "{}",
-        "To log out, use the `logout` command.".red()
+        "To get started, run: `guepard --help`"
     );
+    
     Ok(())
 }
 

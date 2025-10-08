@@ -70,6 +70,18 @@ pub fn save_jwt_token(jwt_token: &str) -> Result<(), ConfigError> {
         ));
     }
 
+    save_jwt_token_direct(jwt_token)
+}
+
+pub fn save_jwt_token_direct(jwt_token: &str) -> Result<(), ConfigError> {
+    // Create session directory if it doesn't exist
+    let session_dir = dirs::home_dir()
+        .ok_or_else(|| ConfigError::IoError("Home directory not found".to_string()))?
+        .join(".guepard");
+    
+    fs::create_dir_all(&session_dir)
+        .map_err(|e| ConfigError::IoError(format!("Failed to create .guepard directory: {}", e)))?;
+
     #[cfg(feature = "keyring")]
     {
         let entry = Entry::new("guepard-cli", "session")
@@ -81,16 +93,8 @@ pub fn save_jwt_token(jwt_token: &str) -> Result<(), ConfigError> {
     
     #[cfg(not(feature = "keyring"))]
     {
-        // Fallback: store JWT in session file (less secure but works for cross-compilation)
-        let _data: SessionData = {
-            let file = File::open(&path)
-                .map_err(|e| ConfigError::IoError(format!("Failed to open session file: {}", e)))?;
-            serde_json::from_reader(file)
-                .map_err(|e| ConfigError::IoError(format!("Invalid session data: {}", e)))?
-        };
-        
         // Store JWT in a separate file for cross-compilation builds
-        let jwt_path = path.with_extension("jwt");
+        let jwt_path = session_dir.join("session.jwt");
         fs::write(&jwt_path, jwt_token)
             .map_err(|e| ConfigError::IoError(format!("Failed to write JWT file: {}", e)))?;
         
