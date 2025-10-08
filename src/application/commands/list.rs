@@ -69,11 +69,17 @@ fn show_available_columns(resource: &str) {
 }
 
 async fn list_deployments(args: &ListArgs, config: &Config) -> Result<()> {
-    let deployments = deploy::list_deployments(config).await?;
+    let mut deployments = deploy::list_deployments(config).await?;
     
     if deployments.is_empty() {
         println!("{} No deployments found", "ℹ️".blue());
         return Ok(());
+    }
+    
+    // Apply limit if specified
+    let total_count = deployments.len();
+    if let Some(limit) = args.limit {
+        deployments.truncate(limit);
     }
     
     let selected_columns = parse_columns(&args.columns, DEPLOYMENT_COLUMNS);
@@ -111,7 +117,19 @@ async fn list_deployments(args: &ListArgs, config: &Config) -> Result<()> {
         rows.push(row_data);
     }
     
-    println!("{} Found {} deployments", "✅".green(), rows.len());
+    println!("{} Found {} deployments{}", 
+        "✅".green(), 
+        total_count,
+        if let Some(limit) = args.limit {
+            if limit < total_count {
+                format!(" (showing first {})", limit)
+            } else {
+                String::new()
+            }
+        } else {
+            String::new()
+        }
+    );
     
     // Display the table with selected columns
     display_dynamic_table(rows, &selected_columns);
@@ -122,11 +140,17 @@ async fn list_branches(args: &ListArgs, config: &Config) -> Result<()> {
     let deployment_id = args.deployment_id.as_ref()
         .ok_or_else(|| anyhow::anyhow!("Deployment ID is required for listing branches. Use -x <deployment_id>"))?;
     
-    let branches = branch::list_branches(deployment_id, config).await?;
+    let mut branches = branch::list_branches(deployment_id, config).await?;
     
     if branches.is_empty() {
         println!("{} No branches found for deployment: {}", "ℹ️".blue(), deployment_id);
         return Ok(());
+    }
+    
+    // Apply limit if specified
+    let total_count = branches.len();
+    if let Some(limit) = args.limit {
+        branches.truncate(limit);
     }
     
     let selected_columns = parse_columns(&args.columns, BRANCH_COLUMNS);
@@ -156,7 +180,20 @@ async fn list_branches(args: &ListArgs, config: &Config) -> Result<()> {
         rows.push(row_data);
     }
     
-    println!("{} Found {} branches for deployment: {}", "✅".green(), rows.len(), deployment_id);
+    println!("{} Found {} branches for deployment: {}{}", 
+        "✅".green(), 
+        total_count,
+        deployment_id,
+        if let Some(limit) = args.limit {
+            if limit < total_count {
+                format!(" (showing first {})", limit)
+            } else {
+                String::new()
+            }
+        } else {
+            String::new()
+        }
+    );
     display_dynamic_table(rows, &selected_columns);
     Ok(())
 }
@@ -179,6 +216,12 @@ async fn list_commits(args: &ListArgs, config: &Config) -> Result<()> {
     
     // Sort commits by creation date (oldest first for proper graph)
     commits.sort_by(|a, b| a.created_date.cmp(&b.created_date));
+    
+    // Apply limit if specified
+    let total_count = commits.len();
+    if let Some(limit) = args.limit {
+        commits.truncate(limit);
+    }
     
     // Check if user wants git graph format
     if args.graph {
@@ -214,7 +257,20 @@ async fn list_commits(args: &ListArgs, config: &Config) -> Result<()> {
             rows.push(row_data);
         }
         
-        println!("{} Found {} commits for deployment: {}", "✅".green(), rows.len(), deployment_id);
+        println!("{} Found {} commits for deployment: {}{}", 
+            "✅".green(), 
+            total_count,
+            deployment_id,
+            if let Some(limit) = args.limit {
+                if limit < total_count {
+                    format!(" (showing first {})", limit)
+                } else {
+                    String::new()
+                }
+            } else {
+                String::new()
+            }
+        );
         display_dynamic_table(rows, &selected_columns);
     }
     Ok(())
