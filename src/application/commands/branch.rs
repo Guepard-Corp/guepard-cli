@@ -71,10 +71,10 @@ pub async fn create(args: &CreateBranchArgs, config: &Config) -> Result<()> {
     ).await?;
     
     let branch_row = BranchRow {
-        id: branch.id,
+        id: branch.id.clone(),
         name: branch.label_name,
         status: branch.job_status,
-        snapshot_id: branch.branch_id,
+        snapshot_id: branch.branch_id.unwrap_or_else(|| branch.id.clone()),
         environment_type: "development".to_string(),
         is_ephemeral: "No".to_string(), // Default since not available in response
     };
@@ -113,10 +113,10 @@ pub async fn checkout(args: &CheckoutBranchArgs, config: &Config) -> Result<()> 
     let branch = branch::checkout_branch(&args.deployment_id, &args.branch_id, config).await?;
     
     let branch_row = BranchRow {
-        id: branch.id,
+        id: branch.id.clone(),
         name: branch.label_name,
         status: branch.job_status,
-        snapshot_id: branch.branch_id,
+        snapshot_id: branch.branch_id.unwrap_or_else(|| branch.id.clone()),
         environment_type: "development".to_string(),
         is_ephemeral: "No".to_string(), // Default since not available in response
     };

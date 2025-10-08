@@ -46,10 +46,10 @@ pub async fn checkout_branch(args: &CheckoutBranchArgs, config: &Config) -> Resu
     let branch = branch::checkout_branch(&args.deployment_id, &args.branch_id, config).await?;
     
     let checkout_row = CheckoutRow {
-        id: branch.id,
+        id: branch.id.clone(),
         name: branch.label_name,
         status: branch.job_status,
-        snapshot_id: branch.branch_id,
+        snapshot_id: branch.branch_id.unwrap_or_else(|| branch.id.clone()),
         environment_type: "development".to_string(),
     };
     
