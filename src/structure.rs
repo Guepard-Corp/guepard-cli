@@ -76,6 +76,10 @@ pub struct ListArgs {
     /// Show all commits including AUTO SNAPs (for commits only)
     #[clap(short = 'a', long)]
     pub all: bool,
+    
+    /// Limit number of results to display (default: show all)
+    #[clap(short = 'l', long)]
+    pub limit: Option<usize>,
 }
 
 #[derive(Args, Debug)]
