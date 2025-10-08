@@ -47,9 +47,9 @@ pub async fn checkout_branch(args: &CheckoutBranchArgs, config: &Config) -> Resu
     
     let checkout_row = CheckoutRow {
         id: branch.id.clone(),
-        name: branch.label_name,
-        status: branch.job_status,
-        snapshot_id: branch.branch_id.unwrap_or_else(|| branch.id.clone()),
+        name: branch.label_name.unwrap_or_else(|| branch.id.clone()),
+        status: branch.job_status.unwrap_or_default(),
+        snapshot_id: branch.snapshot_id.unwrap_or_else(|| branch.branch_id.unwrap_or_else(|| branch.id.clone())),
         environment_type: "development".to_string(),
     };
     

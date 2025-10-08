@@ -72,11 +72,11 @@ pub async fn create(args: &CreateBranchArgs, config: &Config) -> Result<()> {
     
     let branch_row = BranchRow {
         id: branch.id.clone(),
-        name: branch.label_name,
-        status: branch.job_status,
-        snapshot_id: branch.branch_id.unwrap_or_else(|| branch.id.clone()),
+        name: branch.label_name.unwrap_or_else(|| branch.id.clone()),
+        status: branch.job_status.unwrap_or_default(),
+        snapshot_id: branch.snapshot_id.unwrap_or_else(|| branch.branch_id.unwrap_or_else(|| branch.id.clone())),
         environment_type: "development".to_string(),
-        is_ephemeral: "No".to_string(), // Default since not available in response
+        is_ephemeral: if branch.is_ephemeral.unwrap_or(false) { "Yes".to_string() } else { "No".to_string() },
     };
     
     println!("{} Branch created successfully!", "✅".green());
@@ -114,11 +114,11 @@ pub async fn checkout(args: &CheckoutBranchArgs, config: &Config) -> Result<()> 
     
     let branch_row = BranchRow {
         id: branch.id.clone(),
-        name: branch.label_name,
-        status: branch.job_status,
-        snapshot_id: branch.branch_id.unwrap_or_else(|| branch.id.clone()),
+        name: branch.label_name.unwrap_or_else(|| branch.id.clone()),
+        status: branch.job_status.unwrap_or_default(),
+        snapshot_id: branch.snapshot_id.unwrap_or_else(|| branch.branch_id.unwrap_or_else(|| branch.id.clone())),
         environment_type: "development".to_string(),
-        is_ephemeral: "No".to_string(), // Default since not available in response
+        is_ephemeral: if branch.is_ephemeral.unwrap_or(false) { "Yes".to_string() } else { "No".to_string() },
     };
     
     println!("{} Checked out branch successfully!", "✅".green());

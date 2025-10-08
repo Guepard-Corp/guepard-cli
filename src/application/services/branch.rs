@@ -31,10 +31,18 @@ pub async fn create_branch(
         .map_err(BranchError::RequestFailed)?;
 
     if response.status().is_success() {
-        response
-            .json::<BranchResponse>()
-            .await
-            .map_err(|e| BranchError::ParseError(e.to_string()))
+        let text = response.text().await.unwrap_or_default();
+        
+        // Try to parse as CheckoutResponse first (success case)
+        if let Ok(checkout_response) = serde_json::from_str::<CheckoutResponse>(&text) {
+            // Parse the body string as BranchResponse
+            serde_json::from_str::<BranchResponse>(&checkout_response.body)
+                .map_err(|e| BranchError::ParseError(e.to_string()))
+        } else {
+            // Try to parse directly as BranchResponse (fallback)
+            serde_json::from_str::<BranchResponse>(&text)
+                .map_err(|e| BranchError::ParseError(e.to_string()))
+        }
     } else {
         Err(BranchError::from_response(response).await)
     }
@@ -86,18 +94,19 @@ pub async fn checkout_branch(deployment_id: &str, branch_id: &str, config: &Conf
                 // Return a mock response for already checked out case
                 Ok(BranchResponse {
                     id: branch_id.to_string(),
-                    account_id: "".to_string(),
-                    label_name: "Already checked out".to_string(),
-                    job_status: "ALREADY_CHECKED_OUT".to_string(),
-                    compute_status: "RUNNING".to_string(),
-                    deployment_id: deployment_id.to_string(),
+                    account_id: None,
+                    label_name: Some("Already checked out".to_string()),
+                    job_status: Some("ALREADY_CHECKED_OUT".to_string()),
+                    deployment_id: Some(deployment_id.to_string()),
                     branch_id: Some(branch_id.to_string()),
-                    performance_profile_id: "".to_string(),
+                    snapshot_id: None,
+                    is_ephemeral: None,
+                    is_masked: None,
+                    is_purged: None,
                     updated_at: None,
                     created_at: None,
                     created_by: None,
                     updated_by: None,
-                    port: 0,
                 })
             } else {
                 // Parse the body string as BranchResponse
@@ -108,18 +117,19 @@ pub async fn checkout_branch(deployment_id: &str, branch_id: &str, config: &Conf
             // Return a mock response for already checked out case
             Ok(BranchResponse {
                 id: branch_id.to_string(),
-                account_id: "".to_string(),
-                label_name: "Already checked out".to_string(),
-                job_status: "ALREADY_CHECKED_OUT".to_string(),
-                compute_status: "RUNNING".to_string(),
-                deployment_id: deployment_id.to_string(),
+                account_id: None,
+                label_name: Some("Already checked out".to_string()),
+                job_status: Some("ALREADY_CHECKED_OUT".to_string()),
+                deployment_id: Some(deployment_id.to_string()),
                 branch_id: Some(branch_id.to_string()),
-                performance_profile_id: "".to_string(),
+                snapshot_id: None,
+                is_ephemeral: None,
+                is_masked: None,
+                is_purged: None,
                 updated_at: None,
                 created_at: None,
                 created_by: None,
                 updated_by: None,
-                port: 0,
             })
         } else {
             Err(BranchError::ParseError(format!("Unexpected response format: {}", text)))
