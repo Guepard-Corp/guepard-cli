@@ -27,7 +27,7 @@ pub struct BranchResponse {
     pub job_status: String,
     pub compute_status: String,
     pub deployment_id: String,
-    pub branch_id: String,
+    pub branch_id: Option<String>,
     pub performance_profile_id: String,
     pub updated_at: Option<String>,
     pub created_at: Option<String>,
