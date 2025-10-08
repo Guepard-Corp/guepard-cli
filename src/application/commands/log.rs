@@ -8,6 +8,7 @@ use reqwest::Client;
 use std::io::{self, Write};
 use std::time::Duration;
 use tokio::time::sleep;
+use chrono::{DateTime, Utc, NaiveDateTime};
 
 pub async fn log(args: &LogArgs, config: &Config) -> Result<()> {
     let jwt_token = auth::get_auth_token()?;
@@ -44,7 +45,44 @@ pub async fn log(args: &LogArgs, config: &Config) -> Result<()> {
 fn display_structured_logs(log_response: &LogResponse, args: &LogArgs) -> Result<()> {
     let mut lines = log_response.parse_logs();
     
-    // Apply filters
+    // Count stdout vs stderr before filtering
+    let stdout_count = lines.iter().filter(|line| matches!(line.source, LogSource::Stdout)).count();
+    let stderr_count = lines.iter().filter(|line| matches!(line.source, LogSource::Stderr)).count();
+    
+    // Apply date filters
+    if let Some(since_str) = &args.since {
+        if let Ok(since_dt) = parse_date_filter(since_str) {
+            lines.retain(|line| {
+                if let Some(timestamp) = &line.timestamp {
+                    if let Ok(line_dt) = parse_log_timestamp(timestamp) {
+                        line_dt >= since_dt
+                    } else {
+                        true // Keep if can't parse timestamp
+                    }
+                } else {
+                    true // Keep if no timestamp
+                }
+            });
+        }
+    }
+    
+    if let Some(until_str) = &args.until {
+        if let Ok(until_dt) = parse_date_filter(until_str) {
+            lines.retain(|line| {
+                if let Some(timestamp) = &line.timestamp {
+                    if let Ok(line_dt) = parse_log_timestamp(timestamp) {
+                        line_dt <= until_dt
+                    } else {
+                        true // Keep if can't parse timestamp
+                    }
+                } else {
+                    true // Keep if no timestamp
+                }
+            });
+        }
+    }
+    
+    // Apply source filters
     if args.stdout_only {
         lines.retain(|line| matches!(line.source, LogSource::Stdout));
     } else if args.stderr_only {
@@ -60,6 +98,15 @@ fn display_structured_logs(log_response: &LogResponse, args: &LogArgs) -> Result
     // Display header
     println!("{} Deployment Logs for: {}", "📋".blue(), args.deployment_id);
     println!("{}", "=".repeat(60).dimmed());
+    
+    // Show log summary
+    if !args.stdout_only && !args.stderr_only {
+        println!("{} Log Summary: {} stdout, {} stderr", 
+                 "📊".cyan(), 
+                 stdout_count.to_string().green(), 
+                 stderr_count.to_string().red());
+        println!("{}", "-".repeat(60).dimmed());
+    }
     
     if lines.is_empty() {
         println!("{} No logs available", "ℹ️".blue());
@@ -170,30 +217,25 @@ fn format_log_line(line: &LogLine, show_timestamps: bool) -> String {
         }
     }
     
-    // Add source indicator
+    // Add source indicator (just colored dot)
     let source_indicator = match line.source {
-        LogSource::Stdout => "📤".green(),
-        LogSource::Stderr => "📥".red(),
+        LogSource::Stdout => "●".green(),
+        LogSource::Stderr => "●".red(),
     };
     formatted.push_str(&format!("{} ", source_indicator));
     
-    // Add level indicator
-    let level_indicator = match line.level {
-        LogLevel::Error => "❌".red(),
-        LogLevel::Warning => "⚠️".yellow(),
-        LogLevel::Info => "ℹ️".blue(),
-        LogLevel::Debug => "🐛".purple(),
-        LogLevel::Trace => "🔍".dimmed(),
-    };
-    formatted.push_str(&format!("{} ", level_indicator));
+    // No level indicator needed
     
-    // Add content with appropriate color
-    let content_color = match line.level {
-        LogLevel::Error => line.content.red(),
-        LogLevel::Warning => line.content.yellow(),
-        LogLevel::Info => line.content.white(),
-        LogLevel::Debug => line.content.purple(),
-        LogLevel::Trace => line.content.dimmed(),
+    // Add content with appropriate color based on source and level
+    let content_color = match (&line.source, &line.level) {
+        (LogSource::Stderr, LogLevel::Error) => line.content.red().bold(),
+        (LogSource::Stderr, LogLevel::Warning) => line.content.yellow().bold(),
+        (LogSource::Stderr, _) => line.content.red(),
+        (LogSource::Stdout, LogLevel::Error) => line.content.red(),
+        (LogSource::Stdout, LogLevel::Warning) => line.content.yellow(),
+        (LogSource::Stdout, LogLevel::Info) => line.content.green(),
+        (LogSource::Stdout, LogLevel::Debug) => line.content.purple(),
+        (LogSource::Stdout, LogLevel::Trace) => line.content.dimmed(),
     };
     
     formatted.push_str(&content_color.to_string());
@@ -256,4 +298,44 @@ async fn follow_logs(args: &LogArgs, config: &Config, client: &Client, jwt_token
         
         sleep(Duration::from_secs(2)).await;
     }
+}
+
+fn parse_date_filter(date_str: &str) -> Result<DateTime<Utc>> {
+    // Try different date formats
+    let formats = [
+        "%Y-%m-%d %H:%M:%S",  // 2025-10-08 08:52:16
+        "%Y-%m-%d",           // 2025-10-08
+        "%Y-%m-%d %H:%M",     // 2025-10-08 08:52
+    ];
+    
+    for format in &formats {
+        if let Ok(naive_dt) = NaiveDateTime::parse_from_str(date_str, format) {
+            return Ok(DateTime::from_naive_utc_and_offset(naive_dt, Utc));
+        }
+    }
+    
+    // If no format matches, try parsing as just date and assume midnight
+    if let Ok(naive_date) = chrono::NaiveDate::parse_from_str(date_str, "%Y-%m-%d") {
+        let naive_dt = naive_date.and_hms_opt(0, 0, 0).unwrap();
+        return Ok(DateTime::from_naive_utc_and_offset(naive_dt, Utc));
+    }
+    
+    Err(anyhow::anyhow!("Invalid date format: {}", date_str))
+}
+
+fn parse_log_timestamp(timestamp: &str) -> Result<DateTime<Utc>> {
+    // Parse PostgreSQL timestamp format: "2025-10-08 08:52:16.178 UTC"
+    let cleaned = timestamp.replace(" UTC", "");
+    let formats = [
+        "%Y-%m-%d %H:%M:%S%.3f",  // With milliseconds
+        "%Y-%m-%d %H:%M:%S",       // Without milliseconds
+    ];
+    
+    for format in &formats {
+        if let Ok(naive_dt) = NaiveDateTime::parse_from_str(&cleaned, format) {
+            return Ok(DateTime::from_naive_utc_and_offset(naive_dt, Utc));
+        }
+    }
+    
+    Err(anyhow::anyhow!("Invalid timestamp format: {}", timestamp))
 }
