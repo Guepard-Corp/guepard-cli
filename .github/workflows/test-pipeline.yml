@@ -64,6 +64,10 @@ jobs:
     permissions:
       packages: read
     steps:
+      - name: Normalize repository name
+        id: repo_name
+        run: echo "repo_lc=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+        
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -74,7 +78,7 @@ jobs:
         run: |
           mkdir -p $HOME/bin
           echo '#!/bin/bash' > $HOME/bin/guepard
-          echo 'docker run --rm ghcr.io/${{ github.repository }}:latest "$@"' >> $HOME/bin/guepard
+          echo 'docker run --rm ghcr.io/${{ steps.repo_name.outputs.repo_lc }}:latest "$@"' >> $HOME/bin/guepard
           chmod +x $HOME/bin/guepard
           echo "$HOME/bin" >> $GITHUB_PATH
       - name: Test - Main Help & Version
@@ -112,7 +116,7 @@ jobs:
         run: |
           mkdir -p $HOME/bin
           echo '#!/bin/bash' > $HOME/bin/guepard
-          echo 'docker run --rm --env GUEPARD_API_TOKEN ghcr.io/${{ github.repository }}:latest "$@"' >> $HOME/bin/guepard
+          echo 'docker run --rm --env GUEPARD_API_TOKEN ghcr.io/${{ steps.repo_name.outputs.repo_lc }}:latest "$@"' >> $HOME/bin/guepard
           chmod +x $HOME/bin/guepard
           echo "$HOME/bin" >> $GITHUB_PATH
       - name: Check Login
