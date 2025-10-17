@@ -35,7 +35,7 @@ The easiest way to install on macOS:
 
 ```bash
 brew tap guepard-corp/guepard-cli
-brew install gfs
+brew install guepard
 ```
 
 ### Pre-built Binaries
@@ -66,32 +66,11 @@ make install
 ## Usage
 
 ```bash
-# Initialize a new Guepard repository
-gfs init .
+# Login to you account and link the CLI
+guepard login
 
-# Deploy with database configuration
-gfs deploy --database_provider=MySQL --database_version=8
-
-# Create a commit
-gfs commit -m "Initial version"
-
-# List branches
-gfs branch
-
-# Create a new branch
-gfs branch develop
-
-# Switch to a branch
-gfs checkout develop
-
-# View commit history
-gfs log
-
-# Manage compute instances
-gfs compute status
-gfs compute start
-gfs compute stop
-gfs compute restart
+# List all you available databases
+guepard list
 ```
 
 ## Supported Platforms
