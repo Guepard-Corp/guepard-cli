@@ -2,7 +2,7 @@ use anyhow::Result;
 use crate::config::config::Config;
 use crate::structure::DeployArgs;
 use crate::application::dto::deploy::{CreateDeploymentRequest, UpdateDeploymentRequest};
-use crate::application::services::{deploy, performance};
+use crate::application::services::{deploy, performance, compute};
 use colored::Colorize;
 use std::io::{self, Write};
 
@@ -85,9 +85,15 @@ async fn create_deployment(args: &DeployArgs, config: &Config) -> Result<()> {
     println!("  {} {}", "Datacenter:".yellow(), deployment.datacenter);
     println!("  {} {}", "Created:".yellow(), deployment.created_date);
     
+    // Try to get compute information for the real port
+    let port = match compute::list_compute(&deployment.id, config).await {
+        Ok(compute_info) => compute_info.port.to_string(),
+        Err(_) => deployment.port.map(|p| p.to_string()).unwrap_or_else(|| "5432".to_string()),
+    };
+    
     // Show database connection information
-    if let Some(port) = deployment.port {
-        println!("  {} {}", "Port:".yellow(), port);
+    if let Some(port_display) = deployment.port {
+        println!("  {} {}", "Port:".yellow(), port_display);
     }
     if let Some(connection_string) = &deployment.connection_string {
         println!("  {} {}", "Connection URI:".yellow(), connection_string);
@@ -97,13 +103,12 @@ async fn create_deployment(args: &DeployArgs, config: &Config) -> Result<()> {
     println!();
     println!("{} Database Connection", "🔗".blue());
     println!("  {} {}", "Host:".yellow(), deployment.fqdn);
-    println!("  {} {}", "Port:".yellow(), deployment.port.map(|p| p.to_string()).unwrap_or_else(|| "5432".to_string()));
+    println!("  {} {}", "Port:".yellow(), port);
     println!("  {} {}", "Database:".yellow(), deployment.repository_name);
     println!("  {} {}", "Username:".yellow(), deployment.database_username);
     println!("  {} {}", "Password:".yellow(), deployment.database_password);
     
     // Construct and show the connection URI
-    let port = deployment.port.map(|p| p.to_string()).unwrap_or_else(|| "5432".to_string());
     let connection_uri = format!("postgresql://{}:{}@{}:{}/{}", 
         deployment.database_username,
         deployment.database_password,
@@ -125,6 +130,28 @@ async fn create_deployment(args: &DeployArgs, config: &Config) -> Result<()> {
     println!("{} Use 'guepard deploy -x {}' to get more details", "💡".yellow(), deployment.id);
     
     Ok(())
+}
+
+fn generate_password() -> String {
+    // Generate a strong 13-character password with alphanumeric and special characters
+    let chars: Vec<char> = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*".chars().collect();
+    let mut password = String::new();
+    
+    // Use current time with nanoseconds for better randomness
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    
+    // Add some process-specific entropy for more randomness
+    let process_id = std::process::id() as u128;
+    
+    for i in 0..13 {
+        let index = ((timestamp as usize + process_id as usize + i * 1007) as usize) % chars.len();
+        password.push(chars[index]);
+    }
+    
+    password
 }
 
 async fn update_deployment(deployment_id: &str, args: &DeployArgs, config: &Config) -> Result<()> {
@@ -152,20 +179,27 @@ async fn get_deployment(deployment_id: &str, config: &Config) -> Result<()> {
     println!("  {} {}", "Datacenter:".yellow(), deployment.datacenter);
     println!("  {} {}", "Created:".yellow(), deployment.created_date);
     
+    // Try to get compute information for the real port
+    let port = match compute::list_compute(deployment_id, config).await {
+        Ok(compute_info) => compute_info.port.to_string(),
+        Err(_) => deployment.port.map(|p| p.to_string()).unwrap_or_else(|| "5432".to_string()),
+    };
+    
     // Show database connection information
     println!();
     println!("{} Database Connection", "🔗".blue());
     println!("  {} {}", "Host:".yellow(), deployment.fqdn);
-    println!("  {} {}", "Port:".yellow(), "5432");
+    println!("  {} {}", "Port:".yellow(), port);
     println!("  {} {}", "Database:".yellow(), deployment.repository_name);
     println!("  {} {}", "Username:".yellow(), deployment.database_username);
     println!("  {} {}", "Password:".yellow(), deployment.database_password);
     
     // Construct database connection URI
-    let connection_uri = format!("postgresql://{}:{}@{}:5432/{}", 
+    let connection_uri = format!("postgresql://{}:{}@{}:{}/{}", 
         deployment.database_username, 
         deployment.database_password, 
         deployment.fqdn,
+        port,
         deployment.repository_name
     );
     println!();
@@ -265,14 +299,14 @@ async fn interactive_deploy(config: &Config) -> Result<()> {
     // Step 5: Datacenter
     println!();
     println!("{} Step 5: Choose Datacenter", "5️⃣".blue());
-    println!("Available options: aws, gcp, azure");
-    print!("{} Datacenter [aws]: ", "🏢".green());
+    println!("Available options: us-west-aws, us-east-aws, eu-west-aws");
+    print!("{} Datacenter [us-west-aws]: ", "🏢".green());
     io::stdout().flush()?;
     
     let mut datacenter = String::new();
     io::stdin().read_line(&mut datacenter)?;
     let datacenter = datacenter.trim();
-    let datacenter = if datacenter.is_empty() { "aws" } else { datacenter };
+    let datacenter = if datacenter.is_empty() { "us-west-aws" } else { datacenter };
     
     // Step 6: Repository Name
     println!();
@@ -285,30 +319,31 @@ async fn interactive_deploy(config: &Config) -> Result<()> {
     let repository_name = repository_name.trim();
     let repository_name = if repository_name.is_empty() { "my-database" } else { repository_name };
     
-    // Step 7: Database Password
+    // Step 7: Database Username (optional)
     println!();
-    println!("{} Step 7: Database Password", "7️⃣".blue());
-    print!("{} Database Password: ", "🔐".green());
-    io::stdout().flush()?;
-    
-    let mut database_password = String::new();
-    io::stdin().read_line(&mut database_password)?;
-    let database_password = database_password.trim().to_string();
-    
-    if database_password.is_empty() {
-        return Err(anyhow::anyhow!("Database password is required"));
-    }
-    
-    // Step 8: Username
-    println!();
-    println!("{} Step 8: Database Username", "8️⃣".blue());
-    print!("{} Database Username [guepard]: ", "👤".green());
+    println!("{} Step 7: Database Username", "7️⃣".blue());
+    print!("{} Database Username [postgres]: ", "👤".green());
     io::stdout().flush()?;
     
     let mut user = String::new();
     io::stdin().read_line(&mut user)?;
     let user = user.trim();
-    let user = if user.is_empty() { "guepard" } else { user };
+    let user = if user.is_empty() { "postgres" } else { user };
+    
+    // Step 8: Database Password
+    println!();
+    println!("{} Step 8: Database Password", "8️⃣".blue());
+    print!("{} Database Password [press Enter to auto-generate]: ", "🔐".green());
+    io::stdout().flush()?;
+    
+    let mut database_password = String::new();
+    io::stdin().read_line(&mut database_password)?;
+    let database_password = database_password.trim();
+    let database_password = if database_password.is_empty() { 
+        generate_password() 
+    } else { 
+        database_password.to_string() 
+    };
     
     // Step 9: Performance Profile
     println!();
@@ -332,17 +367,19 @@ async fn interactive_deploy(config: &Config) -> Result<()> {
     println!("  {} {}", "Datacenter:".yellow(), datacenter);
     println!("  {} {}", "Repository Name:".yellow(), repository_name);
     println!("  {} {}", "Username:".yellow(), user);
+    println!("  {} {}", "Password:".yellow(), database_password);
     println!("  {} {}", "Performance Profile:".yellow(), performance_profile);
     println!();
     
     // Confirmation
-    print!("{} Proceed with deployment? (y/N): ", "❓".yellow());
+    print!("{} Proceed with deployment? (Y/n): ", "❓".yellow());
     io::stdout().flush()?;
     
     let mut confirmation = String::new();
     io::stdin().read_line(&mut confirmation)?;
     
-    if !confirmation.trim().to_lowercase().starts_with('y') {
+    let confirm_input = confirmation.trim().to_lowercase();
+    if !confirm_input.is_empty() && confirm_input.starts_with('n') {
         println!("{} Deployment cancelled.", "ℹ️".blue());
         return Ok(());
     }
@@ -367,7 +404,7 @@ async fn interactive_deploy(config: &Config) -> Result<()> {
         region: region.to_string(),
         datacenter: datacenter.to_string(),
         database_username: user.to_string(),
-        database_password: database_password,
+        database_password: database_password.to_string(),
         performance_profile_id,
     };
     
@@ -389,9 +426,15 @@ async fn interactive_deploy(config: &Config) -> Result<()> {
     println!("  {} {}", "Datacenter:".yellow(), deployment.datacenter);
     println!("  {} {}", "Created:".yellow(), deployment.created_date);
     
+    // Try to get compute information for the real port
+    let port = match compute::list_compute(&deployment.id, config).await {
+        Ok(compute_info) => compute_info.port.to_string(),
+        Err(_) => deployment.port.map(|p| p.to_string()).unwrap_or_else(|| "5432".to_string()),
+    };
+    
     // Show database connection information
-    if let Some(port) = deployment.port {
-        println!("  {} {}", "Port:".yellow(), port);
+    if let Some(port_display) = deployment.port {
+        println!("  {} {}", "Port:".yellow(), port_display);
     }
     if let Some(connection_string) = &deployment.connection_string {
         println!("  {} {}", "Connection URI:".yellow(), connection_string);
@@ -401,13 +444,12 @@ async fn interactive_deploy(config: &Config) -> Result<()> {
     println!();
     println!("{} Database Connection", "🔗".blue());
     println!("  {} {}", "Host:".yellow(), deployment.fqdn);
-    println!("  {} {}", "Port:".yellow(), deployment.port.map(|p| p.to_string()).unwrap_or_else(|| "5432".to_string()));
+    println!("  {} {}", "Port:".yellow(), port);
     println!("  {} {}", "Database:".yellow(), deployment.repository_name);
     println!("  {} {}", "Username:".yellow(), deployment.database_username);
     println!("  {} {}", "Password:".yellow(), deployment.database_password);
     
     // Construct and show the connection URI
-    let port = deployment.port.map(|p| p.to_string()).unwrap_or_else(|| "5432".to_string());
     let connection_uri = format!("postgresql://{}:{}@{}:{}/{}", 
         deployment.database_username,
         deployment.database_password,
