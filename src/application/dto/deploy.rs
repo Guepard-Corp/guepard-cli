@@ -72,6 +72,8 @@ pub struct GetDeploymentResponse {
     pub deployment_type: String,
     pub repository_name: String,
     pub fqdn: String,
+    pub port: Option<i32>,
+    pub connection_string: Option<String>,
     pub database_provider: String,
     pub database_version: String,
     pub database_username: String,
