@@ -6,7 +6,6 @@ Your Guepard CLI now follows a Git-like structure while preserving all your orig
 ## Commands
 
 ### Core Commands
-- `guepard init [path]` - Initialize a new Guepard environment
 - `guepard deploy` - Deploy database instances with beautiful table output
 - `guepard commit -m "message" -x <deployment_id> -c <clone_id>` - Create snapshots (bookmarks)
 - `guepard branch` - List and manage branches with detailed tables

@@ -20,10 +20,10 @@ The easiest way to install Guepard CLI on macOS:
 brew tap guepard-corp/guepard-cli
 
 # Install Guepard CLI
-brew install gfs
+brew install guepard
 ```
 
-**Note**: The Homebrew package installs as `gfs` but you can also use `guepard` command.
+**Note**: The Homebrew package installs as `guepard` command.
 
 ### 2. Pre-built Binaries
 
@@ -32,33 +32,33 @@ Download the appropriate binary for your platform from our [Releases](https://gi
 #### macOS
 ```bash
 # For Intel Macs (AMD64)
-wget https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.27.14/guepard-cli-0.27.14-macos-amd64.tar.gz
-tar -xzf guepard-cli-0.27.14-macos-amd64.tar.gz
+wget https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.27.17/guepard-cli-0.27.17-macos-amd64.tar.gz
+tar -xzf guepard-cli-0.27.17-macos-amd64.tar.gz
 sudo mv guepard /usr/local/bin/
 
 # For Apple Silicon Macs (ARM64)
-wget https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.27.14/guepard-cli-0.27.14-macos-arm64.tar.gz
-tar -xzf guepard-cli-0.27.14-macos-arm64.tar.gz
+wget https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.27.17/guepard-cli-0.27.17-macos-arm64.tar.gz
+tar -xzf guepard-cli-0.27.17-macos-arm64.tar.gz
 sudo mv guepard /usr/local/bin/
 ```
 
 #### Linux
 ```bash
 # For AMD64
-wget https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.27.14/guepard-cli-0.27.14-linux-amd64.tar.gz
-tar -xzf guepard-cli-0.27.14-linux-amd64.tar.gz
+wget https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.27.17/guepard-cli-0.27.17-linux-amd64.tar.gz
+tar -xzf guepard-cli-0.27.17-linux-amd64.tar.gz
 sudo mv guepard /usr/local/bin/
 
 # For ARM64
-wget https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.27.14/guepard-cli-0.27.14-linux-arm64.tar.gz
-tar -xzf guepard-cli-0.27.14-linux-arm64.tar.gz
+wget https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.27.17/guepard-cli-0.27.17-linux-arm64.tar.gz
+tar -xzf guepard-cli-0.27.17-linux-arm64.tar.gz
 sudo mv guepard /usr/local/bin/
 ```
 
 #### Windows
 1. Download the appropriate ZIP file:
-   - [Windows AMD64](https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.27.14/guepard-cli-0.27.14-windows-amd64.zip)
-   - [Windows ARM64](https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.27.14/guepard-cli-0.27.14-windows-arm64.zip)
+   - [Windows AMD64](https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.27.17/guepard-cli-0.27.17-windows-amd64.zip)
+   - [Windows ARM64](https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.27.17/guepard-cli-0.27.17-windows-arm64.zip)
 
 2. Extract the ZIP file
 3. Move `guepard.exe` to a directory in your PATH (e.g., `C:\Windows\System32`)
@@ -104,7 +104,7 @@ After installation, verify that Guepard CLI is working:
 ```bash
 # Check version
 guepard --version
-# Output: guepard 0.27.14
+# Output: guepard 0.27.17
 
 # Check help
 guepard --help

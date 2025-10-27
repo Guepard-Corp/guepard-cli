@@ -69,13 +69,13 @@ guepard checkout -x <deployment_id> -c <branch_id>
 
 ## Support
 
-- **Community**: Join our [Discord](https://discord.gg/NYsNzQGvZT)
+- **Community**: Join our [Discord](https://discord.gg/nCXAsUd3hm)
 - **Issues**: Report bugs on [GitHub](https://github.com/Guepard-Corp/guepard-cli/issues)
 - **Documentation**: This comprehensive guide covers everything you need
 
 ## Version
 
-Current version: **0.27.14**
+Current version: **0.27.17**
 
 ---
 

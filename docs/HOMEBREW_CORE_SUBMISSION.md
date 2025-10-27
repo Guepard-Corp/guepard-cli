@@ -2,7 +2,7 @@
 
 ## Formula Details
 - **Name**: guepard
-- **Version**: v0.26.19
+- **Version**: v0.27.17
 - **Description**: Guepard CLI - Git for Data
 - **Homepage**: https://www.guepard.run
 - **License**: Guepard (c) 2025
@@ -29,22 +29,22 @@
 
 3. **Create branch and commit**:
    ```bash
-   git checkout -b add-guepard-v0.26.19
+   git checkout -b add-guepard-v0.27.17
    git add Formula/guepard.rb
-   git commit -m "guepard v0.26.19 (new formula)"
-   git push origin add-guepard-v0.26.19
+   git commit -m "guepard v0.27.17 (new formula)"
+   git push origin add-guepard-v0.27.17
    ```
 
 4. **Create Pull Request**:
    - Go to your fork on GitHub
    - Create PR against Homebrew/homebrew-core
-   - Title: "guepard v0.26.19 (new formula)"
+   - Title: "guepard v0.27.17 (new formula)"
    - Use the description template below
 
 ## PR Description Template
 
 ```
-guepard v0.26.19 (new formula)
+guepard v0.27.17 (new formula)
 
 Guepard CLI - Git for Data. Provides version control and management 
 capabilities for databases with familiar Git-like commands like init, 

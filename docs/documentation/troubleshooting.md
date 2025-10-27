@@ -18,7 +18,7 @@ Get help with common issues and find answers to frequently asked questions about
 
 ### Command Not Found
 
-**Problem**: `guepard: command not found` or `gfs: command not found`
+**Problem**: `guepard: command not found`
 
 **Solutions**:
 
@@ -26,7 +26,7 @@ Get help with common issues and find answers to frequently asked questions about
    ```bash
    which guepard
    # or
-   which gfs
+   which guepard
    ```
 
 2. **Add to PATH**:
@@ -41,7 +41,7 @@ Get help with common issues and find answers to frequently asked questions about
 3. **Reinstall**:
    ```bash
    # macOS
-   brew reinstall gfs
+   brew reinstall guepard
    
    # Or download from releases page
    ```
@@ -81,7 +81,7 @@ Get help with common issues and find answers to frequently asked questions about
 2. **Update to latest version**:
    ```bash
    # macOS
-   brew upgrade gfs
+   brew upgrade guepard
    
    # Or download latest from releases page
    ```
@@ -609,7 +609,7 @@ Actual behavior:
 Login page shows "Error loading page" message.
 
 Environment:
-- Guepard CLI version: 0.27.14
+- Guepard CLI version: 0.27.17
 - macOS version: 12.6 Monterey
 - Browser: Safari 15.6
 - Network: Corporate WiFi (may have proxy)
