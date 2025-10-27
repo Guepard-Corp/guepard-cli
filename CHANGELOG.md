@@ -2,12 +2,10 @@
 
 All notable changes to Guepard CLI will be documented in this file.
 
-## v0.27.19 (2025-10-27)
+## v0.27.19 - v0.27.18 (2025-10-27)
 
 ### Changes
 - Homebrew formula updates for v0.27.19
-
-## v0.27.18 (2025-10-27)
 
 ### Features
 - **Enhanced deployment command**: Added compute information retrieval for accurate port display during deployment
