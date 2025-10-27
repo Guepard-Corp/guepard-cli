@@ -238,8 +238,8 @@ jobs:
       
       - name: Setup Guepard CLI
         run: |
-          wget https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.27.14/guepard-cli-0.27.14-linux-amd64.tar.gz
-          tar -xzf guepard-cli-0.27.14-linux-amd64.tar.gz
+          wget https://github.com/Guepard-Corp/guepard-cli/releases/download/v0.27.17/guepard-cli-0.27.17-linux-amd64.tar.gz
+          tar -xzf guepard-cli-0.27.17-linux-amd64.tar.gz
           sudo mv guepard /usr/local/bin/
       
       - name: Authenticate with Guepard

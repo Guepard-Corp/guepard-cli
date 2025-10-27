@@ -1,10 +1,10 @@
 # Homebrew Distribution Guide for Guepard CLI
 
-This guide will help you publish your Guepard CLI (`gfs`) to Homebrew for easy installation on macOS.
+This guide will help you publish your Guepard CLI (`guepard`) to Homebrew for easy installation on macOS.
 
 ## What We've Set Up
 
-✅ **Homebrew Formula**: Created `homebrew-tap/Formula/gfs.rb` with proper configuration
+✅ **Homebrew Formula**: Created `homebrew-tap/Formula/guepard.rb` with proper configuration
 ✅ **Installation Scripts**: Created setup and test scripts
 ✅ **Documentation**: Updated README.md with Homebrew installation instructions
 ✅ **Formula Validation**: Tested formula syntax and style
@@ -27,13 +27,13 @@ First, you need to create GitHub releases with your binaries:
 # Create a GitHub release with your binaries
 # The release should be named v0.1.0 (matching your Cargo.toml version)
 # Upload these files:
-# - guepard-cli-0.1.0-macos-arm64.tar.gz
-# - guepard-cli-0.1.0-macos-amd64.tar.gz
+# - guepard-cli-0.27.17-macos-arm64.tar.gz
+# - guepard-cli-0.27.17-macos-amd64.tar.gz
 ```
 
 **Important**: The release URL in the formula must match exactly:
-- Release tag: `v0.1.0`
-- File names: `guepard-cli-0.1.0-macos-arm64.tar.gz` and `guepard-cli-0.1.0-macos-amd64.tar.gz`
+- Release tag: `v0.27.17`
+- File names: `guepard-cli-0.27.17-macos-arm64.tar.gz` and `guepard-cli-0.27.17-macos-amd64.tar.gz`
 
 ### 2. Create Homebrew Tap Repository
 
@@ -69,11 +69,11 @@ Once your tap is published, test the installation:
 # Add the tap
 brew tap guepard-corp/guepard-cli
 
-# Install gfs
-brew install gfs
+# Install guepard
+brew install guepard
 
 # Test it works
-gfs --version
+guepard --version
 ```
 
 ### 4. Update Documentation
@@ -86,7 +86,7 @@ Your README.md already includes Homebrew installation instructions. You may want
 guepard-cli-1/
 ├── homebrew-tap/
 │   ├── Formula/
-│   │   └── gfs.rb          # Homebrew formula
+│   │   └── guepard.rb          # Homebrew formula
 │   └── README.md           # Tap documentation
 ├── setup-homebrew-tap.sh   # Automated setup script
 ├── test-homebrew-formula.sh # Testing script
@@ -95,7 +95,7 @@ guepard-cli-1/
 
 ## Formula Details
 
-The formula (`gfs.rb`) includes:
+The formula (`guepard.rb`) includes:
 
 - **Multi-architecture support**: ARM64 and AMD64 for macOS
 - **Proper SHA256 checksums**: For security verification
@@ -107,7 +107,7 @@ The formula (`gfs.rb`) includes:
 
 When you release new versions:
 
-1. Update the version in `homebrew-tap/Formula/gfs.rb`
+1. Update the version in `homebrew-tap/Formula/guepard.rb`
 2. Update the SHA256 checksums for both architectures
 3. Update the URL to point to the new release
 4. Commit and push changes to your tap repository
@@ -124,11 +124,11 @@ When you release new versions:
 
 ```bash
 # Check formula style
-brew style homebrew-tap/Formula/gfs.rb
+brew style homebrew-tap/Formula/guepard.rb
 
 # Test installation (after creating releases)
 brew tap guepard-corp/guepard-cli
-brew install gfs
+brew install guepard
 ```
 
 ## Next Steps
@@ -144,7 +144,7 @@ Once published, users can install your CLI with:
 
 ```bash
 brew tap guepard-corp/guepard-cli
-brew install gfs
+brew install guepard
 ```
 
 This provides a much better user experience than manual binary downloads!

@@ -397,7 +397,7 @@ guepard logout
 ## Command Aliases and Shortcuts
 
 ### Common Aliases
-- `guepard` and `gfs` are interchangeable
+- `guepard` command is the primary binary name
 - Use `-x` instead of `--deployment-id`
 - Use `-m` instead of `--message`
 - Use `-n` instead of `--name`

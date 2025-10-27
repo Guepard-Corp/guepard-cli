@@ -7,7 +7,7 @@
     <a href="https://youtu.be/WlOkLnoY2h8?si=hb6-7kLhlOvVL1u6">
         <img src="https://img.shields.io/badge/Watch-YouTube-%23ffcb51?logo=youtube&logoColor=black" alt="Watch on YouTube" />
     </a>
-    <a href="https://discord.gg/NYsNzQGvZT">
+    <a href="https://discord.gg/nCXAsUd3hm">
         <img src="https://img.shields.io/badge/Join-Community-%23ffcb51?logo=discord&logoColor=black" alt="Join our Community" />
     </a>
     <a href="https://github.com/Guepard-Corp/guepard-engine-v2/actions/workflows/build_and_test.yml" target="_blank">
@@ -145,4 +145,4 @@ Have questions, feedback, or just want to say hi? We’d love to hear from you! 
 
 - Documentation: [https://docs.guepard.run](https://docs.guepard.run)
 - Issues: [GitHub Issues](https://github.com/Guepard-Corp/guepard-cli/issues)
-- Community: [Discord](https://discord.gg/guepard)
+- Community: [Discord](https://discord.gg/nCXAsUd3hm)

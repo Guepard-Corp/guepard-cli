@@ -4,7 +4,7 @@ This guide covers distributing your Guepard CLI across multiple package managers
 
 ## Current Status
 
-✅ **macOS**: Available via Homebrew (`brew tap guepard-corp/guepard-cli && brew install gfs`)
+✅ **macOS**: Available via Homebrew (`brew tap guepard-corp/guepard-cli && brew install guepard`)
 🔄 **Linux**: Snap package ready (needs Linux binaries)
 🔄 **Windows**: Chocolatey package ready (needs Windows binary checksum)
 
@@ -13,10 +13,10 @@ This guide covers distributing your Guepard CLI across multiple package managers
 ### 1. Homebrew (macOS) - ✅ COMPLETE
 
 **Status**: Published and working
-**Installation**: `brew tap guepard-corp/guepard-cli && brew install gfs`
+**Installation**: `brew tap guepard-corp/guepard-cli && brew install guepard`
 
 **Files**:
-- `homebrew-tap/Formula/gfs.rb` - Homebrew formula
+- `homebrew-tap/Formula/guepard.rb` - Homebrew formula
 - `homebrew-tap/README.md` - Tap documentation
 
 ### 2. Snap (Linux) - 🔄 READY FOR PUBLISHING
@@ -34,7 +34,7 @@ This guide covers distributing your Guepard CLI across multiple package managers
 3. Build snap: `snapcraft`
 4. Publish: `snapcraft upload gfs_0.25.1_amd64.snap`
 
-**User Installation**: `snap install gfs`
+**User Installation**: `snap install guepard`
 
 ### 3. Chocolatey (Windows) - 🔄 READY FOR PUBLISHING
 
@@ -42,7 +42,7 @@ This guide covers distributing your Guepard CLI across multiple package managers
 **Target**: Windows 7+ with PowerShell
 
 **Files**:
-- `chocolatey/gfs.nuspec` - Package metadata
+- `chocolatey/guepard.nuspec` - Package metadata
 - `chocolatey/tools/chocolateyInstall.ps1` - Installation script
 - `chocolatey/tools/chocolateyUninstall.ps1` - Uninstallation script
 - `setup-chocolatey.sh` - Setup script
@@ -53,7 +53,7 @@ This guide covers distributing your Guepard CLI across multiple package managers
 3. Build package: `choco pack chocolatey/gfs.nuspec`
 4. Publish: `choco push gfs.0.25.1.nupkg --source https://push.chocolatey.org/`
 
-**User Installation**: `choco install gfs`
+**User Installation**: `choco install guepard`
 
 ## Building Linux Binaries
 
@@ -76,9 +76,9 @@ Build on a Linux machine or VM.
 
 | Platform | Package Manager | Status | User Command |
 |----------|-----------------|--------|--------------|
-| macOS    | Homebrew        | ✅ Live | `brew install gfs` |
-| Linux    | Snap | 🔄 Ready | `snap install gfs` |
-| Windows  | Chocolatey      | 🔄 Ready | `choco install gfs` |
+| macOS    | Homebrew        | ✅ Live | `brew install guepard` |
+| Linux    | Snap | 🔄 Ready | `snap install guepard` |
+| Windows  | Chocolatey      | 🔄 Ready | `choco install guepard` |
 | Linux    | APT/YUM         | ❌ Not setup | Manual download |
 | Windows  | Scoop           | ❌ Not setup | Manual download |
 
@@ -88,7 +88,7 @@ Build on a Linux machine or VM.
 ```bash
 # Via Homebrew (Recommended)
 brew tap guepard-corp/guepard-cli
-brew install gfs
+brew install guepard
 
 # Direct download
 # Download from GitHub releases
@@ -102,7 +102,7 @@ tar -xzf guepard-cli-0.25.1-linux-amd64.tar.gz
 sudo mv gfs /usr/local/bin/
 
 # Via Snap (Coming soon)
-snap install gfs
+snap install guepard
 ```
 
 ### Windows
@@ -111,7 +111,7 @@ snap install gfs
 # Download from GitHub releases and extract
 
 # Via Chocolatey (Coming soon)
-choco install gfs
+choco install guepard
 ```
 
 ## Next Steps Priority
@@ -126,21 +126,21 @@ choco install gfs
 ```
 guepard-cli-1/
 ├── homebrew-tap/           # ✅ Complete
-│   ├── Formula/gfs.rb
+│   ├── Formula/guepard.rb
 │   └── README.md
 ├── snap/                   # 🔄 Ready
 │   └── snapcraft.yaml
 ├── chocolatey/             # 🔄 Ready
-│   ├── gfs.nuspec
+│   ├── guepard.nuspec
 │   └── tools/
 │       ├── chocolateyInstall.ps1
 │       └── chocolateyUninstall.ps1
 ├── setup-snap.sh           # Setup script
 ├── setup-chocolatey.sh     # Setup script
 └── dist/                   # Binaries
-    ├── guepard-cli-0.25.1-macos-*.tar.gz
-    ├── guepard-cli-0.25.1-windows-*.zip
-    └── guepard-cli-0.25.1-linux-*.tar.gz (needs building)
+    ├── guepard-cli-0.27.17-macos-*.tar.gz
+    ├── guepard-cli-0.27.17-windows-*.zip
+    └── guepard-cli-0.27.17-linux-*.tar.gz (needs building)
 ```
 
 ## Testing Commands
@@ -148,22 +148,22 @@ guepard-cli-1/
 ### Test Homebrew (macOS)
 ```bash
 brew tap guepard-corp/guepard-cli
-brew install gfs
-gfs --version
+brew install guepard
+guepard --version
 ```
 
 ### Test Snap (Linux) - After building
 ```bash
 snapcraft
-sudo snap install --dangerous gfs_0.25.1_amd64.snap
-gfs --version
+sudo snap install --dangerous guepard_0.27.17_amd64.snap
+guepard --version
 ```
 
 ### Test Chocolatey (Windows) - After building
 ```bash
-choco pack chocolatey/gfs.nuspec
-choco install gfs --source . --force
-gfs --version
+choco pack chocolatey/guepard.nuspec
+choco install guepard --source . --force
+guepard --version
 ```
 
 Your CLI is well-positioned for multi-platform distribution! The main remaining work is building Linux binaries and completing the package publishing process.

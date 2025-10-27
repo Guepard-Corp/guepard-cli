@@ -6,7 +6,7 @@ Successfully configured the Guepard CLI to support multi-platform builds for AMD
 ## Changes Made
 
 ### 1. Updated Cargo.toml
-- Changed binary name from `gprd` to `gfs`
+- Binary name is `guepard`
 - Added multi-platform metadata configuration
 - Added platform-specific features for keyring support
 - Updated package description and metadata
@@ -26,12 +26,12 @@ Successfully configured the Guepard CLI to support multi-platform builds for AMD
 ### 4. Platform Support Matrix
 | Platform | Architecture | Status | Binary Name |
 |----------|-------------|--------|-------------|
-| Linux    | AMD64 (x86_64) | ✅ | `gfs` |
-| Linux    | ARM64 (aarch64) | ✅ | `gfs` |
-| Windows  | AMD64 (x86_64) | ✅ | `gfs.exe` |
-| Windows  | ARM64 (aarch64) | ✅ | `gfs.exe` |
-| macOS    | AMD64 (x86_64) | ✅ | `gfs` |
-| macOS    | ARM64 (aarch64) | ✅ | `gfs` |
+| Linux    | AMD64 (x86_64) | ✅ | `guepard` |
+| Linux    | ARM64 (aarch64) | ✅ | `guepard` |
+| Windows  | AMD64 (x86_64) | ✅ | `guepard.exe` |
+| Windows  | ARM64 (aarch64) | ✅ | `guepard.exe` |
+| macOS    | AMD64 (x86_64) | ✅ | `guepard` |
+| macOS    | ARM64 (aarch64) | ✅ | `guepard` |
 
 ## Build Commands
 
