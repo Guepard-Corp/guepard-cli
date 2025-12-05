@@ -79,7 +79,7 @@ pub async fn create(args: &CreateBranchArgs, config: &Config) -> Result<()> {
         is_ephemeral: if branch.is_ephemeral.unwrap_or(false) { "Yes".to_string() } else { "No".to_string() },
     };
     
-    println!("{} Branch created successfully!", "✅".green());
+    println!("{} Branch '{}' created successfully!", "✅".green(), branch_row.name);
     println!("{}", Table::new(vec![branch_row]).with(Style::rounded()));
     Ok(())
 }
