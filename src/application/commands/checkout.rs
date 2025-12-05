@@ -53,7 +53,7 @@ pub async fn checkout_branch(args: &CheckoutBranchArgs, config: &Config) -> Resu
         environment_type: "development".to_string(),
     };
     
-    println!("{} Checked out branch successfully!", "✅".green());
+    println!("{} Checked out branch '{}' successfully!", "✅".green(), checkout_row.name);
     println!("{}", Table::new(vec![checkout_row]).with(Style::rounded()));
     Ok(())
 }
