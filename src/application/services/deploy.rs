@@ -270,6 +270,7 @@ mod tests {
             database_username: "user".to_string(),
             database_password: "pass".to_string(),
             performance_profile_id: "perf-1".to_string(),
+            node_id: None,
         };
         let r1 = create_deployment_with_deps(create_req, &config, &auth).await;
         assert!(r1.is_err());
