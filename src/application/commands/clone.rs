@@ -170,31 +170,32 @@ async fn create_clone(args: &CloneArgs, deployment_id: &str, snapshot_id: &str, 
     println!("  {} {}", "Port:".yellow(), port);
     println!("  {} {}", "Database:".yellow(), clone_response.repository_name);
     
-    // Show username and password
-    if let Some(username) = &clone_response.database_username {
-        println!("  {} {}", "Username:".yellow(), username);
-    }
-    if let Some(password) = &clone_response.database_password {
-        println!("  {} {}", "Password:".yellow(), password);
-    }
+    // Show username and password (always show, even if None)
+    let username = clone_response.database_username.as_ref().map(|s| s.as_str()).unwrap_or("N/A");
+    let password = clone_response.database_password.as_ref().map(|s| s.as_str()).unwrap_or("N/A");
     
-    // Construct database connection URI if we have username and password
-    if let (Some(username), Some(password)) = (&clone_response.database_username, &clone_response.database_password) {
-        let connection_uri = format!("postgresql://{}:{}@{}:{}/{}", 
-            username,
-            password,
-            clone_response.fqdn,
-            port,
-            clone_response.repository_name
-        );
-        println!();
-        println!("{} Ready-to-use Connection URI:", "💡".green());
-        println!("{}", connection_uri.cyan().bold());
-        println!();
-        println!("{} Connect with psql:", "📝".yellow());
-        println!("{} psql '{}'", "  $".dimmed(), connection_uri);
-        println!();
-        println!("{} Connect with any PostgreSQL client using the URI above", "ℹ️".blue());
+    println!("  {} {}", "Username:".yellow(), username);
+    println!("  {} {}", "Password:".yellow(), password);
+    
+    // Construct database connection URI if we have both username and password (and they're not "N/A")
+    if let (Some(username_val), Some(password_val)) = (&clone_response.database_username, &clone_response.database_password) {
+        if !username_val.is_empty() && !password_val.is_empty() {
+            let connection_uri = format!("postgresql://{}:{}@{}:{}/{}", 
+                username_val,
+                password_val,
+                clone_response.fqdn,
+                port,
+                clone_response.repository_name
+            );
+            println!();
+            println!("{} Ready-to-use Connection URI:", "💡".green());
+            println!("{}", connection_uri.cyan().bold());
+            println!();
+            println!("{} Connect with psql:", "📝".yellow());
+            println!("{} psql '{}'", "  $".dimmed(), connection_uri);
+            println!();
+            println!("{} Connect with any PostgreSQL client using the URI above", "ℹ️".blue());
+        }
     }
     
     println!();
