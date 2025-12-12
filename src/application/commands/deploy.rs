@@ -82,7 +82,7 @@ async fn create_deployment(args: &DeployArgs, config: &Config, output_format: Ou
     println!("{} Deployment Details", "📋".blue());
     println!("  {} {}", "ID:".yellow(), deployment.id);
     println!("  {} {}", "Name:".yellow(), deployment.name);
-    println!("  {} {}", "Repository:".yellow(), deployment.repository_name);
+    println!("  {} {}", "Name:".yellow(), deployment.repository_name);
     println!("  {} {}", "Provider:".yellow(), deployment.database_provider);
     println!("  {} {}", "Version:".yellow(), deployment.database_version);
     println!("  {} {}", "Status:".yellow(), deployment.status);
@@ -182,9 +182,15 @@ async fn get_deployment(deployment_id: &str, config: &Config, output_format: Out
         return Ok(());
     }
     
-    println!("{} Deployment Details", "📋".blue());
+    // Determine if this is a clone (SHADOW type)
+    let is_clone = deployment.deployment_type == "SHADOW";
+    let deployment_label = if is_clone { "Clone Details" } else { "Deployment Details" };
+    
+    println!("{} {}", "📋".blue(), deployment_label);
     println!("  {} {}", "ID:".yellow(), deployment.id);
     println!("  {} {}", "Name:".yellow(), deployment.name);
+    let deployment_type_display = if is_clone { "Clone".cyan() } else { deployment.deployment_type.clone().cyan() };
+    println!("  {} {}", "Type:".yellow(), deployment_type_display);
     println!("  {} {}", "Repository:".yellow(), deployment.repository_name);
     println!("  {} {}", "Provider:".yellow(), deployment.database_provider);
     println!("  {} {}", "Version:".yellow(), deployment.database_version);
@@ -193,6 +199,20 @@ async fn get_deployment(deployment_id: &str, config: &Config, output_format: Out
     println!("  {} {}", "Region:".yellow(), deployment.region);
     println!("  {} {}", "Datacenter:".yellow(), deployment.datacenter);
     println!("  {} {}", "Created:".yellow(), deployment.created_date);
+    
+    // Show deployment parent if it's a clone
+    if is_clone {
+        if let Some(deployment_parent) = &deployment.deployment_parent {
+            println!("  {} {}", "Deployment Parent:".yellow(), deployment_parent.cyan());
+        }
+    }
+    
+    // Show snapshot parent if it's a clone
+    if is_clone {
+        if let Some(snapshot_parent) = &deployment.snapshot_parent {
+            println!("  {} {}", "Snapshot Parent:".yellow(), snapshot_parent.cyan());
+        }
+    }
     
     // Show branch and snapshot information from compute (what compute is currently pointing to)
     match compute::list_compute(deployment_id, config).await {
@@ -521,7 +541,7 @@ async fn interactive_deploy(config: &Config) -> Result<()> {
     println!("{} Deployment Details", "📋".blue());
     println!("  {} {}", "ID:".yellow(), deployment.id);
     println!("  {} {}", "Name:".yellow(), deployment.name);
-    println!("  {} {}", "Repository:".yellow(), deployment.repository_name);
+    println!("  {} {}", "Name:".yellow(), deployment.repository_name);
     println!("  {} {}", "Provider:".yellow(), deployment.database_provider);
     println!("  {} {}", "Version:".yellow(), deployment.database_version);
     println!("  {} {}", "Status:".yellow(), deployment.status);

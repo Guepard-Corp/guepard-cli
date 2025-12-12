@@ -228,6 +228,19 @@ pub enum SubCommand {
     ///   # Get specific configuration value
     ///   guepard config --get
     Config(ConfigArgs),
+    
+    /// 🎭 Clone deployments from snapshots
+    ///
+    /// Create shadow/clone deployments from snapshots or list existing clones.
+    /// Clones are read-only copies used for testing, analysis, or backup purposes.
+    ///
+    /// Examples:
+    ///   # Create a clone from a snapshot
+    ///   guepard clone -x <deployment_id> -s <snapshot_id>
+    ///
+    ///   # List all clones for a deployment
+    ///   guepard clone list -x <deployment_id>
+    Clone(CloneArgs),
 }
 
 // Git-like command arguments
@@ -737,4 +750,64 @@ pub struct ConfigArgs {
     ///   guepard config --show
     #[clap(long)]
     pub show: bool,
+}
+
+#[derive(Args, Debug)]
+pub struct CloneArgs {
+    #[clap(flatten)]
+    pub output: OutputArgs,
+    
+    /// Deployment ID
+    ///
+    /// Required for creating a clone. Also used with 'list' subcommand.
+    #[clap(short = 'x', long)]
+    pub deployment_id: Option<String>,
+    
+    /// Snapshot ID to clone from
+    ///
+    /// Required when creating a clone. If provided with deployment_id, creates a new clone.
+    #[clap(short = 's', long)]
+    pub snapshot_id: Option<String>,
+    
+    /// Repository name for the clone
+    ///
+    /// A unique identifier for the clone deployment.
+    #[clap(short = 'n', long)]
+    pub repository_name: Option<String>,
+    
+    /// Branch name for the clone
+    ///
+    /// The branch name to use for the clone.
+    #[clap(short = 'b', long)]
+    pub branch_name: Option<String>,
+    
+    /// Performance profile for the clone
+    ///
+    /// Available profiles:
+    ///   - gp.g1.xsmall: 1 vCPU, 2GB RAM (development, testing)
+    ///   - gp.g1.small: 2 vCPU, 4GB RAM (small production, staging)
+    ///   - gp.g1.medium: 4 vCPU, 8GB RAM (medium production)
+    ///   - gp.g1.large: 8 vCPU, 16GB RAM (large production, high-traffic)
+    ///
+    /// If not specified, defaults to gp.g1.xsmall.
+    #[clap(short = 'f', long)]
+    pub performance_profile: Option<String>,
+    
+    #[clap(subcommand)]
+    pub command: Option<CloneSubCommand>,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum CloneSubCommand {
+    /// List all clones for a deployment
+    ///
+    /// Lists all shadow/clone deployments associated with a specific deployment.
+    ///
+    /// Example:
+    ///   guepard clone list -x <deployment_id>
+    List {
+        /// Deployment ID
+        #[clap(short = 'x', long, required = true)]
+        deployment_id: String,
+    },
 }
