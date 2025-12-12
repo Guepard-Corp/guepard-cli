@@ -194,83 +194,86 @@ async fn get_deployment(deployment_id: &str, config: &Config, output_format: Out
     println!("  {} {}", "Datacenter:".yellow(), deployment.datacenter);
     println!("  {} {}", "Created:".yellow(), deployment.created_date);
     
-    // Show branch and snapshot information
-    // Try to get branch information
-    if let Some(branch_id) = &deployment.branch_id {
-        // If branch_id is set in deployment, fetch its details
-        let branch_name = match branch::list_branches(deployment_id, config).await {
-            Ok(branches) => {
-                branches.iter()
-                    .find(|b| b.id == *branch_id)
-                    .and_then(|b| b.branch_name.as_ref().or(b.label_name.as_ref()))
-                    .map(|s| s.clone())
-                    .unwrap_or_else(|| branch_id.clone())
-            }
-            Err(_) => branch_id.clone(),
-        };
-        
-        println!("  {} {}", "Branch:".yellow(), branch_name.cyan());
-        println!("  {} {}", "Branch ID:".yellow(), branch_id.dimmed());
-    } else {
-        // Try to list branches to see if there are any
-        match branch::list_branches(deployment_id, config).await {
-            Ok(branches) if !branches.is_empty() => {
-                // Show the first branch or find the active one
-                let active_branch = branches.iter()
-                    .find(|b| b.job_status.as_ref().map(|s| s == "ACTIVE" || s == "CHECKED_OUT").unwrap_or(false))
-                    .or_else(|| branches.first());
-                
-                if let Some(branch) = active_branch {
-                    let branch_name = branch.branch_name.as_ref()
-                        .or(branch.label_name.as_ref())
-                        .map(|s| s.clone())
-                        .unwrap_or_else(|| branch.id.clone());
-                    println!("  {} {}", "Branch:".yellow(), branch_name.cyan());
-                    println!("  {} {}", "Branch ID:".yellow(), branch.id.dimmed());
+    // Show branch and snapshot information from compute (what compute is currently pointing to)
+    match compute::list_compute(deployment_id, config).await {
+        Ok(compute_info) => {
+            // Get the branch that compute is attached to
+            let attached_branch_id = compute_info.branch_id.as_ref()
+                .or(Some(&compute_info.attached_branch))
+                .unwrap();
+            
+            // Get branch details
+            match branch::list_branches(deployment_id, config).await {
+                Ok(branches) => {
+                    if let Some(branch) = branches.iter().find(|b| b.id == *attached_branch_id) {
+                        let branch_name = branch.branch_name.as_ref()
+                            .or(branch.label_name.as_ref())
+                            .map(|s| s.clone())
+                            .unwrap_or_else(|| branch.id.clone());
+                        
+                        println!("  {} {}", "Branch:".yellow(), branch_name.cyan());
+                        println!("  {} {}", "Branch ID:".yellow(), branch.id.dimmed());
+                        
+                        // Get snapshot information from the branch
+                        let snapshot_id = &branch.snapshot_id;
+                        match commit::list_all_commits(deployment_id, config).await {
+                            Ok(snapshots) => {
+                                if let Some(snapshot) = snapshots.iter().find(|s| s.id == *snapshot_id) {
+                                    println!("  {} {}", "Snapshot:".yellow(), snapshot.name.cyan());
+                                    if !snapshot.snapshot_comment.is_empty() {
+                                        println!("  {} {}", "Comment:".yellow(), snapshot.snapshot_comment.cyan());
+                                    }
+                                    println!("  {} {}", "Snapshot ID:".yellow(), snapshot.id.dimmed());
+                                } else {
+                                    println!("  {} {}", "Snapshot ID:".yellow(), snapshot_id.dimmed());
+                                }
+                            }
+                            Err(_) => {
+                                println!("  {} {}", "Snapshot ID:".yellow(), snapshot_id.dimmed());
+                            }
+                        }
+                    } else {
+                        // Branch not found, but show the ID
+                        println!("  {} {}", "Branch ID:".yellow(), attached_branch_id.dimmed());
+                    }
                 }
-            }
-            _ => {
-                // No branches available
+                Err(_) => {
+                    // Couldn't fetch branches, but show the branch ID from compute
+                    println!("  {} {}", "Branch ID:".yellow(), attached_branch_id.dimmed());
+                }
             }
         }
-    }
-    
-    // Try to get snapshot information
-    if let Some(snapshot_id) = &deployment.snapshot_id {
-        // If snapshot_id is set in deployment, fetch its details
-        match commit::list_all_commits(deployment_id, config).await {
-            Ok(snapshots) => {
-                if let Some(snapshot) = snapshots.iter().find(|s| s.id == *snapshot_id) {
-                    println!("  {} {}", "Snapshot:".yellow(), snapshot.name.cyan());
-                    if !snapshot.snapshot_comment.is_empty() {
-                        println!("  {} {}", "Comment:".yellow(), snapshot.snapshot_comment.cyan());
+        Err(_) => {
+            // Compute not available, fall back to deployment branch_id/snapshot_id if available
+            if let Some(branch_id) = &deployment.branch_id {
+                match branch::list_branches(deployment_id, config).await {
+                    Ok(branches) => {
+                        if let Some(branch) = branches.iter().find(|b| b.id == *branch_id) {
+                            let branch_name = branch.branch_name.as_ref()
+                                .or(branch.label_name.as_ref())
+                                .map(|s| s.clone())
+                                .unwrap_or_else(|| branch_id.clone());
+                            println!("  {} {}", "Branch:".yellow(), branch_name.cyan());
+                            println!("  {} {}", "Branch ID:".yellow(), branch_id.dimmed());
+                            
+                            // Get snapshot from branch
+                            let snapshot_id = &branch.snapshot_id;
+                            match commit::list_all_commits(deployment_id, config).await {
+                                Ok(snapshots) => {
+                                    if let Some(snapshot) = snapshots.iter().find(|s| s.id == *snapshot_id) {
+                                        println!("  {} {}", "Snapshot:".yellow(), snapshot.name.cyan());
+                                        if !snapshot.snapshot_comment.is_empty() {
+                                            println!("  {} {}", "Comment:".yellow(), snapshot.snapshot_comment.cyan());
+                                        }
+                                        println!("  {} {}", "Snapshot ID:".yellow(), snapshot.id.dimmed());
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
                     }
-                    println!("  {} {}", "Snapshot ID:".yellow(), snapshot_id.dimmed());
-                } else {
-                    println!("  {} {}", "Snapshot:".yellow(), snapshot_id.cyan());
-                    println!("  {} {}", "Snapshot ID:".yellow(), snapshot_id.dimmed());
+                    _ => {}
                 }
-            }
-            Err(_) => {
-                println!("  {} {}", "Snapshot:".yellow(), snapshot_id.cyan());
-                println!("  {} {}", "Snapshot ID:".yellow(), snapshot_id.dimmed());
-            }
-        }
-    } else {
-        // Try to list snapshots to see if there are any
-        match commit::list_all_commits(deployment_id, config).await {
-            Ok(snapshots) if !snapshots.is_empty() => {
-                // Show the most recent snapshot
-                if let Some(snapshot) = snapshots.first() {
-                    println!("  {} {}", "Snapshot:".yellow(), snapshot.name.cyan());
-                    if !snapshot.snapshot_comment.is_empty() {
-                        println!("  {} {}", "Comment:".yellow(), snapshot.snapshot_comment.cyan());
-                    }
-                    println!("  {} {}", "Snapshot ID:".yellow(), snapshot.id.dimmed());
-                }
-            }
-            _ => {
-                // No snapshots available
             }
         }
     }
