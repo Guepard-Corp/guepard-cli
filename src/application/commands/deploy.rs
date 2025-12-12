@@ -3,11 +3,11 @@ use crate::config::config::Config;
 use crate::structure::DeployArgs;
 use crate::application::dto::deploy::{CreateDeploymentRequest, UpdateDeploymentRequest};
 use crate::application::services::{deploy, performance, compute};
+use crate::application::output::{OutputFormat, print_json};
 use colored::Colorize;
 use std::io::{self, Write};
 
-
-pub async fn deploy(args: &DeployArgs, config: &Config) -> Result<()> {
+pub async fn deploy(args: &DeployArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     // Check for interactive mode
     if args.interactive {
         return interactive_deploy(config).await;
@@ -17,13 +17,13 @@ pub async fn deploy(args: &DeployArgs, config: &Config) -> Result<()> {
         // We have a deployment ID, determine operation based on other args
         if args.repository_name.is_some() {
             // Update deployment
-            update_deployment(deployment_id, args, config).await?;
+            update_deployment(deployment_id, args, config, output_format).await?;
         } else if args.yes {
             // Delete deployment
-            delete_deployment(deployment_id, args, config).await?;
+            delete_deployment(deployment_id, args, config, output_format).await?;
         } else {
             // Get deployment details
-            get_deployment(deployment_id, config).await?;
+            get_deployment(deployment_id, config, output_format).await?;
         }
     } else {
         // No deployment ID, check if we have create args
@@ -31,7 +31,7 @@ pub async fn deploy(args: &DeployArgs, config: &Config) -> Result<()> {
            args.region.is_some() && args.instance_type.is_some() && 
            args.datacenter.is_some() && args.database_password.is_some() {
             // Create new deployment
-            create_deployment(args, config).await?;
+            create_deployment(args, config, output_format).await?;
         } else {
             println!("{} Please provide either:", "❌".red());
             println!("  • Create args: -p, -v, -r, -i, -d, -w (and optionally -n, -u)");
@@ -42,7 +42,7 @@ pub async fn deploy(args: &DeployArgs, config: &Config) -> Result<()> {
     Ok(())
 }
 
-async fn create_deployment(args: &DeployArgs, config: &Config) -> Result<()> {
+async fn create_deployment(args: &DeployArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     let database_provider = args.database_provider.clone().unwrap();
     let database_version = args.database_version.clone().unwrap();
     
@@ -68,6 +68,11 @@ async fn create_deployment(args: &DeployArgs, config: &Config) -> Result<()> {
     };
     
     let deployment = deploy::create_deployment(request, config).await?;
+    
+    if output_format == OutputFormat::Json {
+        print_json(&deployment);
+        return Ok(());
+    }
     
     println!("{} Deployment created successfully!", "✅".green());
     println!();
@@ -154,18 +159,27 @@ fn generate_password() -> String {
     password
 }
 
-async fn update_deployment(deployment_id: &str, args: &DeployArgs, config: &Config) -> Result<()> {
+async fn update_deployment(deployment_id: &str, args: &DeployArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     let request = UpdateDeploymentRequest {
         repository_name: args.repository_name.clone().unwrap(),
     };
     
     deploy::update_deployment(deployment_id, request, config).await?;
-    println!("{} Deployment updated successfully!", "✅".green());
+    if output_format == OutputFormat::Table {
+        println!("{} Deployment updated successfully!", "✅".green());
+    } else {
+        print_json(&serde_json::json!({"status": "updated", "deployment_id": deployment_id}));
+    }
     Ok(())
 }
 
-async fn get_deployment(deployment_id: &str, config: &Config) -> Result<()> {
+async fn get_deployment(deployment_id: &str, config: &Config, output_format: OutputFormat) -> Result<()> {
     let deployment = deploy::get_deployment(deployment_id, config).await?;
+    
+    if output_format == OutputFormat::Json {
+        print_json(&deployment);
+        return Ok(());
+    }
     
     println!("{} Deployment Details", "📋".blue());
     println!("  {} {}", "ID:".yellow(), deployment.id);
@@ -215,7 +229,7 @@ async fn get_deployment(deployment_id: &str, config: &Config) -> Result<()> {
     Ok(())
 }
 
-async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Config) -> Result<()> {
+async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     // Confirm deletion unless -y flag is used
     if !args.yes {
         print!("{} Are you sure you want to delete deployment {}? (y/N): ", 
@@ -234,7 +248,11 @@ async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Conf
     // Call the actual delete API
     deploy::delete_deployment(deployment_id, config).await?;
     
-    println!("{} Deployment {} deleted successfully!", "✅".green(), deployment_id);
+    if output_format == OutputFormat::Table {
+        println!("{} Deployment {} deleted successfully!", "✅".green(), deployment_id);
+    } else {
+        print_json(&serde_json::json!({"status": "deleted", "deployment_id": deployment_id}));
+    }
     
     Ok(())
 }

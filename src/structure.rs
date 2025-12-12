@@ -35,6 +35,20 @@ pub struct CLI {
     pub sub_commands: SubCommand,
 }
 
+/// Shared output format option for all commands
+#[derive(Args, Debug)]
+pub struct OutputArgs {
+    /// Output results as JSON instead of tables
+    ///
+    /// Use this flag to get machine-readable JSON output instead of formatted tables.
+    ///
+    /// Examples:
+    ///   guepard list deployments --json
+    ///   guepard deploy -x <id> --json
+    #[clap(long = "json")]
+    pub json: bool,
+}
+
 #[derive(Subcommand, Debug)]
 pub enum SubCommand {
     /// 🚀 Deploy, manage, and configure database instances
@@ -219,6 +233,9 @@ pub enum SubCommand {
 // Git-like command arguments
 #[derive(Args, Debug)]
 pub struct ListArgs {
+    #[clap(flatten)]
+    pub output: OutputArgs,
+    
     /// Resource type to list: deployments, branches, or commits
     ///
     /// - deployments: List all database deployments (default)
@@ -267,6 +284,9 @@ pub struct ListArgs {
 
 #[derive(Args, Debug)]
 pub struct DeployArgs {
+    #[clap(flatten)]
+    pub output: OutputArgs,
+    
     /// Database provider type
     ///
     /// Supported providers: PostgreSQL, MySQL, MongoDB
@@ -368,6 +388,9 @@ pub struct DeployArgs {
 
 #[derive(Args, Debug)]
 pub struct CommitArgs {
+    #[clap(flatten)]
+    pub output: OutputArgs,
+    
     /// Commit message describing the snapshot
     ///
     /// Similar to git commit messages. Use descriptive messages that explain what
@@ -400,6 +423,9 @@ pub struct CommitArgs {
 
 #[derive(Args, Debug)]
 pub struct BranchArgs {
+    #[clap(flatten)]
+    pub output: OutputArgs,
+    
     /// Branch name to create (optional - if omitted, lists all branches)
     ///
     /// Use descriptive names following conventions:
@@ -460,6 +486,9 @@ pub struct BranchArgs {
 
 #[derive(Args, Debug)]
 pub struct LogArgs {
+    #[clap(flatten)]
+    pub output: OutputArgs,
+    
     /// Deployment ID to view logs for
     ///
     /// Required. Find deployment IDs with:
@@ -529,6 +558,9 @@ pub struct LogArgs {
 
 #[derive(Args, Debug)]
 pub struct CheckoutArgs {
+    #[clap(flatten)]
+    pub output: OutputArgs,
+    
     /// Deployment ID
     ///
     /// Required for checkout operations. Find deployments with:
@@ -580,6 +612,9 @@ pub struct CheckoutArgs {
 
 #[derive(Args, Debug)]
 pub struct ComputeArgs {
+    #[clap(flatten)]
+    pub output: OutputArgs,
+    
     /// Deployment ID to manage compute for
     ///
     /// Required. Find deployment IDs with:
@@ -650,6 +685,9 @@ pub struct CheckoutBranchArgs {
 
 #[derive(Args, Debug)]
 pub struct LoginArgs {
+    #[clap(flatten)]
+    pub output: OutputArgs,
+    
     /// Direct access token input (skip interactive login)
     ///
     /// Provide your Guepard access token directly instead of using interactive
@@ -665,6 +703,9 @@ pub struct LoginArgs {
 
 #[derive(Args, Debug)]
 pub struct ConfigArgs {
+    #[clap(flatten)]
+    pub output: OutputArgs,
+    
     /// Get current configuration value
     ///
     /// Display the current value of a configuration setting.

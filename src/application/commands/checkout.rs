@@ -2,24 +2,29 @@ use anyhow::Result;
 use crate::config::config::Config;
 use crate::structure::{CheckoutArgs, CheckoutBranchArgs};
 use crate::application::services::branch;
+use crate::application::output::{OutputFormat, print_row_or_json, print_table_or_json, print_json};
 use colored::Colorize;
-use tabled::{Table, Tabled, settings::Style};
+use serde::Serialize;
+use tabled::{Tabled};
 
-#[derive(Tabled)]
+#[derive(Tabled, Serialize)]
 struct CheckoutRow {
     #[tabled(rename = "Branch ID")]
+    #[serde(rename = "branch_id")]
     id: String,
     #[tabled(rename = "Name")]
     name: String,
     #[tabled(rename = "Status")]
     status: String,
     #[tabled(rename = "Snapshot ID")]
+    #[serde(rename = "snapshot_id")]
     snapshot_id: String,
     #[tabled(rename = "Environment")]
+    #[serde(rename = "environment_type")]
     environment_type: String,
 }
 
-pub async fn checkout(args: &CheckoutArgs, config: &Config) -> Result<()> {
+pub async fn checkout(args: &CheckoutArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     if let Some(deployment_id) = &args.deployment_id {
         if let Some(branch_id) = &args.branch_id {
             // Checkout specific branch
@@ -27,11 +32,11 @@ pub async fn checkout(args: &CheckoutArgs, config: &Config) -> Result<()> {
                 deployment_id: deployment_id.clone(),
                 branch_id: branch_id.clone(),
             };
-            checkout_branch(&checkout_args, config).await?;
+            checkout_branch(&checkout_args, config, output_format).await?;
         } else {
             // List available branches for checkout
             println!("{} Available branches for deployment: {}", "🌿".blue(), deployment_id);
-            list_branches_for_checkout(deployment_id, config).await?;
+            list_branches_for_checkout(deployment_id, config, output_format).await?;
         }
     } else {
         // Show help for checkout command
@@ -42,8 +47,13 @@ pub async fn checkout(args: &CheckoutArgs, config: &Config) -> Result<()> {
     Ok(())
 }
 
-pub async fn checkout_branch(args: &CheckoutBranchArgs, config: &Config) -> Result<()> {
+pub async fn checkout_branch(args: &CheckoutBranchArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     let branch = branch::checkout_branch(&args.deployment_id, &args.branch_id, config).await?;
+    
+    if output_format == OutputFormat::Json {
+        print_json(&branch);
+        return Ok(());
+    }
     
     let checkout_row = CheckoutRow {
         id: branch.id.clone(),
@@ -54,15 +64,24 @@ pub async fn checkout_branch(args: &CheckoutBranchArgs, config: &Config) -> Resu
     };
     
     println!("{} Checked out branch successfully!", "✅".green());
-    println!("{}", Table::new(vec![checkout_row]).with(Style::rounded()));
+    print_row_or_json(checkout_row, output_format);
     Ok(())
 }
 
-async fn list_branches_for_checkout(deployment_id: &str, config: &Config) -> Result<()> {
+async fn list_branches_for_checkout(deployment_id: &str, config: &Config, output_format: OutputFormat) -> Result<()> {
     let branches = branch::list_branches(deployment_id, config).await?;
     
     if branches.is_empty() {
-        println!("{} No branches available for checkout", "ℹ️".blue());
+        if output_format == OutputFormat::Json {
+            print_json(&serde_json::json!([]));
+        } else {
+            println!("{} No branches available for checkout", "ℹ️".blue());
+        }
+        return Ok(());
+    }
+    
+    if output_format == OutputFormat::Json {
+        print_json(&branches);
         return Ok(());
     }
     
@@ -78,6 +97,6 @@ async fn list_branches_for_checkout(deployment_id: &str, config: &Config) -> Res
     }).collect();
     
     println!("{} Use 'guepard checkout -x {} -c <branch_id>' to checkout a branch", "💡".yellow(), deployment_id);
-    println!("{}", Table::new(rows).with(Style::rounded()));
+    print_table_or_json(rows, output_format);
     Ok(())
 }

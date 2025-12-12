@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GetCommitResponse {
     pub id: String, // bookmark_id = snapshot_id
     pub name: String,  // bookmark_name = snapshot_name
@@ -15,7 +15,7 @@ pub struct GetCommitResponse {
     pub schema: Option<BookmarkSchema>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CreateCommitResponse {
     pub id: String, // bookmark_id = snapshot_id
     pub name: String,
@@ -53,13 +53,13 @@ pub struct CheckoutCommitResponse {
     pub created_date: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct BookmarkSchema {
     pub info: Option<String>,
     pub databases: Option<Vec<Database>>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Database {
     pub id: String,
     pub name: String,
