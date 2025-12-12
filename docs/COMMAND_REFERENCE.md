@@ -30,11 +30,17 @@ Your Guepard CLI now follows a Git-like structure while preserving all your orig
 # Create new deployment
 guepard deploy -p PostgreSQL -v 16 -r us-west-aws -d us-west-aws -n myrepo -w password
 
+# Create deployment with node ID
+guepard deploy -p PostgreSQL -v 17 -r us-west-aws -d us-west-aws -n myrepo -w password --node-id <node_id>
+
 # Update deployment
 guepard deploy -x <deployment_id> -n <new_repository_name>
 
 # Get deployment details
 guepard deploy -x <deployment_id>
+
+# Get deployment details as JSON
+guepard deploy -x <deployment_id> --json
 ```
 
 ### Commit Command (Snapshots)

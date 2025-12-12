@@ -82,6 +82,24 @@ guepard deploy \
   --performance-profile gp.g1.small
 ```
 
+**Create deployment with node ID:**
+```bash
+guepard deploy \
+  --database-provider PostgreSQL \
+  --database-version 17 \
+  --region us-west-aws \
+  --instance-type REPOSITORY \
+  --datacenter us-west-aws \
+  --repository-name db-new-api \
+  --database-password guepard \
+  --node-id <node_id>
+```
+
+**Get deployment details as JSON:**
+```bash
+guepard deploy --deployment-id <id> --json
+```
+
 ### Deployment Parameters
 
 | Parameter | Short | Description | Required | Options |
@@ -95,6 +113,8 @@ guepard deploy \
 | `--database-password` | `-w` | Database password | Yes | Strong password recommended |
 | `--user` | `-u` | Database username | No | Default: guepard |
 | `--performance-profile` | `-f` | Performance tier | No | gp.g1.xsmall, gp.g1.small, gp.g1.medium, gp.g1.large |
+| `--node-id` | | Node ID for deployment | No | Optional node identifier |
+| `--json` | | Output results as JSON | No | Machine-readable output |
 
 ## Deployment Types
 

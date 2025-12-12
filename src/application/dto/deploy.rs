@@ -12,6 +12,8 @@ pub struct CreateDeploymentRequest {
     pub database_username: String,
     pub database_password: String,
     pub performance_profile_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub node_id: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

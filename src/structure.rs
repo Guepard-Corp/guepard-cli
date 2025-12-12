@@ -378,6 +378,12 @@ pub struct DeployArgs {
     #[clap(short = 'f', long)]
     pub performance_profile: Option<String>,
     
+    /// Node ID for the deployment
+    ///
+    /// Optional node identifier for the deployment. Used for specific node targeting.
+    #[clap(long)]
+    pub node_id: Option<String>,
+    
     /// Interactive mode - guided setup wizard
     ///
     /// Launches an interactive wizard that guides you through deployment creation
