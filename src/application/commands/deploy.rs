@@ -65,6 +65,7 @@ async fn create_deployment(args: &DeployArgs, config: &Config, output_format: Ou
         database_username: args.user.clone().unwrap_or("guepard".to_string()),
         database_password: args.database_password.clone().unwrap(),
         performance_profile_id,
+        node_id: args.node_id.clone(),
     };
     
     let deployment = deploy::create_deployment(request, config).await?;
@@ -424,6 +425,7 @@ async fn interactive_deploy(config: &Config) -> Result<()> {
         database_username: user.to_string(),
         database_password: database_password.to_string(),
         performance_profile_id,
+        node_id: None, // Interactive mode doesn't support node_id yet
     };
     
     let deployment = deploy::create_deployment(request, config).await?;
