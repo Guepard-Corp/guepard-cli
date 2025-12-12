@@ -6,23 +6,30 @@ use crate::application::services::branch;
 use colored::Colorize;
 use tabled::{Table, Tabled, settings::Style};
 
-#[derive(Tabled)]
+#[derive(Tabled, Serialize)]
 struct BranchRow {
     #[tabled(rename = "Branch ID")]
+    #[serde(rename = "branch_id")]
     id: String,
     #[tabled(rename = "Name")]
     name: String,
     #[tabled(rename = "Status")]
     status: String,
     #[tabled(rename = "Snapshot ID")]
+    #[serde(rename = "snapshot_id")]
     snapshot_id: String,
     #[tabled(rename = "Environment")]
+    #[serde(rename = "environment_type")]
     environment_type: String,
     #[tabled(rename = "Ephemeral")]
+    #[serde(rename = "is_ephemeral")]
     is_ephemeral: String,
 }
 
-pub async fn branch(args: &BranchArgs, config: &Config) -> Result<()> {
+use crate::application::output::{OutputFormat, print_row_or_json, print_table_or_json, print_json};
+use serde::Serialize;
+
+pub async fn branch(args: &BranchArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     if let Some(deployment_id) = &args.deployment_id {
         if let Some(name) = &args.name {
             // Create branch
@@ -38,10 +45,10 @@ pub async fn branch(args: &BranchArgs, config: &Config) -> Result<()> {
                 checkout: args.checkout,
                 ephemeral: args.ephemeral,
             };
-            create(&create_args, config).await?;
+            create(&create_args, config, output_format).await?;
         } else {
             // List branches
-            list(deployment_id, config).await?;
+            list(deployment_id, config, output_format).await?;
         }
     } else if let Some(name) = &args.name {
         // Git-like branch creation (simplified)
@@ -54,7 +61,7 @@ pub async fn branch(args: &BranchArgs, config: &Config) -> Result<()> {
     Ok(())
 }
 
-pub async fn create(args: &CreateBranchArgs, config: &Config) -> Result<()> {
+pub async fn create(args: &CreateBranchArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     let request = BranchRequest {
         branch_name: Some(args.branch_name.clone()),
         discard_changes: Some(args.discard_changes.clone()),
@@ -79,16 +86,27 @@ pub async fn create(args: &CreateBranchArgs, config: &Config) -> Result<()> {
         is_ephemeral: if branch.is_ephemeral.unwrap_or(false) { "Yes".to_string() } else { "No".to_string() },
     };
     
-    println!("{} Branch created successfully!", "✅".green());
-    println!("{}", Table::new(vec![branch_row]).with(Style::rounded()));
+    if output_format == OutputFormat::Table {
+        println!("{} Branch created successfully!", "✅".green());
+    }
+    print_row_or_json(branch_row, output_format);
     Ok(())
 }
 
-pub async fn list(deployment_id: &str, config: &Config) -> Result<()> {
+pub async fn list(deployment_id: &str, config: &Config, output_format: OutputFormat) -> Result<()> {
     let branches = branch::list_branches(deployment_id, config).await?;
     
     if branches.is_empty() {
-        println!("{} No branches found for deployment: {}", "ℹ️".blue(), deployment_id);
+        if output_format == OutputFormat::Json {
+            print_json(&serde_json::json!([]));
+        } else {
+            println!("{} No branches found for deployment: {}", "ℹ️".blue(), deployment_id);
+        }
+        return Ok(());
+    }
+    
+    if output_format == OutputFormat::Json {
+        print_json(&branches);
         return Ok(());
     }
     
@@ -105,7 +123,7 @@ pub async fn list(deployment_id: &str, config: &Config) -> Result<()> {
     }).collect();
     
     println!("{} Found {} branches for deployment: {}", "✅".green(), rows.len(), deployment_id);
-    println!("{}", Table::new(rows).with(Style::rounded()));
+    print_table_or_json(rows, output_format);
     Ok(())
 }
 

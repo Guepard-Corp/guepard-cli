@@ -3,22 +3,26 @@ use crate::config::config::Config;
 use crate::structure::CommitArgs;
 use crate::application::services::commit;
 use crate::application::dto::commit::CreateCommitRequest;
+use crate::application::output::{OutputFormat, print_row_or_json};
 use colored::Colorize;
-use tabled::{Table, Tabled, settings::Style};
+use serde::Serialize;
+use tabled::{Tabled};
 
-#[derive(Tabled)]
+#[derive(Tabled, Serialize)]
 struct CommitRow {
     #[tabled(rename = "Commit ID")]
+    #[serde(rename = "commit_id")]
     commit_id: String,
     #[tabled(rename = "Message")]
     message: String,
     #[tabled(rename = "Status")]
     status: String,
     #[tabled(rename = "Created")]
+    #[serde(rename = "created_date")]
     created_date: String,
 }
 
-pub async fn commit(args: &CommitArgs, config: &Config) -> Result<()> {
+pub async fn commit(args: &CommitArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     let request = CreateCommitRequest {
         snapshot_comment: args.message.clone(),
     };
@@ -38,8 +42,10 @@ pub async fn commit(args: &CommitArgs, config: &Config) -> Result<()> {
         created_date: commit.created_date,
     };
     
-    println!("{} Created commit successfully!", "✅".green());
-    println!("{}", Table::new(vec![commit_row]).with(Style::rounded()));
+    if output_format == OutputFormat::Table {
+        println!("{} Created commit successfully!", "✅".green());
+    }
+    print_row_or_json(commit_row, output_format);
     
     Ok(())
 }

@@ -4,7 +4,9 @@ use crate::structure::ConfigArgs;
 use colored::Colorize;
 use base64;
 
-pub async fn config(args: &ConfigArgs) -> Result<(), ConfigError> {
+use crate::application::output::OutputFormat;
+
+pub async fn config(args: &ConfigArgs, _output_format: OutputFormat) -> Result<(), ConfigError> {
     if args.show || args.get {
         show_config().await
     } else if let Some(api_url) = &args.api_url {

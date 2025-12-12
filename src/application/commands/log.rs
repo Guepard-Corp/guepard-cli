@@ -10,7 +10,9 @@ use std::time::Duration;
 use tokio::time::sleep;
 use chrono::{DateTime, Utc, NaiveDateTime};
 
-pub async fn log(args: &LogArgs, config: &Config) -> Result<()> {
+use crate::application::output::OutputFormat;
+
+pub async fn log(args: &LogArgs, config: &Config, _output_format: OutputFormat) -> Result<()> {
     let jwt_token = auth::get_auth_token()?;
     let client = Client::new();
     

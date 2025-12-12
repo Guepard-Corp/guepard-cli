@@ -19,7 +19,7 @@ pub struct UpdateDeploymentRequest {
     pub repository_name: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CreateDeploymentResponse {
     pub id: String,
     pub name: String,
@@ -39,7 +39,7 @@ pub struct CreateDeploymentResponse {
     pub created_by: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ListDeploymentsResponse {
     pub id: String,
     pub name: String,
@@ -57,7 +57,7 @@ pub struct ListDeploymentsResponse {
     pub created_by: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GetDeploymentResponse {
     pub id: String,
     pub name: String,
