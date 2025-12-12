@@ -1,5 +1,5 @@
 use clap::Parser;
-use guepard_cli::application::commands::{deploy, commit, branch, log, checkout, compute, usage, login, logout, list, config};
+use guepard_cli::application::commands::{deploy, commit, branch, log, checkout, compute, usage, login, logout, list, config, clone};
 use guepard_cli::application::output::OutputFormat;
 use guepard_cli::config::config::{load_config, Config};
 use guepard_cli::domain::errors::{bookmark_error::BookmarkError, branch_error::BranchError, compute_error::ComputeError, deploy_error::DeployError, login_error::LoginError, usage_error::UsageError};
@@ -93,6 +93,10 @@ async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
         SubCommand::Config(args) => {
             let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
             config::config(args, output_format).await.map_err(|e| anyhow::anyhow!("{}", e))
+        }
+        SubCommand::Clone(args) => {
+            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+            clone::clone_command(args, config, output_format).await
         }
     }
 }
