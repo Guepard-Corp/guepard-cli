@@ -61,6 +61,13 @@ pub async fn status(args: &ComputeArgs, config: &Config) -> Result<()> {
             
             println!("{} Compute Status for deployment: {}", "📊".blue(), args.deployment_id);
             println!("{}", Table::new(vec![status_row]).with(Style::rounded()));
+            
+            // Fetch and display connection string
+            if let Ok(compute_info) = compute::list_compute(&args.deployment_id, config).await {
+                println!();
+                println!("{} Connection Information", "🔗".blue());
+                println!("  {} {}", "Connection URI:".yellow(), compute_info.connection_string.cyan().bold());
+            }
         }
         Err(ComputeError::NotHealthy(message)) => {
             let status_row = StatusRow {
@@ -70,6 +77,13 @@ pub async fn status(args: &ComputeArgs, config: &Config) -> Result<()> {
             
             println!("{} Compute Status for deployment: {}", "📊".blue(), args.deployment_id);
             println!("{}", Table::new(vec![status_row]).with(Style::rounded()));
+            
+            // Try to fetch connection string even if status is not healthy
+            if let Ok(compute_info) = compute::list_compute(&args.deployment_id, config).await {
+                println!();
+                println!("{} Connection Information", "🔗".blue());
+                println!("  {} {}", "Connection URI:".yellow(), compute_info.connection_string.cyan().bold());
+            }
         }
         Err(e) => return Err(e.into()),
     }
