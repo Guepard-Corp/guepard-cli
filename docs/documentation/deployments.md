@@ -95,6 +95,11 @@ guepard deploy \
   --node-id <node_id>
 ```
 
+**Or using short flags:**
+```bash
+guepard deploy -p PostgreSQL -v 17 -r us-west-aws -i REPOSITORY -d us-west-aws -n db-new-api -w guepard -s <node_id>
+```
+
 **Get deployment details as JSON:**
 ```bash
 guepard deploy --deployment-id <id> --json
@@ -113,7 +118,7 @@ guepard deploy --deployment-id <id> --json
 | `--database-password` | `-w` | Database password | Yes | Strong password recommended |
 | `--user` | `-u` | Database username | No | Default: guepard |
 | `--performance-profile` | `-f` | Performance tier | No | gp.g1.xsmall, gp.g1.small, gp.g1.medium, gp.g1.large |
-| `--node-id` | | Node ID for deployment | No | Optional node identifier |
+| `--node-id` | `-s` | Node ID for deployment | No | Optional node identifier |
 | `--json` | | Output results as JSON | No | Machine-readable output |
 
 ## Deployment Types

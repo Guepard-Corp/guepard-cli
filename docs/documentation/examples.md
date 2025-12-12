@@ -42,6 +42,9 @@ guepard deploy \
   --database-password secure_password_123 \
   --node-id <node_id>
 
+# Or using short flags
+guepard deploy -p PostgreSQL -v 17 -r us-west-aws -i REPOSITORY -d us-west-aws -n ecommerce-prod -w secure_password_123 -s <node_id>
+
 # Output: Deployment ID: prod-12345678-1234-1234-1234-123456789abc
 ```
 

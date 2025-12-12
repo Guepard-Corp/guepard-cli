@@ -35,7 +35,7 @@ guepard deploy [OPTIONS]
 | `--user` | `-u` | Database username (default: guepard) | No |
 | `--yes` | `-y` | Skip confirmation prompts | No |
 | `--performance-profile` | `-f` | Performance profile | No |
-| `--node-id` | | Node ID for deployment | No |
+| `--node-id` | `-s` | Node ID for deployment | No |
 | `--interactive` | `-I` | Interactive mode | No |
 | `--json` | | Output results as JSON | No |
 
@@ -64,6 +64,11 @@ guepard deploy \
   --repository-name db-new-api \
   --database-password guepard \
   --node-id <node_id>
+```
+
+**Or using short flag:**
+```bash
+guepard deploy -p PostgreSQL -v 17 -r us-west-aws -i REPOSITORY -d us-west-aws -n db-new-api -w guepard -s <node_id>
 ```
 
 **Get deployment details as JSON:**
