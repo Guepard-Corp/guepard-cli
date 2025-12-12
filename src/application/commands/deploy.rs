@@ -79,10 +79,15 @@ async fn create_deployment(args: &DeployArgs, config: &Config, output_format: Ou
     println!();
     
     // Display the created deployment details in a more natural format
-    println!("{} Deployment Details", "📋".blue());
+    let is_clone = deployment.deployment_type == "SHADOW";
+    let deployment_label = if is_clone { "Clone Details" } else { "Deployment Details" };
+    
+    println!("{} {}", "📋".blue(), deployment_label);
     println!("  {} {}", "ID:".yellow(), deployment.id);
     println!("  {} {}", "Name:".yellow(), deployment.name);
-    println!("  {} {}", "Name:".yellow(), deployment.repository_name);
+    let deployment_type_display = if is_clone { "Clone".cyan() } else { deployment.deployment_type.clone().cyan() };
+    println!("  {} {}", "Type:".yellow(), deployment_type_display);
+    println!("  {} {}", "Repository:".yellow(), deployment.repository_name);
     println!("  {} {}", "Provider:".yellow(), deployment.database_provider);
     println!("  {} {}", "Version:".yellow(), deployment.database_version);
     println!("  {} {}", "Status:".yellow(), deployment.status);
@@ -231,25 +236,27 @@ async fn get_deployment(deployment_id: &str, config: &Config, output_format: Out
                             .map(|s| s.clone())
                             .unwrap_or_else(|| branch.id.clone());
                         
+                        println!();
+                        println!("{} Checkout Information", "📍".blue());
                         println!("  {} {}", "Branch:".yellow(), branch_name.cyan());
-                        println!("  {} {}", "Branch ID:".yellow(), branch.id.dimmed());
+                        println!("    {} {}", "Branch ID:".yellow(), branch.id.dimmed());
                         
                         // Get snapshot information from the branch
                         let snapshot_id = &branch.snapshot_id;
                         match commit::list_all_commits(deployment_id, config).await {
                             Ok(snapshots) => {
                                 if let Some(snapshot) = snapshots.iter().find(|s| s.id == *snapshot_id) {
-                                    println!("  {} {}", "Snapshot:".yellow(), snapshot.name.cyan());
+                                    println!("    {} {}", "Snapshot:".yellow(), snapshot.name.cyan());
                                     if !snapshot.snapshot_comment.is_empty() {
-                                        println!("  {} {}", "Comment:".yellow(), snapshot.snapshot_comment.cyan());
+                                        println!("    {} {}", "Comment:".yellow(), snapshot.snapshot_comment.cyan());
                                     }
-                                    println!("  {} {}", "Snapshot ID:".yellow(), snapshot.id.dimmed());
+                                    println!("    {} {}", "Snapshot ID:".yellow(), snapshot.id.dimmed());
                                 } else {
-                                    println!("  {} {}", "Snapshot ID:".yellow(), snapshot_id.dimmed());
+                                    println!("    {} {}", "Snapshot ID:".yellow(), snapshot_id.dimmed());
                                 }
                             }
                             Err(_) => {
-                                println!("  {} {}", "Snapshot ID:".yellow(), snapshot_id.dimmed());
+                                println!("    {} {}", "Snapshot ID:".yellow(), snapshot_id.dimmed());
                             }
                         }
                     } else {
@@ -262,6 +269,14 @@ async fn get_deployment(deployment_id: &str, config: &Config, output_format: Out
                     println!("  {} {}", "Branch ID:".yellow(), attached_branch_id.dimmed());
                 }
             }
+            
+            // Show compute information
+            println!();
+            println!("{} Compute Information", "🖥️".blue());
+            println!("  {} {}", "Compute Name:".yellow(), compute_info.name.cyan());
+            println!("  {} {}", "FQDN:".yellow(), compute_info.fqdn.cyan());
+            println!("  {} {}", "Port:".yellow(), compute_info.port.to_string().cyan());
+            println!("  {} {}", "Connection String:".yellow(), compute_info.connection_string.cyan());
         }
         Err(_) => {
             // Compute not available, fall back to deployment branch_id/snapshot_id if available
@@ -273,19 +288,21 @@ async fn get_deployment(deployment_id: &str, config: &Config, output_format: Out
                                 .or(branch.label_name.as_ref())
                                 .map(|s| s.clone())
                                 .unwrap_or_else(|| branch_id.clone());
+                            println!();
+                            println!("{} Checkout Information", "📍".blue());
                             println!("  {} {}", "Branch:".yellow(), branch_name.cyan());
-                            println!("  {} {}", "Branch ID:".yellow(), branch_id.dimmed());
+                            println!("    {} {}", "Branch ID:".yellow(), branch_id.dimmed());
                             
                             // Get snapshot from branch
                             let snapshot_id = &branch.snapshot_id;
                             match commit::list_all_commits(deployment_id, config).await {
                                 Ok(snapshots) => {
                                     if let Some(snapshot) = snapshots.iter().find(|s| s.id == *snapshot_id) {
-                                        println!("  {} {}", "Snapshot:".yellow(), snapshot.name.cyan());
+                                        println!("    {} {}", "Snapshot:".yellow(), snapshot.name.cyan());
                                         if !snapshot.snapshot_comment.is_empty() {
-                                            println!("  {} {}", "Comment:".yellow(), snapshot.snapshot_comment.cyan());
+                                            println!("    {} {}", "Comment:".yellow(), snapshot.snapshot_comment.cyan());
                                         }
-                                        println!("  {} {}", "Snapshot ID:".yellow(), snapshot.id.dimmed());
+                                        println!("    {} {}", "Snapshot ID:".yellow(), snapshot.id.dimmed());
                                     }
                                 }
                                 _ => {}
@@ -538,10 +555,15 @@ async fn interactive_deploy(config: &Config) -> Result<()> {
     println!();
     
     // Display the created deployment details in a more natural format
-    println!("{} Deployment Details", "📋".blue());
+    let is_clone = deployment.deployment_type == "SHADOW";
+    let deployment_label = if is_clone { "Clone Details" } else { "Deployment Details" };
+    
+    println!("{} {}", "📋".blue(), deployment_label);
     println!("  {} {}", "ID:".yellow(), deployment.id);
     println!("  {} {}", "Name:".yellow(), deployment.name);
-    println!("  {} {}", "Name:".yellow(), deployment.repository_name);
+    let deployment_type_display = if is_clone { "Clone".cyan() } else { deployment.deployment_type.clone().cyan() };
+    println!("  {} {}", "Type:".yellow(), deployment_type_display);
+    println!("  {} {}", "Repository:".yellow(), deployment.repository_name);
     println!("  {} {}", "Provider:".yellow(), deployment.database_provider);
     println!("  {} {}", "Version:".yellow(), deployment.database_version);
     println!("  {} {}", "Status:".yellow(), deployment.status);
