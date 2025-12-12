@@ -381,7 +381,7 @@ pub struct DeployArgs {
     /// Node ID for the deployment
     ///
     /// Optional node identifier for the deployment. Used for specific node targeting.
-    #[clap(long)]
+    #[clap(short = 's', long)]
     pub node_id: Option<String>,
     
     /// Interactive mode - guided setup wizard
