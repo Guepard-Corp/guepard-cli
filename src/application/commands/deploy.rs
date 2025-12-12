@@ -239,24 +239,24 @@ async fn get_deployment(deployment_id: &str, config: &Config, output_format: Out
                         println!();
                         println!("{} Checkout Information", "📍".blue());
                         println!("  {} {}", "Branch:".yellow(), branch_name.cyan());
-                        println!("    {} {}", "Branch ID:".yellow(), branch.id.dimmed());
+                        println!("  {} {}", "Branch ID:".yellow(), branch.id.dimmed());
                         
                         // Get snapshot information from the branch
                         let snapshot_id = &branch.snapshot_id;
                         match commit::list_all_commits(deployment_id, config).await {
                             Ok(snapshots) => {
                                 if let Some(snapshot) = snapshots.iter().find(|s| s.id == *snapshot_id) {
-                                    println!("    {} {}", "Snapshot:".yellow(), snapshot.name.cyan());
+                                    println!("  {} {}", "Snapshot:".yellow(), snapshot.name.cyan());
                                     if !snapshot.snapshot_comment.is_empty() {
-                                        println!("    {} {}", "Comment:".yellow(), snapshot.snapshot_comment.cyan());
+                                        println!("  {} {}", "Comment:".yellow(), snapshot.snapshot_comment.cyan());
                                     }
-                                    println!("    {} {}", "Snapshot ID:".yellow(), snapshot.id.dimmed());
+                                    println!("  {} {}", "Snapshot ID:".yellow(), snapshot.id.dimmed());
                                 } else {
-                                    println!("    {} {}", "Snapshot ID:".yellow(), snapshot_id.dimmed());
+                                    println!("  {} {}", "Snapshot ID:".yellow(), snapshot_id.dimmed());
                                 }
                             }
                             Err(_) => {
-                                println!("    {} {}", "Snapshot ID:".yellow(), snapshot_id.dimmed());
+                                println!("  {} {}", "Snapshot ID:".yellow(), snapshot_id.dimmed());
                             }
                         }
                     } else {
