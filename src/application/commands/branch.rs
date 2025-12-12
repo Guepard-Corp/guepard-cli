@@ -1,8 +1,8 @@
-use anyhow::Result;
+use anyhow::{Result, bail};
 use crate::config::config::Config;
 use crate::structure::{BranchArgs, CreateBranchArgs, CheckoutBranchArgs};
 use crate::application::dto::branch::BranchRequest;
-use crate::application::services::branch;
+use crate::application::services::{branch, deploy};
 use colored::Colorize;
 use tabled::{Table, Tabled, settings::Style};
 
@@ -31,6 +31,12 @@ use serde::Serialize;
 
 pub async fn branch(args: &BranchArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     if let Some(deployment_id) = &args.deployment_id {
+        // Check if deployment is an F2 type
+        let deployment = deploy::get_deployment(deployment_id, config).await?;
+        if deployment.deployment_type == "F2" {
+            bail!("{} Branch operations are not supported for F2 deployments. Use a REPOSITORY deployment instead.", "❌".red());
+        }
+        
         if let Some(name) = &args.name {
             // Create branch
             let source_branch_id = args.source_branch_id.clone()
@@ -128,6 +134,12 @@ pub async fn list(deployment_id: &str, config: &Config, output_format: OutputFor
 }
 
 pub async fn checkout(args: &CheckoutBranchArgs, config: &Config) -> Result<()> {
+    // Check if deployment is an F2 type
+    let deployment = deploy::get_deployment(&args.deployment_id, config).await?;
+    if deployment.deployment_type == "F2" {
+        bail!("{} Branch checkout is not supported for F2 deployments. Use a REPOSITORY deployment instead.", "❌".red());
+    }
+    
     let branch = branch::checkout_branch(&args.deployment_id, &args.branch_id, config).await?;
     
     let branch_row = BranchRow {
