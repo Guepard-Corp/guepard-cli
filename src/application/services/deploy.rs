@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use reqwest::Client;
+use serde_json;
 
 use crate::application::auth;
 use crate::application::dto::deploy::{
@@ -29,6 +30,11 @@ pub async fn create_deployment_with_deps<A: AuthProvider>(request: CreateDeploym
         .get_auth_token()
         .map_err(|e| DeployError::SessionError(format!("{}", e)))?;
     let client = Client::new();
+    
+    // Serialize request for debug output
+    let request_json = serde_json::to_string_pretty(&request)
+        .unwrap_or_else(|_| format!("{:?}", request));
+    
     let response = client
         .post(format!("{}/deploy", config.api_url))
         .header("Authorization", format!("Bearer {}", jwt_token))
@@ -38,11 +44,42 @@ pub async fn create_deployment_with_deps<A: AuthProvider>(request: CreateDeploym
         .map_err(|e| DeployError::ApiError(format!("Network error: {}", e)))?;
 
     if !response.status().is_success() {
-        return Err(DeployError::ApiError(format!(
-            "API error: {} {}",
-            response.status(),
-            response.text().await.unwrap_or_default()
-        )));
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        
+        // Try to parse as JSON to extract meaningful error messages
+        let error_message = if let Ok(json) = serde_json::from_str::<serde_json::Value>(&error_text) {
+            // Extract message field if present
+            if let Some(msg) = json.get("message") {
+                if msg.is_string() {
+                    msg.as_str().unwrap_or("").to_string()
+                } else if msg.is_object() {
+                    // If message is an object, try to extract details
+                    serde_json::to_string_pretty(msg).unwrap_or_else(|_| format!("{:?}", msg))
+                } else {
+                    format!("{}", msg)
+                }
+            } else if let Some(errors) = json.get("errors") {
+                // Handle validation errors array
+                serde_json::to_string_pretty(errors).unwrap_or_else(|_| format!("{:?}", errors))
+            } else {
+                // Fallback to pretty-printed JSON
+                serde_json::to_string_pretty(&json).unwrap_or(error_text)
+            }
+        } else {
+            error_text
+        };
+        
+        // Build detailed error message with request info
+        let mut error_msg = format!("API error: {} {}", status, error_message);
+        
+        // Add request details for debugging
+        if std::env::var("GUEPARD_DEBUG").is_ok() || std::env::var("RUST_LOG").is_ok() {
+            error_msg.push_str(&format!("\n\nRequest payload:\n{}", request_json));
+            error_msg.push_str(&format!("\n\nAPI URL: {}/deploy", config.api_url));
+        }
+        
+        return Err(DeployError::ApiError(error_msg));
     }
 
     response
