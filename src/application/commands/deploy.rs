@@ -2,12 +2,12 @@ use anyhow::Result;
 use crate::config::config::Config;
 use crate::structure::DeployArgs;
 use crate::application::dto::deploy::{CreateDeploymentRequest, UpdateDeploymentRequest};
-use crate::application::services::{deploy, performance, compute};
+use crate::application::services::{deploy, performance, compute, branch, commit};
+use crate::application::output::{OutputFormat, print_json};
 use colored::Colorize;
 use std::io::{self, Write};
 
-
-pub async fn deploy(args: &DeployArgs, config: &Config) -> Result<()> {
+pub async fn deploy(args: &DeployArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     // Check for interactive mode
     if args.interactive {
         return interactive_deploy(config).await;
@@ -17,13 +17,13 @@ pub async fn deploy(args: &DeployArgs, config: &Config) -> Result<()> {
         // We have a deployment ID, determine operation based on other args
         if args.repository_name.is_some() {
             // Update deployment
-            update_deployment(deployment_id, args, config).await?;
+            update_deployment(deployment_id, args, config, output_format).await?;
         } else if args.yes {
             // Delete deployment
-            delete_deployment(deployment_id, args, config).await?;
+            delete_deployment(deployment_id, args, config, output_format).await?;
         } else {
             // Get deployment details
-            get_deployment(deployment_id, config).await?;
+            get_deployment(deployment_id, config, output_format).await?;
         }
     } else {
         // No deployment ID, check if we have create args
@@ -31,7 +31,7 @@ pub async fn deploy(args: &DeployArgs, config: &Config) -> Result<()> {
            args.region.is_some() && args.instance_type.is_some() && 
            args.datacenter.is_some() && args.database_password.is_some() {
             // Create new deployment
-            create_deployment(args, config).await?;
+            create_deployment(args, config, output_format).await?;
         } else {
             println!("{} Please provide either:", "❌".red());
             println!("  • Create args: -p, -v, -r, -i, -d, -w (and optionally -n, -u)");
@@ -42,7 +42,7 @@ pub async fn deploy(args: &DeployArgs, config: &Config) -> Result<()> {
     Ok(())
 }
 
-async fn create_deployment(args: &DeployArgs, config: &Config) -> Result<()> {
+async fn create_deployment(args: &DeployArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     let database_provider = args.database_provider.clone().unwrap();
     let database_version = args.database_version.clone().unwrap();
     
@@ -65,17 +65,28 @@ async fn create_deployment(args: &DeployArgs, config: &Config) -> Result<()> {
         database_username: args.user.clone().unwrap_or("guepard".to_string()),
         database_password: args.database_password.clone().unwrap(),
         performance_profile_id,
+        node_id: args.node_id.clone(),
     };
     
     let deployment = deploy::create_deployment(request, config).await?;
+    
+    if output_format == OutputFormat::Json {
+        print_json(&deployment);
+        return Ok(());
+    }
     
     println!("{} Deployment created successfully!", "✅".green());
     println!();
     
     // Display the created deployment details in a more natural format
-    println!("{} Deployment Details", "📋".blue());
+    let is_clone = deployment.deployment_type == "SHADOW";
+    let deployment_label = if is_clone { "Clone Details" } else { "Deployment Details" };
+    
+    println!("{} {}", "📋".blue(), deployment_label);
     println!("  {} {}", "ID:".yellow(), deployment.id);
     println!("  {} {}", "Name:".yellow(), deployment.name);
+    let deployment_type_display = if is_clone { "Clone".cyan() } else { deployment.deployment_type.clone().cyan() };
+    println!("  {} {}", "Type:".yellow(), deployment_type_display);
     println!("  {} {}", "Repository:".yellow(), deployment.repository_name);
     println!("  {} {}", "Provider:".yellow(), deployment.database_provider);
     println!("  {} {}", "Version:".yellow(), deployment.database_version);
@@ -154,22 +165,37 @@ fn generate_password() -> String {
     password
 }
 
-async fn update_deployment(deployment_id: &str, args: &DeployArgs, config: &Config) -> Result<()> {
+async fn update_deployment(deployment_id: &str, args: &DeployArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     let request = UpdateDeploymentRequest {
         repository_name: args.repository_name.clone().unwrap(),
     };
     
     deploy::update_deployment(deployment_id, request, config).await?;
-    println!("{} Deployment updated successfully!", "✅".green());
+    if output_format == OutputFormat::Table {
+        println!("{} Deployment updated successfully!", "✅".green());
+    } else {
+        print_json(&serde_json::json!({"status": "updated", "deployment_id": deployment_id}));
+    }
     Ok(())
 }
 
-async fn get_deployment(deployment_id: &str, config: &Config) -> Result<()> {
+async fn get_deployment(deployment_id: &str, config: &Config, output_format: OutputFormat) -> Result<()> {
     let deployment = deploy::get_deployment(deployment_id, config).await?;
     
-    println!("{} Deployment Details", "📋".blue());
+    if output_format == OutputFormat::Json {
+        print_json(&deployment);
+        return Ok(());
+    }
+    
+    // Determine if this is a clone (SHADOW type)
+    let is_clone = deployment.deployment_type == "SHADOW";
+    let deployment_label = if is_clone { "Clone Details" } else { "Deployment Details" };
+    
+    println!("{} {}", "📋".blue(), deployment_label);
     println!("  {} {}", "ID:".yellow(), deployment.id);
     println!("  {} {}", "Name:".yellow(), deployment.name);
+    let deployment_type_display = if is_clone { "Clone".cyan() } else { deployment.deployment_type.clone().cyan() };
+    println!("  {} {}", "Type:".yellow(), deployment_type_display);
     println!("  {} {}", "Repository:".yellow(), deployment.repository_name);
     println!("  {} {}", "Provider:".yellow(), deployment.database_provider);
     println!("  {} {}", "Version:".yellow(), deployment.database_version);
@@ -178,6 +204,116 @@ async fn get_deployment(deployment_id: &str, config: &Config) -> Result<()> {
     println!("  {} {}", "Region:".yellow(), deployment.region);
     println!("  {} {}", "Datacenter:".yellow(), deployment.datacenter);
     println!("  {} {}", "Created:".yellow(), deployment.created_date);
+    
+    // Show deployment parent if it's a clone
+    if is_clone {
+        if let Some(deployment_parent) = &deployment.deployment_parent {
+            println!("  {} {}", "Deployment Parent:".yellow(), deployment_parent.cyan());
+        }
+    }
+    
+    // Show snapshot parent if it's a clone
+    if is_clone {
+        if let Some(snapshot_parent) = &deployment.snapshot_parent {
+            println!("  {} {}", "Snapshot Parent:".yellow(), snapshot_parent.cyan());
+        }
+    }
+    
+    // Show branch and snapshot information from compute (what compute is currently pointing to)
+    match compute::list_compute(deployment_id, config).await {
+        Ok(compute_info) => {
+            // Get the branch that compute is attached to
+            let attached_branch_id = compute_info.branch_id.as_ref()
+                .or(Some(&compute_info.attached_branch))
+                .unwrap();
+            
+            // Get branch details
+            match branch::list_branches(deployment_id, config).await {
+                Ok(branches) => {
+                    if let Some(branch) = branches.iter().find(|b| b.id == *attached_branch_id) {
+                        let branch_name = branch.branch_name.as_ref()
+                            .or(branch.label_name.as_ref())
+                            .map(|s| s.clone())
+                            .unwrap_or_else(|| branch.id.clone());
+                        
+                        println!();
+                        println!("{} Checkout Information", "📍".blue());
+                        println!("  {} {}", "Branch:".yellow(), branch_name.cyan());
+                        println!("  {} {}", "Branch ID:".yellow(), branch.id.dimmed());
+                        
+                        // Get snapshot information from the branch
+                        let snapshot_id = &branch.snapshot_id;
+                        match commit::list_all_commits(deployment_id, config).await {
+                            Ok(snapshots) => {
+                                if let Some(snapshot) = snapshots.iter().find(|s| s.id == *snapshot_id) {
+                                    println!("  {} {}", "Snapshot:".yellow(), snapshot.name.cyan());
+                                    if !snapshot.snapshot_comment.is_empty() {
+                                        println!("  {} {}", "Comment:".yellow(), snapshot.snapshot_comment.cyan());
+                                    }
+                                    println!("  {} {}", "Snapshot ID:".yellow(), snapshot.id.dimmed());
+                                } else {
+                                    println!("  {} {}", "Snapshot ID:".yellow(), snapshot_id.dimmed());
+                                }
+                            }
+                            Err(_) => {
+                                println!("  {} {}", "Snapshot ID:".yellow(), snapshot_id.dimmed());
+                            }
+                        }
+                    } else {
+                        // Branch not found, but show the ID
+                        println!("  {} {}", "Branch ID:".yellow(), attached_branch_id.dimmed());
+                    }
+                }
+                Err(_) => {
+                    // Couldn't fetch branches, but show the branch ID from compute
+                    println!("  {} {}", "Branch ID:".yellow(), attached_branch_id.dimmed());
+                }
+            }
+            
+            // Show compute information
+            println!();
+            println!("{} Compute Information", "🖥️".blue());
+            println!("  {} {}", "Compute Name:".yellow(), compute_info.name.cyan());
+            println!("  {} {}", "FQDN:".yellow(), compute_info.fqdn.cyan());
+            println!("  {} {}", "Port:".yellow(), compute_info.port.to_string().cyan());
+            println!("  {} {}", "Connection String:".yellow(), compute_info.connection_string.cyan());
+        }
+        Err(_) => {
+            // Compute not available, fall back to deployment branch_id/snapshot_id if available
+            if let Some(branch_id) = &deployment.branch_id {
+                match branch::list_branches(deployment_id, config).await {
+                    Ok(branches) => {
+                        if let Some(branch) = branches.iter().find(|b| b.id == *branch_id) {
+                            let branch_name = branch.branch_name.as_ref()
+                                .or(branch.label_name.as_ref())
+                                .map(|s| s.clone())
+                                .unwrap_or_else(|| branch_id.clone());
+                            println!();
+                            println!("{} Checkout Information", "📍".blue());
+                            println!("  {} {}", "Branch:".yellow(), branch_name.cyan());
+                            println!("    {} {}", "Branch ID:".yellow(), branch_id.dimmed());
+                            
+                            // Get snapshot from branch
+                            let snapshot_id = &branch.snapshot_id;
+                            match commit::list_all_commits(deployment_id, config).await {
+                                Ok(snapshots) => {
+                                    if let Some(snapshot) = snapshots.iter().find(|s| s.id == *snapshot_id) {
+                                        println!("    {} {}", "Snapshot:".yellow(), snapshot.name.cyan());
+                                        if !snapshot.snapshot_comment.is_empty() {
+                                            println!("    {} {}", "Comment:".yellow(), snapshot.snapshot_comment.cyan());
+                                        }
+                                        println!("    {} {}", "Snapshot ID:".yellow(), snapshot.id.dimmed());
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
     
     // Try to get compute information for the real port
     let port = match compute::list_compute(deployment_id, config).await {
@@ -215,7 +351,7 @@ async fn get_deployment(deployment_id: &str, config: &Config) -> Result<()> {
     Ok(())
 }
 
-async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Config) -> Result<()> {
+async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     // Confirm deletion unless -y flag is used
     if !args.yes {
         print!("{} Are you sure you want to delete deployment {}? (y/N): ", 
@@ -234,7 +370,11 @@ async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Conf
     // Call the actual delete API
     deploy::delete_deployment(deployment_id, config).await?;
     
-    println!("{} Deployment {} deleted successfully!", "✅".green(), deployment_id);
+    if output_format == OutputFormat::Table {
+        println!("{} Deployment {} deleted successfully!", "✅".green(), deployment_id);
+    } else {
+        print_json(&serde_json::json!({"status": "deleted", "deployment_id": deployment_id}));
+    }
     
     Ok(())
 }
@@ -406,6 +546,7 @@ async fn interactive_deploy(config: &Config) -> Result<()> {
         database_username: user.to_string(),
         database_password: database_password.to_string(),
         performance_profile_id,
+        node_id: None, // Interactive mode doesn't support node_id yet
     };
     
     let deployment = deploy::create_deployment(request, config).await?;
@@ -414,9 +555,14 @@ async fn interactive_deploy(config: &Config) -> Result<()> {
     println!();
     
     // Display the created deployment details in a more natural format
-    println!("{} Deployment Details", "📋".blue());
+    let is_clone = deployment.deployment_type == "SHADOW";
+    let deployment_label = if is_clone { "Clone Details" } else { "Deployment Details" };
+    
+    println!("{} {}", "📋".blue(), deployment_label);
     println!("  {} {}", "ID:".yellow(), deployment.id);
     println!("  {} {}", "Name:".yellow(), deployment.name);
+    let deployment_type_display = if is_clone { "Clone".cyan() } else { deployment.deployment_type.clone().cyan() };
+    println!("  {} {}", "Type:".yellow(), deployment_type_display);
     println!("  {} {}", "Repository:".yellow(), deployment.repository_name);
     println!("  {} {}", "Provider:".yellow(), deployment.database_provider);
     println!("  {} {}", "Version:".yellow(), deployment.database_version);

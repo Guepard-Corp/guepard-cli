@@ -19,7 +19,7 @@ pub struct CheckoutResponse {
 }
 
 /// matches the POST, Checkout responses.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct BranchResponse {
     pub id: String,  // Branch ID (UUID)
     pub account_id: Option<String>,
@@ -38,7 +38,7 @@ pub struct BranchResponse {
 }
 
 /// matches the GET /deploy/{deployment_id}/branch response.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ListBranchesResponse {
     pub id: String, // branch id 
     pub branch_name: Option<String>,

@@ -5,3 +5,4 @@ pub mod compute;
 pub mod usage;
 pub mod login;
 pub mod log;
+pub mod clone;

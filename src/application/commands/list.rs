@@ -15,11 +15,13 @@ const BRANCH_COLUMNS: &[&str] = &["id", "branch_name", "label_name", "job_status
 
 const COMMIT_COLUMNS: &[&str] = &["id", "name", "message", "created", "dataset_id", "parent_id", "status", "type"];
 
-pub async fn list(args: &ListArgs, config: &Config) -> Result<()> {
+use crate::application::output::{OutputFormat, print_json};
+
+pub async fn list(args: &ListArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     match args.resource.as_str() {
-        "deployments" => list_deployments(args, config).await,
-        "branches" => list_branches(args, config).await,
-        "commits" => list_commits(args, config).await,
+        "deployments" => list_deployments(args, config, output_format).await,
+        "branches" => list_branches(args, config, output_format).await,
+        "commits" => list_commits(args, config, output_format).await,
         _ => {
             println!("{} Unknown resource: {}", "❌".red(), args.resource);
             println!("Available resources: deployments, branches, commits");
@@ -68,11 +70,15 @@ fn show_available_columns(resource: &str) {
     }
 }
 
-async fn list_deployments(args: &ListArgs, config: &Config) -> Result<()> {
+async fn list_deployments(args: &ListArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     let mut deployments = deploy::list_deployments(config).await?;
     
     if deployments.is_empty() {
-        println!("{} No deployments found", "ℹ️".blue());
+        if output_format == OutputFormat::Json {
+            print_json(&serde_json::json!([]));
+        } else {
+            println!("{} No deployments found", "ℹ️".blue());
+        }
         return Ok(());
     }
     
@@ -80,6 +86,12 @@ async fn list_deployments(args: &ListArgs, config: &Config) -> Result<()> {
     let total_count = deployments.len();
     if let Some(limit) = args.limit {
         deployments.truncate(limit);
+    }
+    
+    if output_format == OutputFormat::Json {
+        // For JSON, output all fields regardless of column selection
+        print_json(&deployments);
+        return Ok(());
     }
     
     let selected_columns = parse_columns(&args.columns, DEPLOYMENT_COLUMNS);
@@ -136,14 +148,18 @@ async fn list_deployments(args: &ListArgs, config: &Config) -> Result<()> {
     Ok(())
 }
 
-async fn list_branches(args: &ListArgs, config: &Config) -> Result<()> {
+async fn list_branches(args: &ListArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     let deployment_id = args.deployment_id.as_ref()
         .ok_or_else(|| anyhow::anyhow!("Deployment ID is required for listing branches. Use -x <deployment_id>"))?;
     
     let mut branches = branch::list_branches(deployment_id, config).await?;
     
     if branches.is_empty() {
-        println!("{} No branches found for deployment: {}", "ℹ️".blue(), deployment_id);
+        if output_format == OutputFormat::Json {
+            print_json(&serde_json::json!([]));
+        } else {
+            println!("{} No branches found for deployment: {}", "ℹ️".blue(), deployment_id);
+        }
         return Ok(());
     }
     
@@ -151,6 +167,11 @@ async fn list_branches(args: &ListArgs, config: &Config) -> Result<()> {
     let total_count = branches.len();
     if let Some(limit) = args.limit {
         branches.truncate(limit);
+    }
+    
+    if output_format == OutputFormat::Json {
+        print_json(&branches);
+        return Ok(());
     }
     
     let selected_columns = parse_columns(&args.columns, BRANCH_COLUMNS);
@@ -198,7 +219,7 @@ async fn list_branches(args: &ListArgs, config: &Config) -> Result<()> {
     Ok(())
 }
 
-async fn list_commits(args: &ListArgs, config: &Config) -> Result<()> {
+async fn list_commits(args: &ListArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     let deployment_id = args.deployment_id.as_ref()
         .ok_or_else(|| anyhow::anyhow!("Deployment ID is required for listing commits. Use -x <deployment_id>"))?;
     
@@ -210,7 +231,11 @@ async fn list_commits(args: &ListArgs, config: &Config) -> Result<()> {
     }
     
     if commits.is_empty() {
-        println!("{} No commits found for deployment: {}", "ℹ️".blue(), deployment_id);
+        if output_format == OutputFormat::Json {
+            print_json(&serde_json::json!([]));
+        } else {
+            println!("{} No commits found for deployment: {}", "ℹ️".blue(), deployment_id);
+        }
         return Ok(());
     }
     
@@ -221,6 +246,11 @@ async fn list_commits(args: &ListArgs, config: &Config) -> Result<()> {
     let total_count = commits.len();
     if let Some(limit) = args.limit {
         commits.truncate(limit);
+    }
+    
+    if output_format == OutputFormat::Json {
+        print_json(&commits);
+        return Ok(());
     }
     
     // Check if user wants git graph format

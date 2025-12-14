@@ -35,7 +35,9 @@ guepard deploy [OPTIONS]
 | `--user` | `-u` | Database username (default: guepard) | No |
 | `--yes` | `-y` | Skip confirmation prompts | No |
 | `--performance-profile` | `-f` | Performance profile | No |
+| `--node-id` | `-s` | Node ID for deployment | No |
 | `--interactive` | `-I` | Interactive mode | No |
+| `--json` | | Output results as JSON | No |
 
 #### Examples
 
@@ -49,6 +51,29 @@ guepard deploy \
   --datacenter aws \
   --repository-name myapp \
   --database-password secret123
+```
+
+**Create deployment with node ID:**
+```bash
+guepard deploy \
+  --database-provider PostgreSQL \
+  --database-version 17 \
+  --region us-west-aws \
+  --instance-type REPOSITORY \
+  --datacenter us-west-aws \
+  --repository-name db-new-api \
+  --database-password guepard \
+  --node-id <node_id>
+```
+
+**Or using short flag:**
+```bash
+guepard deploy -p PostgreSQL -v 17 -r us-west-aws -i REPOSITORY -d us-west-aws -n db-new-api -w guepard -s <node_id>
+```
+
+**Get deployment details as JSON:**
+```bash
+guepard deploy --deployment-id <id> --json
 ```
 
 **Interactive deployment:**
@@ -90,6 +115,7 @@ guepard commit --message <message> --deployment-id <id> --branch-id <id>
 | `--message` | `-m` | Commit message | Yes |
 | `--deployment-id` | `-x` | Deployment ID | Yes |
 | `--branch-id` | `-b` | Branch ID | Yes |
+| `--json` | | Output results as JSON | No |
 
 #### Examples
 
@@ -111,6 +137,11 @@ guepard commit -m "Add user profiles" -x <deployment_id> -b <branch_id>
 guepard commit -m "Add payment tables" -x <deployment_id> -b <branch_id>
 ```
 
+**Create snapshot and output as JSON:**
+```bash
+guepard commit -m "Initial schema" -x <deployment_id> -b <branch_id> --json
+```
+
 ### `guepard branch` - Branch Management
 
 List and create branches for your deployments.
@@ -127,6 +158,7 @@ guepard branch [OPTIONS] [NAME]
 | `--snapshot-id` | `-s` | Snapshot ID to branch from | For creation |
 | `--name` | `-n` | Branch name | For creation |
 | `--checkout` | `-k` | Checkout after creation | No |
+| `--json` | | Output results as JSON | No |
 | `--ephemeral` | `-e` | Create ephemeral branch | No |
 | `--source-branch-id` | `-b` | Source branch ID | No |
 | `--discard-changes` | `-d` | Discard changes | No |
@@ -138,6 +170,11 @@ guepard branch [OPTIONS] [NAME]
 guepard branch --deployment-id 12345678-1234-1234-1234-123456789abc
 ```
 
+**List branches as JSON:**
+```bash
+guepard branch --deployment-id 12345678-1234-1234-1234-123456789abc --json
+```
+
 **Create a new branch:**
 ```bash
 guepard branch \
@@ -146,6 +183,11 @@ guepard branch \
   --name feature-auth \
   --checkout \
   --ephemeral
+```
+
+**Create branch and output as JSON:**
+```bash
+guepard branch -x <deployment_id> -s <snapshot_id> -n feature-auth --json
 ```
 
 **Git-like usage:**
@@ -172,6 +214,7 @@ guepard checkout [OPTIONS] <target>
 | `--snapshot-id` | `-s` | Snapshot ID to checkout | For snapshot checkout |
 | `--checkout` | `-k` | Perform checkout | No |
 | `--discard-changes` | `-d` | Discard changes | No |
+| `--json` | | Output results as JSON | No |
 
 #### Examples
 
@@ -185,6 +228,11 @@ guepard checkout \
 **List available branches:**
 ```bash
 guepard checkout --deployment-id 12345678-1234-1234-1234-123456789abc
+```
+
+**Checkout branch and output as JSON:**
+```bash
+guepard checkout -x <deployment_id> -c <branch_id> --json
 ```
 
 **Git-like usage:**
@@ -213,6 +261,7 @@ guepard log --deployment-id <id> [OPTIONS]
 | `--timestamps` | `-t` | Show timestamps | No |
 | `--since` | | Filter logs from date | No |
 | `--until` | | Filter logs until date | No |
+| `--json` | | Output results as JSON | No |
 
 #### Examples
 
@@ -258,6 +307,12 @@ guepard compute <action> --deployment-id <id>
 - `logs` - View compute logs
 - `list` - List compute details (default)
 
+#### Options
+| Option | Short | Description | Required |
+|--------|-------|-------------|----------|
+| `--deployment-id` | `-x` | Deployment ID | Yes |
+| `--json` | | Output results as JSON | No |
+
 #### Examples
 
 **Check compute status:**
@@ -278,6 +333,11 @@ guepard compute logs --deployment-id 12345678-1234-1234-1234-123456789abc
 **List compute details:**
 ```bash
 guepard compute list --deployment-id 12345678-1234-1234-1234-123456789abc
+```
+
+**Get compute status as JSON:**
+```bash
+guepard compute status --deployment-id <id> --json
 ```
 
 ### `guepard list` - List Resources
@@ -301,6 +361,7 @@ guepard list <resource> [OPTIONS]
 | `--columns` | `-c` | Columns to display | No |
 | `--graph` | `-g` | Show git graph style | For commits |
 | `--all` | `-a` | Show all commits including AUTO SNAPs | For commits |
+| `--json` | | Output results as JSON | No |
 
 #### Examples
 
@@ -326,18 +387,35 @@ guepard list commits \
   --graph
 ```
 
+**List deployments as JSON:**
+```bash
+guepard list deployments --json
+```
+
 ### `guepard usage` - Usage Information
 
 View your account usage and quotas.
 
 #### Syntax
 ```bash
+guepard usage [OPTIONS]
+```
+
+#### Options
+| Option | Description | Required |
+|--------|-------------|----------|
+| `--json` | Output results as JSON | No |
+
+#### Examples
+
+**View usage:**
+```bash
 guepard usage
 ```
 
-#### Example
+**View usage as JSON:**
 ```bash
-guepard usage
+guepard usage --json
 ```
 
 **Output:**
@@ -413,6 +491,34 @@ guepard commit -m "message"
 ```
 
 ## Output Formats
+
+### JSON Output
+
+All commands support `--json` flag for machine-readable output:
+
+**Examples:**
+```bash
+# List deployments as JSON
+guepard list deployments --json
+
+# Get deployment details as JSON
+guepard deploy --deployment-id <id> --json
+
+# List branches as JSON
+guepard branch -x <id> --json
+
+# Get compute status as JSON
+guepard compute status -x <id> --json
+
+# View usage as JSON
+guepard usage --json
+```
+
+JSON output is useful for:
+- Scripting and automation
+- Integration with other tools
+- Parsing with `jq` or similar tools
+- CI/CD pipelines
 
 ### Beautiful Tables
 All commands use colorized, rounded tables for better readability:

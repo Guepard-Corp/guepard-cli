@@ -7,7 +7,9 @@ use colored::Colorize;
 use std::io::{self, Write};
 use std::process::Command;
 
-pub async fn execute(args: &LoginArgs, config: &Config) -> Result<()> {
+use crate::application::output::OutputFormat;
+
+pub async fn execute(args: &LoginArgs, config: &Config, _output_format: OutputFormat) -> Result<()> {
     // If code is provided, save it directly
     if let Some(token) = &args.code {
         return execute_direct_login(token, config).await;

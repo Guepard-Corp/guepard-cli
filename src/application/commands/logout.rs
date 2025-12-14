@@ -3,7 +3,9 @@ use crate::domain::errors::logout_error::LogoutError;
 use anyhow::Result;
 use colored::Colorize;
 
-pub async fn logout(_config: &Config) -> Result<()> {
+use crate::application::output::OutputFormat;
+
+pub async fn logout(_config: &Config, _output_format: OutputFormat) -> Result<()> {
     // Check if user is already logged out
     if !config::is_logged_in() {
         println!("{}", "You are already logged out! 🐆".yellow());

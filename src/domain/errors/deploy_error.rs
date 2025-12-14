@@ -1,6 +1,7 @@
 use anyhow::Result;
 use reqwest::StatusCode;
 use thiserror::Error;
+use serde_json;
 
 #[derive(Error, Debug)]
 pub enum DeployError {
@@ -43,13 +44,32 @@ impl DeployError {
             .await
             .unwrap_or_else(|_| "Unknown error".to_string());
 
+        // Try to parse JSON error response
+        let error_message = if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) {
+            if let Some(msg) = json.get("message") {
+                if msg.is_string() {
+                    msg.as_str().unwrap_or("").to_string()
+                } else if msg.is_object() {
+                    serde_json::to_string_pretty(msg).unwrap_or_else(|_| format!("{:?}", msg))
+                } else {
+                    format!("{}", msg)
+                }
+            } else if let Some(errors) = json.get("errors") {
+                serde_json::to_string_pretty(errors).unwrap_or_else(|_| format!("{:?}", errors))
+            } else {
+                serde_json::to_string_pretty(&json).unwrap_or(text)
+            }
+        } else {
+            text
+        };
+
         match status {
-            StatusCode::BAD_REQUEST => DeployError::BadRequest(text),
+            StatusCode::BAD_REQUEST => DeployError::BadRequest(error_message),
             StatusCode::FORBIDDEN => DeployError::Forbidden,
             StatusCode::NOT_FOUND => DeployError::NotFound,
             StatusCode::INTERNAL_SERVER_ERROR => DeployError::InternalServerError,
             StatusCode::SERVICE_UNAVAILABLE => DeployError::ServiceUnavailable,
-            _ => DeployError::Unexpected(format!("{}: {}", status, text)),
+            _ => DeployError::Unexpected(format!("{}: {}", status, error_message)),
         }
     }
 }
@@ -61,10 +81,30 @@ pub async fn handle_api_response(response: reqwest::Response) -> Result<()> {
             Ok(())
         }
         reqwest::StatusCode::BAD_REQUEST => {
-            let err_msg = response
+            let text = response
                 .text()
                 .await
                 .unwrap_or("Invalid request data".to_string());
+            
+            // Try to parse JSON error response
+            let err_msg = if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) {
+                if let Some(msg) = json.get("message") {
+                    if msg.is_string() {
+                        msg.as_str().unwrap_or("").to_string()
+                    } else if msg.is_object() {
+                        serde_json::to_string_pretty(msg).unwrap_or_else(|_| format!("{:?}", msg))
+                    } else {
+                        format!("{}", msg)
+                    }
+                } else if let Some(errors) = json.get("errors") {
+                    serde_json::to_string_pretty(errors).unwrap_or_else(|_| format!("{:?}", errors))
+                } else {
+                    serde_json::to_string_pretty(&json).unwrap_or(text)
+                }
+            } else {
+                text
+            };
+            
             Err(anyhow::anyhow!("❌ 400 Bad Request: {}", err_msg))
         }
         reqwest::StatusCode::FORBIDDEN => Err(anyhow::anyhow!(
@@ -74,7 +114,20 @@ pub async fn handle_api_response(response: reqwest::Response) -> Result<()> {
             "❌ 503 Service Unavailable: The API is currently down"
         )),
         _ => {
-            let err_msg = response.text().await.unwrap_or("Unknown error".to_string());
+            let text = response.text().await.unwrap_or("Unknown error".to_string());
+            let err_msg = if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) {
+                if let Some(msg) = json.get("message") {
+                    if msg.is_string() {
+                        msg.as_str().unwrap_or("").to_string()
+                    } else {
+                        serde_json::to_string_pretty(&json).unwrap_or(text)
+                    }
+                } else {
+                    serde_json::to_string_pretty(&json).unwrap_or(text)
+                }
+            } else {
+                text
+            };
             Err(anyhow::anyhow!("❌ Unexpected Error: {}", err_msg))
         }
     }

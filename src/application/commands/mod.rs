@@ -9,3 +9,4 @@ pub mod login;
 pub mod logout;
 pub mod list;
 pub mod config;
+pub mod clone;

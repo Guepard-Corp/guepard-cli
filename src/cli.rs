@@ -1,5 +1,6 @@
 use clap::Parser;
-use guepard_cli::application::commands::{deploy, commit, branch, log, checkout, compute, usage, login, logout, list, config};
+use guepard_cli::application::commands::{deploy, commit, branch, log, checkout, compute, usage, login, logout, list, config, clone};
+use guepard_cli::application::output::OutputFormat;
 use guepard_cli::config::config::{load_config, Config};
 use guepard_cli::domain::errors::{bookmark_error::BookmarkError, branch_error::BranchError, compute_error::ComputeError, deploy_error::DeployError, login_error::LoginError, usage_error::UsageError};
 use guepard_cli::structure::{SubCommand, CLI};
@@ -49,16 +50,53 @@ async fn main() {
 
 async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
         match sub_commands {
-            SubCommand::Deploy(args) => deploy::deploy(args, config).await,
-        SubCommand::Commit(args) => commit::commit(args, config).await,
-        SubCommand::Branch(args) => branch::branch(args, config).await,
-        SubCommand::Log(args) => log::log(args, config).await,
-        SubCommand::Checkout(args) => checkout::checkout(args, config).await,
-                SubCommand::Compute(args) => compute::compute(args, config).await,
-        SubCommand::Usage => usage::usage(config).await,
-        SubCommand::List(args) => list::list(args, config).await,
-        SubCommand::Login(args) => login::execute(args, config).await,
-        SubCommand::Logout => logout::logout(config).await,
-        SubCommand::Config(args) => config::config(args).await.map_err(|e| anyhow::anyhow!("{}", e)),
+            SubCommand::Deploy(args) => {
+                let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+                deploy::deploy(args, config, output_format).await
+            }
+        SubCommand::Commit(args) => {
+            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+            commit::commit(args, config, output_format).await
+        }
+        SubCommand::Branch(args) => {
+            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+            branch::branch(args, config, output_format).await
+        }
+        SubCommand::Log(args) => {
+            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+            log::log(args, config, output_format).await
+        }
+        SubCommand::Checkout(args) => {
+            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+            checkout::checkout(args, config, output_format).await
+        }
+                SubCommand::Compute(args) => {
+            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+            compute::compute(args, config, output_format).await
+        }
+        SubCommand::Usage => {
+            // Usage doesn't have args, use default table format
+            usage::usage(config, OutputFormat::Table).await
+        }
+        SubCommand::List(args) => {
+            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+            list::list(args, config, output_format).await
+        }
+        SubCommand::Login(args) => {
+            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+            login::execute(args, config, output_format).await
+        }
+        SubCommand::Logout => {
+            // Logout doesn't have args, use default table format
+            logout::logout(config, OutputFormat::Table).await
+        }
+        SubCommand::Config(args) => {
+            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+            config::config(args, output_format).await.map_err(|e| anyhow::anyhow!("{}", e))
+        }
+        SubCommand::Clone(args) => {
+            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+            clone::clone_command(args, config, output_format).await
+        }
     }
 }
