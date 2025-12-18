@@ -1,7 +1,7 @@
 use anyhow::Result;
 use crate::config::config::Config;
 use crate::structure::ListArgs;
-use crate::application::services::{deploy, branch, commit};
+use crate::application::services::{deploy, branch, commit, clone};
 use colored::Colorize;
 use std::collections::HashSet;
 
@@ -17,6 +17,8 @@ const BRANCH_COLUMNS: &[&str] = &["id", "branch_name", "label_name", "job_status
 
 const COMMIT_COLUMNS: &[&str] = &["id", "name", "message", "created", "dataset_id", "parent_id", "status", "type"];
 
+const CLONE_COLUMNS: &[&str] = &["id", "name", "status", "snapshot_parent", "created", "repository_name", "fqdn", "provider", "version", "region", "connection"];
+
 use crate::application::output::{OutputFormat, print_json};
 
 pub async fn list(args: &ListArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
@@ -24,15 +26,16 @@ pub async fn list(args: &ListArgs, config: &Config, output_format: OutputFormat)
         "deployments" => list_deployments(args, config, output_format).await,
         "branches" => list_branches(args, config, output_format).await,
         "commits" => list_commits(args, config, output_format).await,
+        "clones" => list_clones(args, config, output_format).await,
         "performance" => list_performance(args, config, output_format).await,
         _ => {
             if output_format == OutputFormat::Table {
                 println!("{} Unknown resource: {}", "❌".red(), args.resource);
-                println!("Available resources: deployments, branches, commits, performance");
+                println!("Available resources: deployments, branches, commits, clones, performance");
             } else {
                 print_json(&serde_json::json!({
                     "error": format!("Unknown resource: {}", args.resource),
-                    "available_resources": ["deployments", "branches", "commits", "performance"]
+                    "available_resources": ["deployments", "branches", "commits", "clones", "performance"]
                 }));
             }
             Ok(())
@@ -58,6 +61,7 @@ fn parse_columns(columns_str: &Option<String>, available_columns: &[&str]) -> Ve
             PERFORMANCE_COLUMNS => vec!["id".to_string(), "label_name".to_string(), "database_provider".to_string(), "database_version".to_string(), "is_default".to_string()],
             BRANCH_COLUMNS => vec!["id".to_string(), "branch_name".to_string(), "label_name".to_string(), "job_status".to_string(), "snapshot_id".to_string()],
             COMMIT_COLUMNS => vec!["id".to_string(), "name".to_string(), "message".to_string(), "created".to_string(), "dataset_id".to_string(), "parent_id".to_string()],
+            CLONE_COLUMNS => vec!["id".to_string(), "name".to_string(), "status".to_string(), "repository_name".to_string(), "fqdn".to_string(), "snapshot_parent".to_string()],
             _ => available_columns.iter().map(|s| s.to_string()).collect(),
         }
     }
@@ -80,6 +84,10 @@ fn show_available_columns(resource: &str) {
         "commits" => {
             println!("{} Available columns for commits:", "ℹ️".blue());
             println!("{}", COMMIT_COLUMNS.join(", "));
+        },
+        "clones" => {
+            println!("{} Available columns for clones:", "ℹ️".blue());
+            println!("{}", CLONE_COLUMNS.join(", "));
         },
         _ => {}
     }
@@ -152,6 +160,94 @@ async fn list_performance(args: &ListArgs, config: &Config, output_format: Outpu
     );
     
     // Display the table with selected columns
+    display_dynamic_table(rows, &selected_columns);
+    Ok(())
+}
+
+async fn list_clones(args: &ListArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
+    let deployment_id = args.deployment_id.as_ref()
+        .ok_or_else(|| anyhow::anyhow!("Deployment ID is required for listing clones. Use -x <deployment_id>"))?;
+    
+    let mut clones = clone::list_clones(deployment_id, config).await?;
+    
+    if clones.is_empty() {
+        if output_format == OutputFormat::Json {
+            print_json(&serde_json::json!([]));
+        } else {
+            println!("{} No clones found for deployment: {}", "ℹ️".blue(), deployment_id);
+        }
+        return Ok(());
+    }
+    
+    // Apply limit if specified
+    let total_count = clones.len();
+    if let Some(limit) = args.limit {
+        clones.truncate(limit);
+    }
+    
+    let selected_columns = parse_columns(&args.columns, CLONE_COLUMNS);
+    
+    if selected_columns.is_empty() {
+        println!("{} No valid columns selected. Available columns:", "❌".red());
+        show_available_columns("clones");
+        return Ok(());
+    }
+    
+    // Create dynamic rows based on selected columns
+    let mut rows = Vec::new();
+    for clone in &clones {
+        let mut row_data = std::collections::HashMap::new();
+        
+        let connection = clone.connection_string.clone().unwrap_or_else(|| {
+            // Fallback to constructing a basic URI if connection_string is missing
+            format!("postgresql://{}:{}@{}:5432/{}", 
+                clone.database_username.as_deref().unwrap_or("user"),
+                if clone.database_password.is_some() { "****" } else { "pass" },
+                clone.fqdn, 
+                clone.repository_name
+            )
+        });
+
+        for col in &selected_columns {
+            let value = match col.as_str() {
+                "id" => clone.id.clone(),
+                "name" => clone.name.clone(),
+                "status" => clone.status.clone(),
+                "snapshot_parent" => clone.snapshot_parent.clone().unwrap_or_default(),
+                "created" => clone.created_date.clone(),
+                "repository_name" => clone.repository_name.clone(),
+                "fqdn" => clone.fqdn.clone(),
+                "provider" => clone.database_provider.clone(),
+                "version" => clone.database_version.clone(),
+                "region" => clone.region.clone().unwrap_or_default(),
+                "connection" => connection.clone(),
+                _ => "".to_string(),
+            };
+            row_data.insert(col.clone(), value);
+        }
+        rows.push(row_data);
+    }
+    
+    if output_format == OutputFormat::Json {
+        print_json(&rows);
+        return Ok(());
+    }
+
+    println!("{} Found {} clones for deployment: {}{}", 
+        "✅".green(), 
+        total_count,
+        deployment_id,
+        if let Some(limit) = args.limit {
+            if limit < total_count {
+                format!(" (showing first {})", limit)
+            } else {
+                String::new()
+            }
+        } else {
+            String::new()
+        }
+    );
+    
     display_dynamic_table(rows, &selected_columns);
     Ok(())
 }

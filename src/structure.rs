@@ -171,7 +171,7 @@ pub enum SubCommand {
     ///   guepard usage
     Usage(UsageArgs),
     
-    /// 📋 List deployments, branches, commits, and other resources
+    /// 📋 List deployments, branches, commits, clones, and other resources
     ///
     /// Display resources in beautiful, colorized tables. Supports custom column selection
     /// and filtering. Default resource is 'deployments'.
@@ -185,6 +185,9 @@ pub enum SubCommand {
     ///
     ///   # List branches for a deployment
     ///   guepard list branches -x <deployment_id>
+    ///
+    ///   # List clones for a deployment
+    ///   guepard list clones -x <deployment_id>
     ///
     ///   # List commits with git-style graph
     ///   guepard list commits -x <deployment_id> --graph
@@ -231,15 +234,12 @@ pub enum SubCommand {
     
     /// 🎭 Clone deployments from snapshots
     ///
-    /// Create shadow/clone deployments from snapshots or list existing clones.
+    /// Create shadow/clone deployments from snapshots.
     /// Clones are read-only copies used for testing, analysis, or backup purposes.
     ///
     /// Examples:
     ///   # Create a clone from a snapshot
     ///   guepard clone -x <deployment_id> -s <snapshot_id>
-    ///
-    ///   # List all clones for a deployment
-    ///   guepard clone list -x <deployment_id>
     Clone(CloneArgs),
 }
 
@@ -249,11 +249,12 @@ pub struct ListArgs {
     #[clap(flatten)]
     pub output: OutputArgs,
     
-    /// Resource type to list: deployments, branches, or commits
+    /// Resource type to list: deployments, branches, commits, or clones
     ///
     /// - deployments: List all database deployments (default)
     /// - branches: List branches for a deployment (requires --deployment-id)
     /// - commits: List snapshots/commits for a deployment (requires --deployment-id)
+    /// - clones: List shadow/clone deployments for a deployment (requires --deployment-id)
     #[clap(value_parser, default_value = "deployments")]
     pub resource: String,
     
@@ -792,24 +793,6 @@ pub struct CloneArgs {
     /// If not specified, defaults to gp.g1.xsmall.
     #[clap(short = 'f', long)]
     pub performance_profile: Option<String>,
-    
-    #[clap(subcommand)]
-    pub command: Option<CloneSubCommand>,
-}
-
-#[derive(Subcommand, Debug)]
-pub enum CloneSubCommand {
-    /// List all clones for a deployment
-    ///
-    /// Lists all shadow/clone deployments associated with a specific deployment.
-    ///
-    /// Example:
-    ///   guepard clone list -x <deployment_id>
-    List {
-        /// Deployment ID
-        #[clap(short = 'x', long, required = true)]
-        deployment_id: String,
-    },
 }
 
 #[derive(Args, Debug)]

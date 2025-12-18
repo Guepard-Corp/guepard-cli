@@ -223,7 +223,7 @@ execute_test() {
             fi
             run_cmd "$BINARY clone -x '$DEPLOY_ID' -s '$use_snap' -n 'custom-clone-$TIMESTAMP' -f gp.g1.small --json" "Custom clone created" CLONE_ID
             ;;
-        35) run_cmd "$BINARY clone list -x '$DEPLOY_ID' --json" "Clones listed" ;;
+        35) run_cmd "$BINARY list clones -x '$DEPLOY_ID' --json" "Clones listed" ;;
 
         36) run_cmd "$BINARY usage --json" "Usage statistics retrieved (JSON)" ;;
         37) run_cmd "$BINARY usage" "Usage statistics retrieved (Table)" ;;

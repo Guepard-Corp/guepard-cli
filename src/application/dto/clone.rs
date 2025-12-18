@@ -7,7 +7,7 @@ pub struct CreateCloneRequest {
     pub performance_profile_id: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CreateCloneResponse {
     pub id: String,
     pub name: String,
@@ -26,6 +26,7 @@ pub struct CreateCloneResponse {
     pub database_version: String,
     pub database_username: Option<String>,
     pub database_password: Option<String>,
+    pub connection_string: Option<String>,
     pub created_by: String,
     pub created_date: String,
     pub last_modified_by: Option<String>,
@@ -36,23 +37,5 @@ pub struct CreateCloneResponse {
     pub datacenter: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ListClonesResponse {
-    pub shadows: Vec<CloneInfo>,
-    pub total: Option<i32>,
-    pub deployment_id: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct CloneInfo {
-    pub id: String,
-    pub name: String,
-    pub description: Option<String>,
-    pub deployment_id: String,
-    pub snapshot_id: String,
-    pub branch_id: Option<String>,
-    pub status: String,
-    pub created_at: String,
-    pub created_by: Option<String>,
-}
+pub type ListClonesResponse = Vec<CreateCloneResponse>;
 

@@ -1,12 +1,11 @@
 use anyhow::Result;
 use crate::config::config::Config;
-use crate::structure::{CloneArgs, CloneSubCommand};
+use crate::structure::{CloneArgs};
 use crate::application::services::{clone, deploy, performance, compute};
 use crate::application::dto::clone::CreateCloneRequest;
-use crate::application::output::{OutputFormat, print_table_or_json, print_json};
+use crate::application::output::{OutputFormat, print_json};
 use colored::Colorize;
 use serde::Serialize;
-use tabled::{Tabled};
 
 #[derive(Serialize)]
 struct DeploymentDetails {
@@ -60,36 +59,12 @@ struct ConnectionInfo {
     connection_uri: String,
 }
 
-#[derive(Tabled, Serialize)]
-struct CloneRow {
-    #[tabled(rename = "Clone ID")]
-    #[serde(rename = "id")]
-    id: String,
-    #[tabled(rename = "Name")]
-    name: String,
-    #[tabled(rename = "Status")]
-    status: String,
-    #[tabled(rename = "Snapshot ID")]
-    #[serde(rename = "snapshot_id")]
-    snapshot_id: String,
-    #[tabled(rename = "Created")]
-    #[serde(rename = "created_at")]
-    created_at: String,
-}
-
 pub async fn clone_command(args: &CloneArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
-    match &args.command {
-        Some(CloneSubCommand::List { deployment_id }) => {
-            list_clones(deployment_id, config, output_format).await
-        }
-        None => {
-            // If both deployment_id and snapshot_id are provided, create a clone
-            if let (Some(deployment_id), Some(snapshot_id)) = (&args.deployment_id, &args.snapshot_id) {
-                create_clone(args, deployment_id, snapshot_id, config, output_format).await
-            } else {
-                Err(anyhow::anyhow!("Either provide both -x and -s to create a clone, or use 'guepard clone list -x <deployment_id>' to list clones"))
-            }
-        }
+    // If both deployment_id and snapshot_id are provided, create a clone
+    if let (Some(deployment_id), Some(snapshot_id)) = (&args.deployment_id, &args.snapshot_id) {
+        create_clone(args, deployment_id, snapshot_id, config, output_format).await
+    } else {
+        Err(anyhow::anyhow!("Provide both -x <deployment_id> and -s <snapshot_id> to create a clone. To list clones, use 'guepard list clones -x <deployment_id>'"))
     }
 }
 
@@ -325,37 +300,4 @@ async fn create_clone(args: &CloneArgs, deployment_id: &str, snapshot_id: &str, 
     Ok(())
 }
 
-async fn list_clones(deployment_id: &str, config: &Config, output_format: OutputFormat) -> Result<()> {
-    let result = clone::list_clones(deployment_id, config).await?;
-    
-    if result.shadows.is_empty() {
-        if output_format == OutputFormat::Json {
-            print_json(&serde_json::json!([]));
-        } else {
-            println!("{} No clones found for deployment: {}", "ℹ️".blue(), deployment_id);
-        }
-        return Ok(());
-    }
-    
-    if output_format == OutputFormat::Json {
-        print_json(&result.shadows);
-        return Ok(());
-    }
-    
-    let rows: Vec<CloneRow> = result.shadows.into_iter().map(|c| {
-        CloneRow {
-            id: c.id,
-            name: c.name,
-            status: c.status,
-            snapshot_id: c.snapshot_id,
-            created_at: c.created_at,
-        }
-    }).collect();
-    
-    if output_format == OutputFormat::Table {
-        println!("{} Found {} clone(s) for deployment: {}", "✅".green(), rows.len(), deployment_id);
-    }
-    print_table_or_json(rows, output_format);
-    Ok(())
-}
 
