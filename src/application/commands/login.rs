@@ -9,13 +9,19 @@ use std::process::Command;
 
 use crate::application::output::OutputFormat;
 
-pub async fn execute(args: &LoginArgs, config: &Config, _output_format: OutputFormat) -> Result<()> {
+use crate::application::output::{OutputFormat, print_json};
+
+pub async fn execute(args: &LoginArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     // If code is provided, save it directly
     if let Some(token) = &args.code {
-        return execute_direct_login(token, config).await;
+        return execute_direct_login(token, config, output_format).await;
     }
     
     // Otherwise, proceed with interactive login
+    if output_format == OutputFormat::Json {
+        return Err(anyhow::anyhow!("Interactive login not supported with --json flag. Please use --code <token> for machine-readable login."));
+    }
+    
     // Step 1: Start login and get URL
     println!("{}", "Starting login process... 🐆".cyan());
     
@@ -70,25 +76,31 @@ pub async fn execute(args: &LoginArgs, config: &Config, _output_format: OutputFo
     Ok(())
 }
 
-async fn execute_direct_login(token: &str, _config: &Config) -> Result<()> {
-    println!("{}", "Saving access token directly... 🐆".cyan());
+async fn execute_direct_login(token: &str, _config: &Config, output_format: OutputFormat) -> Result<()> {
+    if output_format == OutputFormat::Table {
+        println!("{}", "Saving access token directly... 🐆".cyan());
+    }
     
     // Save the token directly without API calls
     crate::config::config::save_jwt_token_direct(token)
         .map_err(|e| LoginError::SessionError(e.to_string()))?;
     
-    println!(
-        "{} {}",
-        "Login successful.".green(),
-        "Happy coding! 🐆".yellow().bold()
-    );
-    println!(
-        "You can now use the Guepard CLI to interact with your Guepard account.🐆"
-    );
-    println!(
-        "{}",
-        "To get started, run: `guepard --help`"
-    );
+    if output_format == OutputFormat::Json {
+        print_json(&serde_json::json!({ "status": "success", "message": "Login successful" }));
+    } else {
+        println!(
+            "{} {}",
+            "Login successful.".green(),
+            "Happy coding! 🐆".yellow().bold()
+        );
+        println!(
+            "You can now use the Guepard CLI to interact with your Guepard account.🐆"
+        );
+        println!(
+            "{}",
+            "To get started, run: `guepard --help`"
+        );
+    }
     
     Ok(())
 }

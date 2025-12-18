@@ -6,33 +6,43 @@ use base64;
 
 use crate::application::output::OutputFormat;
 
-pub async fn config(args: &ConfigArgs, _output_format: OutputFormat) -> Result<(), ConfigError> {
+use crate::application::output::{OutputFormat, print_json};
+
+pub async fn config(args: &ConfigArgs, output_format: OutputFormat) -> Result<(), ConfigError> {
     if args.show || args.get {
-        show_config().await
+        show_config(output_format).await
     } else if let Some(api_url) = &args.api_url {
-        set_api_url(api_url).await
+        set_api_url(api_url, output_format).await
     } else {
         // Default behavior: show current config
-        show_config().await
+        show_config(output_format).await
     }
 }
 
-async fn show_config() -> Result<(), ConfigError> {
+async fn show_config(output_format: OutputFormat) -> Result<(), ConfigError> {
     let config_data = load_config_data()?;
+    let logged_in = is_logged_in();
+    let user = if logged_in {
+        get_user_info_from_token().unwrap_or_else(|_| "Unknown".to_string())
+    } else {
+        "Not logged in".to_string()
+    };
+
+    if output_format == OutputFormat::Json {
+        print_json(&serde_json::json!({
+            "api_url": config_data.api_url,
+            "logged_in": logged_in,
+            "user": user
+        }));
+        return Ok(());
+    }
     
     println!("⚙️  Current Configuration:");
     println!("   API URL: {}", config_data.api_url);
     
     // Show login status
-    if is_logged_in() {
-        match get_user_info_from_token() {
-            Ok(user_info) => {
-                println!("   User: {} {}", "✓".green(), user_info);
-            }
-            Err(_) => {
-                println!("   User: {} (logged in, but unable to decode user info)", "✓".green());
-            }
-        }
+    if logged_in {
+        println!("   User: {} {}", "✓".green(), user);
     } else {
         println!("   User: {} Not logged in", "✗".red());
     }
@@ -40,8 +50,8 @@ async fn show_config() -> Result<(), ConfigError> {
     Ok(())
 }
 
-async fn set_api_url(api_url: &str) -> Result<(), ConfigError> {
-    // Basic URL validation
+async fn set_api_url(api_url: &str, output_format: OutputFormat) -> Result<(), ConfigError> {
+    // ... validation ...
     if !api_url.starts_with("http://") && !api_url.starts_with("https://") {
         return Err(ConfigError::IoError(
             "Invalid URL format. Must start with http:// or https://".to_string()
@@ -50,14 +60,18 @@ async fn set_api_url(api_url: &str) -> Result<(), ConfigError> {
     
     // Check if user is logged in and force logout if changing API URL
     if is_logged_in() {
-        println!("⚠️  Changing API URL requires re-authentication.");
-        println!("   Logging out current session...");
+        if output_format == OutputFormat::Table {
+            println!("⚠️  Changing API URL requires re-authentication.");
+            println!("   Logging out current session...");
+        }
         
         delete_session().map_err(|e| ConfigError::IoError(format!("Failed to delete session: {}", e)))?;
         delete_jwt_token().map_err(|e| ConfigError::IoError(format!("Failed to delete JWT token: {}", e)))?;
         
-        println!("{}", "✓ Logged out successfully!".green());
-        println!("   Please run `guepard login` to authenticate with the new API endpoint.");
+        if output_format == OutputFormat::Table {
+            println!("{}", "✓ Logged out successfully!".green());
+            println!("   Please run `guepard login` to authenticate with the new API endpoint.");
+        }
     }
     
     let config_data = ConfigData {
@@ -66,9 +80,17 @@ async fn set_api_url(api_url: &str) -> Result<(), ConfigError> {
     
     save_config_data(&config_data)?;
     
-    println!("✅ Configuration updated successfully!");
-    println!("   API URL: {}", api_url);
-    println!("   Note: Environment variable PUBLIC_API takes precedence over this setting.");
+    if output_format == OutputFormat::Json {
+        print_json(&serde_json::json!({
+            "status": "success",
+            "api_url": api_url,
+            "message": "Configuration updated successfully"
+        }));
+    } else {
+        println!("✅ Configuration updated successfully!");
+        println!("   API URL: {}", api_url);
+        println!("   Note: Environment variable PUBLIC_API takes precedence over this setting.");
+    }
     
     Ok(())
 }

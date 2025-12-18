@@ -111,11 +111,6 @@ pub async fn list(deployment_id: &str, config: &Config, output_format: OutputFor
         return Ok(());
     }
     
-    if output_format == OutputFormat::Json {
-        print_json(&branches);
-        return Ok(());
-    }
-    
     let rows: Vec<BranchRow> = branches.into_iter().map(|b| {
         let id = b.id.clone();
         BranchRow {
@@ -128,7 +123,9 @@ pub async fn list(deployment_id: &str, config: &Config, output_format: OutputFor
         }
     }).collect();
     
-    println!("{} Found {} branches for deployment: {}", "✅".green(), rows.len(), deployment_id);
+    if output_format == OutputFormat::Table {
+        println!("{} Found {} branches for deployment: {}", "✅".green(), rows.len(), deployment_id);
+    }
     print_table_or_json(rows, output_format);
     Ok(())
 }

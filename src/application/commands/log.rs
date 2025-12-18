@@ -10,14 +10,14 @@ use std::time::Duration;
 use tokio::time::sleep;
 use chrono::{DateTime, Utc, NaiveDateTime};
 
-use crate::application::output::OutputFormat;
+use crate::application::output::{OutputFormat, print_json};
 
-pub async fn log(args: &LogArgs, config: &Config, _output_format: OutputFormat) -> Result<()> {
+pub async fn log(args: &LogArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     let jwt_token = auth::get_auth_token()?;
     let client = Client::new();
     
     if args.follow {
-        return follow_logs(args, config, &client, &jwt_token).await;
+        return follow_logs(args, config, &client, &jwt_token, output_format).await;
     }
     
     let response = client
@@ -31,14 +31,26 @@ pub async fn log(args: &LogArgs, config: &Config, _output_format: OutputFormat) 
         
         // Try to parse as structured JSON first
         if let Ok(log_response) = serde_json::from_str::<LogResponse>(&logs_text) {
+            if output_format == OutputFormat::Json {
+                print_json(&log_response.parse_logs());
+                return Ok(());
+            }
             display_structured_logs(&log_response, args)?;
         } else {
             // Fallback to raw text display
+            if output_format == OutputFormat::Json {
+                print_json(&serde_json::json!({ "logs": logs_text }));
+                return Ok(());
+            }
             display_raw_logs(&logs_text, args)?;
         }
     } else {
         let error_text = response.text().await.unwrap_or_default();
-        println!("{} Failed to fetch logs: {}", "❌".red(), error_text);
+        if output_format == OutputFormat::Json {
+            print_json(&serde_json::json!({ "error": error_text }));
+        } else {
+            println!("{} Failed to fetch logs: {}", "❌".red(), error_text);
+        }
     }
     
     Ok(())
@@ -257,9 +269,11 @@ fn format_log_line_raw(line: &str) -> String {
     }
 }
 
-async fn follow_logs(args: &LogArgs, config: &Config, client: &Client, jwt_token: &str) -> Result<()> {
-    println!("{} Following logs for deployment: {} (Press Ctrl+C to stop)", "👀".green(), args.deployment_id);
-    println!("{}", "=".repeat(60).dimmed());
+async fn follow_logs(args: &LogArgs, config: &Config, client: &Client, jwt_token: &str, output_format: OutputFormat) -> Result<()> {
+    if output_format == OutputFormat::Table {
+        println!("{} Following logs for deployment: {} (Press Ctrl+C to stop)", "👀".green(), args.deployment_id);
+        println!("{}", "=".repeat(60).dimmed());
+    }
     
     let mut last_logs = String::new();
     
@@ -285,12 +299,23 @@ async fn follow_logs(args: &LogArgs, config: &Config, client: &Client, jwt_token
                     };
                     
                     for line in new_lines {
-                        println!("{}", format_log_line(&line, args.timestamps));
+                        if output_format == OutputFormat::Json {
+                            // Print as NDJSON
+                            if let Ok(json) = serde_json::to_string(&line) {
+                                println!("{}", json);
+                            }
+                        } else {
+                            println!("{}", format_log_line(&line, args.timestamps));
+                        }
                     }
                 } else {
                     // Raw text fallback
                     if current_logs != last_logs {
-                        println!("{}", format_log_line_raw(&current_logs));
+                        if output_format == OutputFormat::Json {
+                            println!("{}", serde_json::json!({ "logs": current_logs }));
+                        } else {
+                            println!("{}", format_log_line_raw(&current_logs));
+                        }
                     }
                 }
                 

@@ -50,11 +50,6 @@ pub async fn checkout(args: &CheckoutArgs, config: &Config, output_format: Outpu
 pub async fn checkout_branch(args: &CheckoutBranchArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     let branch = branch::checkout_branch(&args.deployment_id, &args.branch_id, config).await?;
     
-    if output_format == OutputFormat::Json {
-        print_json(&branch);
-        return Ok(());
-    }
-    
     let checkout_row = CheckoutRow {
         id: branch.id.clone(),
         name: branch.label_name.unwrap_or_else(|| branch.id.clone()),
@@ -63,7 +58,9 @@ pub async fn checkout_branch(args: &CheckoutBranchArgs, config: &Config, output_
         environment_type: "development".to_string(),
     };
     
-    println!("{} Checked out branch successfully!", "✅".green());
+    if output_format == OutputFormat::Table {
+        println!("{} Checked out branch successfully!", "✅".green());
+    }
     print_row_or_json(checkout_row, output_format);
     Ok(())
 }
@@ -80,11 +77,6 @@ async fn list_branches_for_checkout(deployment_id: &str, config: &Config, output
         return Ok(());
     }
     
-    if output_format == OutputFormat::Json {
-        print_json(&branches);
-        return Ok(());
-    }
-    
     let rows: Vec<CheckoutRow> = branches.into_iter().map(|b| {
         let id = b.id.clone();
         CheckoutRow {
@@ -96,7 +88,9 @@ async fn list_branches_for_checkout(deployment_id: &str, config: &Config, output
         }
     }).collect();
     
-    println!("{} Use 'guepard checkout -x {} -c <branch_id>' to checkout a branch", "💡".yellow(), deployment_id);
+    if output_format == OutputFormat::Table {
+        println!("{} Use 'guepard checkout -x {} -c <branch_id>' to checkout a branch", "💡".yellow(), deployment_id);
+    }
     print_table_or_json(rows, output_format);
     Ok(())
 }

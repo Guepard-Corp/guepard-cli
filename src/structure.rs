@@ -169,7 +169,7 @@ pub enum SubCommand {
     ///
     /// Example:
     ///   guepard usage
-    Usage,
+    Usage(UsageArgs),
     
     /// 📋 List deployments, branches, commits, and other resources
     ///
@@ -212,7 +212,7 @@ pub enum SubCommand {
     ///
     /// Example:
     ///   guepard logout
-    Logout,
+    Logout(LogoutArgs),
     
     /// ⚙️ Configure API endpoint and other settings
     ///
@@ -810,4 +810,16 @@ pub enum CloneSubCommand {
         #[clap(short = 'x', long, required = true)]
         deployment_id: String,
     },
+}
+
+#[derive(Args, Debug)]
+pub struct UsageArgs {
+    #[clap(flatten)]
+    pub output: OutputArgs,
+}
+
+#[derive(Args, Debug)]
+pub struct LogoutArgs {
+    #[clap(flatten)]
+    pub output: OutputArgs,
 }

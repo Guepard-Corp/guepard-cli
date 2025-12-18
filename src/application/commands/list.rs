@@ -88,12 +88,6 @@ async fn list_deployments(args: &ListArgs, config: &Config, output_format: Outpu
         deployments.truncate(limit);
     }
     
-    if output_format == OutputFormat::Json {
-        // For JSON, output all fields regardless of column selection
-        print_json(&deployments);
-        return Ok(());
-    }
-    
     let selected_columns = parse_columns(&args.columns, DEPLOYMENT_COLUMNS);
     
     if selected_columns.is_empty() {
@@ -129,6 +123,11 @@ async fn list_deployments(args: &ListArgs, config: &Config, output_format: Outpu
         rows.push(row_data);
     }
     
+    if output_format == OutputFormat::Json {
+        print_json(&rows);
+        return Ok(());
+    }
+
     println!("{} Found {} deployments{}", 
         "✅".green(), 
         total_count,
@@ -169,11 +168,6 @@ async fn list_branches(args: &ListArgs, config: &Config, output_format: OutputFo
         branches.truncate(limit);
     }
     
-    if output_format == OutputFormat::Json {
-        print_json(&branches);
-        return Ok(());
-    }
-    
     let selected_columns = parse_columns(&args.columns, BRANCH_COLUMNS);
     
     if selected_columns.is_empty() {
@@ -201,6 +195,11 @@ async fn list_branches(args: &ListArgs, config: &Config, output_format: OutputFo
         rows.push(row_data);
     }
     
+    if output_format == OutputFormat::Json {
+        print_json(&rows);
+        return Ok(());
+    }
+
     println!("{} Found {} branches for deployment: {}{}", 
         "✅".green(), 
         total_count,
@@ -248,13 +247,8 @@ async fn list_commits(args: &ListArgs, config: &Config, output_format: OutputFor
         commits.truncate(limit);
     }
     
-    if output_format == OutputFormat::Json {
-        print_json(&commits);
-        return Ok(());
-    }
-    
     // Check if user wants git graph format
-    if args.graph {
+    if args.graph && output_format == OutputFormat::Table {
         display_git_graph(&commits, deployment_id, config).await?;
     } else {
         let selected_columns = parse_columns(&args.columns, COMMIT_COLUMNS);
@@ -287,6 +281,11 @@ async fn list_commits(args: &ListArgs, config: &Config, output_format: OutputFor
             rows.push(row_data);
         }
         
+        if output_format == OutputFormat::Json {
+            print_json(&rows);
+            return Ok(());
+        }
+
         println!("{} Found {} commits for deployment: {}{}", 
             "✅".green(), 
             total_count,

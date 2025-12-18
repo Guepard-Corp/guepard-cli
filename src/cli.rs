@@ -74,9 +74,9 @@ async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
             let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
             compute::compute(args, config, output_format).await
         }
-        SubCommand::Usage => {
-            // Usage doesn't have args, use default table format
-            usage::usage(config, OutputFormat::Table).await
+        SubCommand::Usage(args) => {
+            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+            usage::usage(args, config, output_format).await
         }
         SubCommand::List(args) => {
             let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
@@ -86,9 +86,9 @@ async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
             let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
             login::execute(args, config, output_format).await
         }
-        SubCommand::Logout => {
-            // Logout doesn't have args, use default table format
-            logout::logout(config, OutputFormat::Table).await
+        SubCommand::Logout(args) => {
+            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+            logout::logout(args, config, output_format).await
         }
         SubCommand::Config(args) => {
             let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };

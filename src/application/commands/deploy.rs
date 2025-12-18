@@ -5,7 +5,60 @@ use crate::application::dto::deploy::{CreateDeploymentRequest, UpdateDeploymentR
 use crate::application::services::{deploy, performance, compute, branch, commit};
 use crate::application::output::{OutputFormat, print_json};
 use colored::Colorize;
+use serde::Serialize;
 use std::io::{self, Write};
+
+#[derive(Serialize)]
+struct DeploymentDetails {
+    deployment: DeploymentInfo,
+    checkout: Option<CheckoutInfo>,
+    compute: Option<ComputeInfo>,
+    connection: ConnectionInfo,
+}
+
+#[derive(Serialize)]
+struct DeploymentInfo {
+    id: String,
+    name: String,
+    deployment_type: String,
+    repository_name: String,
+    database_provider: String,
+    database_version: String,
+    status: String,
+    fqdn: String,
+    region: String,
+    datacenter: String,
+    created_date: String,
+    deployment_parent: Option<String>,
+    snapshot_parent: Option<String>,
+}
+
+#[derive(Serialize)]
+struct CheckoutInfo {
+    branch: String,
+    branch_id: String,
+    snapshot: String,
+    comment: String,
+    snapshot_id: String,
+}
+
+#[derive(Serialize)]
+struct ComputeInfo {
+    name: String,
+    fqdn: String,
+    port: i32,
+    connection_string: String,
+}
+
+#[derive(Serialize)]
+struct ConnectionInfo {
+    host: String,
+    port: String,
+    database: String,
+    username: String,
+    password: String,
+    connection_uri: String,
+}
 
 pub async fn deploy(args: &DeployArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     // Check for interactive mode
@@ -70,8 +123,62 @@ async fn create_deployment(args: &DeployArgs, config: &Config, output_format: Ou
     
     let deployment = deploy::create_deployment(request, config).await?;
     
+    // Try to get compute information for the real port
+    let compute_data = match compute::list_compute(&deployment.id, config).await {
+        Ok(compute_info) => Some(compute_info),
+        Err(_) => None,
+    };
+    
+    let port = compute_data.as_ref()
+        .map(|c| c.port.to_string())
+        .unwrap_or_else(|| deployment.port.map(|p| p.to_string()).unwrap_or_else(|| "5432".to_string()));
+    
+    // Construct connection URI
+    let connection_uri = format!("postgresql://{}:{}@{}:{}/{}", 
+        deployment.database_username,
+        deployment.database_password,
+        deployment.fqdn, 
+        port,
+        deployment.repository_name
+    );
+
+    let connection_info = ConnectionInfo {
+        host: deployment.fqdn.clone(),
+        port: port.clone(),
+        database: deployment.repository_name.clone(),
+        username: deployment.database_username.clone(),
+        password: deployment.database_password.clone(),
+        connection_uri: connection_uri.clone(),
+    };
+
     if output_format == OutputFormat::Json {
-        print_json(&deployment);
+        let is_clone = deployment.deployment_type == "SHADOW";
+        let details = DeploymentDetails {
+            deployment: DeploymentInfo {
+                id: deployment.id.clone(),
+                name: deployment.name.clone(),
+                deployment_type: if is_clone { "Clone".to_string() } else { deployment.deployment_type.clone() },
+                repository_name: deployment.repository_name.clone(),
+                database_provider: deployment.database_provider.clone(),
+                database_version: deployment.database_version.clone(),
+                status: deployment.status.clone(),
+                fqdn: deployment.fqdn.clone(),
+                region: deployment.region.clone(),
+                datacenter: deployment.datacenter.clone(),
+                created_date: deployment.created_date.clone(),
+                deployment_parent: None, // New deployment doesn't have parent info usually here
+                snapshot_parent: None,
+            },
+            checkout: None, // New deployment doesn't have checkout info yet
+            compute: compute_data.map(|c| ComputeInfo {
+                name: c.name,
+                fqdn: c.fqdn,
+                port: c.port,
+                connection_string: c.connection_string,
+            }),
+            connection: connection_info,
+        };
+        print_json(&details);
         return Ok(());
     }
     
@@ -96,12 +203,6 @@ async fn create_deployment(args: &DeployArgs, config: &Config, output_format: Ou
     println!("  {} {}", "Datacenter:".yellow(), deployment.datacenter);
     println!("  {} {}", "Created:".yellow(), deployment.created_date);
     
-    // Try to get compute information for the real port
-    let port = match compute::list_compute(&deployment.id, config).await {
-        Ok(compute_info) => compute_info.port.to_string(),
-        Err(_) => deployment.port.map(|p| p.to_string()).unwrap_or_else(|| "5432".to_string()),
-    };
-    
     // Show database connection information
     if let Some(port_display) = deployment.port {
         println!("  {} {}", "Port:".yellow(), port_display);
@@ -119,14 +220,6 @@ async fn create_deployment(args: &DeployArgs, config: &Config, output_format: Ou
     println!("  {} {}", "Username:".yellow(), deployment.database_username);
     println!("  {} {}", "Password:".yellow(), deployment.database_password);
     
-    // Construct and show the connection URI
-    let connection_uri = format!("postgresql://{}:{}@{}:{}/{}", 
-        deployment.database_username,
-        deployment.database_password,
-        deployment.fqdn, 
-        port,
-        deployment.repository_name
-    );
     println!();
     println!("{} Ready-to-use Connection URI:", "💡".green());
     println!("{}", connection_uri.cyan().bold());
@@ -182,13 +275,132 @@ async fn update_deployment(deployment_id: &str, args: &DeployArgs, config: &Conf
 async fn get_deployment(deployment_id: &str, config: &Config, output_format: OutputFormat) -> Result<()> {
     let deployment = deploy::get_deployment(deployment_id, config).await?;
     
-    if output_format == OutputFormat::Json {
-        print_json(&deployment);
-        return Ok(());
-    }
-    
     // Determine if this is a clone (SHADOW type)
     let is_clone = deployment.deployment_type == "SHADOW";
+    
+    // Try to get compute information
+    let compute_data = match compute::list_compute(deployment_id, config).await {
+        Ok(info) => Some(info),
+        Err(_) => None,
+    };
+    
+    // Try to get checkout information
+    let mut checkout_info = None;
+    if let Some(compute_info) = &compute_data {
+        let attached_branch_id = compute_info.branch_id.as_ref()
+            .or(Some(&compute_info.attached_branch))
+            .unwrap();
+        
+        if let Ok(branches) = branch::list_branches(deployment_id, config).await {
+            if let Some(branch) = branches.iter().find(|b| b.id == *attached_branch_id) {
+                let branch_name = branch.branch_name.as_ref()
+                    .or(branch.label_name.as_ref())
+                    .map(|s| s.clone())
+                    .unwrap_or_else(|| branch.id.clone());
+                
+                let snapshot_id = &branch.snapshot_id;
+                let (snapshot_name, snapshot_comment) = if let Ok(snapshots) = commit::list_all_commits(deployment_id, config).await {
+                    if let Some(snapshot) = snapshots.iter().find(|s| s.id == *snapshot_id) {
+                        (snapshot.name.clone(), snapshot.snapshot_comment.clone())
+                    } else {
+                        (snapshot_id.clone(), String::new())
+                    }
+                } else {
+                    (snapshot_id.clone(), String::new())
+                };
+
+                checkout_info = Some(CheckoutInfo {
+                    branch: branch_name,
+                    branch_id: branch.id.clone(),
+                    snapshot: snapshot_name,
+                    comment: snapshot_comment,
+                    snapshot_id: snapshot_id.clone(),
+                });
+            }
+        }
+    } else if let Some(branch_id) = &deployment.branch_id {
+        if let Ok(branches) = branch::list_branches(deployment_id, config).await {
+            if let Some(branch) = branches.iter().find(|b| b.id == *branch_id) {
+                let branch_name = branch.branch_name.as_ref()
+                    .or(branch.label_name.as_ref())
+                    .map(|s| s.clone())
+                    .unwrap_or_else(|| branch_id.clone());
+                
+                let snapshot_id = &branch.snapshot_id;
+                let (snapshot_name, snapshot_comment) = if let Ok(snapshots) = commit::list_all_commits(deployment_id, config).await {
+                    if let Some(snapshot) = snapshots.iter().find(|s| s.id == *snapshot_id) {
+                        (snapshot.name.clone(), snapshot.snapshot_comment.clone())
+                    } else {
+                        (snapshot_id.clone(), String::new())
+                    }
+                } else {
+                    (snapshot_id.clone(), String::new())
+                };
+
+                checkout_info = Some(CheckoutInfo {
+                    branch: branch_name,
+                    branch_id: branch_id.clone(),
+                    snapshot: snapshot_name,
+                    comment: snapshot_comment,
+                    snapshot_id: snapshot_id.clone(),
+                });
+            }
+        }
+    }
+
+    // Determine real port
+    let port = compute_data.as_ref()
+        .map(|c| c.port.to_string())
+        .unwrap_or_else(|| deployment.port.map(|p| p.to_string()).unwrap_or_else(|| "5432".to_string()));
+
+    // Construct connection URI
+    let connection_uri = format!("postgresql://{}:{}@{}:{}/{}", 
+        deployment.database_username, 
+        deployment.database_password, 
+        deployment.fqdn,
+        port,
+        deployment.repository_name
+    );
+
+    let connection_info = ConnectionInfo {
+        host: deployment.fqdn.clone(),
+        port: port.clone(),
+        database: deployment.repository_name.clone(),
+        username: deployment.database_username.clone(),
+        password: deployment.database_password.clone(),
+        connection_uri: connection_uri.clone(),
+    };
+
+    if output_format == OutputFormat::Json {
+        let details = DeploymentDetails {
+            deployment: DeploymentInfo {
+                id: deployment.id.clone(),
+                name: deployment.name.clone(),
+                deployment_type: if is_clone { "Clone".to_string() } else { deployment.deployment_type.clone() },
+                repository_name: deployment.repository_name.clone(),
+                database_provider: deployment.database_provider.clone(),
+                database_version: deployment.database_version.clone(),
+                status: deployment.status.clone(),
+                fqdn: deployment.fqdn.clone(),
+                region: deployment.region.clone(),
+                datacenter: deployment.datacenter.clone(),
+                created_date: deployment.created_date.clone(),
+                deployment_parent: deployment.deployment_parent.clone(),
+                snapshot_parent: deployment.snapshot_parent.clone(),
+            },
+            checkout: checkout_info,
+            compute: compute_data.map(|c| ComputeInfo {
+                name: c.name,
+                fqdn: c.fqdn,
+                port: c.port,
+                connection_string: c.connection_string,
+            }),
+            connection: connection_info,
+        };
+        print_json(&details);
+        return Ok(());
+    }
+
     let deployment_label = if is_clone { "Clone Details" } else { "Deployment Details" };
     
     println!("{} {}", "📋".blue(), deployment_label);
@@ -219,107 +431,26 @@ async fn get_deployment(deployment_id: &str, config: &Config, output_format: Out
         }
     }
     
-    // Show branch and snapshot information from compute (what compute is currently pointing to)
-    match compute::list_compute(deployment_id, config).await {
-        Ok(compute_info) => {
-            // Get the branch that compute is attached to
-            let attached_branch_id = compute_info.branch_id.as_ref()
-                .or(Some(&compute_info.attached_branch))
-                .unwrap();
-            
-            // Get branch details
-            match branch::list_branches(deployment_id, config).await {
-                Ok(branches) => {
-                    if let Some(branch) = branches.iter().find(|b| b.id == *attached_branch_id) {
-                        let branch_name = branch.branch_name.as_ref()
-                            .or(branch.label_name.as_ref())
-                            .map(|s| s.clone())
-                            .unwrap_or_else(|| branch.id.clone());
-                        
-                        println!();
-                        println!("{} Checkout Information", "📍".blue());
-                        println!("  {} {}", "Branch:".yellow(), branch_name.cyan());
-                        println!("  {} {}", "Branch ID:".yellow(), branch.id.dimmed());
-                        
-                        // Get snapshot information from the branch
-                        let snapshot_id = &branch.snapshot_id;
-                        match commit::list_all_commits(deployment_id, config).await {
-                            Ok(snapshots) => {
-                                if let Some(snapshot) = snapshots.iter().find(|s| s.id == *snapshot_id) {
-                                    println!("  {} {}", "Snapshot:".yellow(), snapshot.name.cyan());
-                                    if !snapshot.snapshot_comment.is_empty() {
-                                        println!("  {} {}", "Comment:".yellow(), snapshot.snapshot_comment.cyan());
-                                    }
-                                    println!("  {} {}", "Snapshot ID:".yellow(), snapshot.id.dimmed());
-                                } else {
-                                    println!("  {} {}", "Snapshot ID:".yellow(), snapshot_id.dimmed());
-                                }
-                            }
-                            Err(_) => {
-                                println!("  {} {}", "Snapshot ID:".yellow(), snapshot_id.dimmed());
-                            }
-                        }
-                    } else {
-                        // Branch not found, but show the ID
-                        println!("  {} {}", "Branch ID:".yellow(), attached_branch_id.dimmed());
-                    }
-                }
-                Err(_) => {
-                    // Couldn't fetch branches, but show the branch ID from compute
-                    println!("  {} {}", "Branch ID:".yellow(), attached_branch_id.dimmed());
-                }
-            }
-            
-            // Show compute information
-            println!();
-            println!("{} Compute Information", "🖥️".blue());
-            println!("  {} {}", "Compute Name:".yellow(), compute_info.name.cyan());
-            println!("  {} {}", "FQDN:".yellow(), compute_info.fqdn.cyan());
-            println!("  {} {}", "Port:".yellow(), compute_info.port.to_string().cyan());
-            println!("  {} {}", "Connection String:".yellow(), compute_info.connection_string.cyan());
+    if let Some(checkout) = &checkout_info {
+        println!();
+        println!("{} Checkout Information", "📍".blue());
+        println!("  {} {}", "Branch:".yellow(), checkout.branch.cyan());
+        println!("  {} {}", "Branch ID:".yellow(), checkout.branch_id.dimmed());
+        println!("  {} {}", "Snapshot:".yellow(), checkout.snapshot.cyan());
+        if !checkout.comment.is_empty() {
+            println!("  {} {}", "Comment:".yellow(), checkout.comment.cyan());
         }
-        Err(_) => {
-            // Compute not available, fall back to deployment branch_id/snapshot_id if available
-            if let Some(branch_id) = &deployment.branch_id {
-                match branch::list_branches(deployment_id, config).await {
-                    Ok(branches) => {
-                        if let Some(branch) = branches.iter().find(|b| b.id == *branch_id) {
-                            let branch_name = branch.branch_name.as_ref()
-                                .or(branch.label_name.as_ref())
-                                .map(|s| s.clone())
-                                .unwrap_or_else(|| branch_id.clone());
-                            println!();
-                            println!("{} Checkout Information", "📍".blue());
-                            println!("  {} {}", "Branch:".yellow(), branch_name.cyan());
-                            println!("    {} {}", "Branch ID:".yellow(), branch_id.dimmed());
-                            
-                            // Get snapshot from branch
-                            let snapshot_id = &branch.snapshot_id;
-                            match commit::list_all_commits(deployment_id, config).await {
-                                Ok(snapshots) => {
-                                    if let Some(snapshot) = snapshots.iter().find(|s| s.id == *snapshot_id) {
-                                        println!("    {} {}", "Snapshot:".yellow(), snapshot.name.cyan());
-                                        if !snapshot.snapshot_comment.is_empty() {
-                                            println!("    {} {}", "Comment:".yellow(), snapshot.snapshot_comment.cyan());
-                                        }
-                                        println!("    {} {}", "Snapshot ID:".yellow(), snapshot.id.dimmed());
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
-                    }
-                    _ => {}
-                }
-            }
-        }
+        println!("  {} {}", "Snapshot ID:".yellow(), checkout.snapshot_id.dimmed());
     }
     
-    // Try to get compute information for the real port
-    let port = match compute::list_compute(deployment_id, config).await {
-        Ok(compute_info) => compute_info.port.to_string(),
-        Err(_) => deployment.port.map(|p| p.to_string()).unwrap_or_else(|| "5432".to_string()),
-    };
+    if let Some(compute) = &compute_data {
+        println!();
+        println!("{} Compute Information", "🖥️".blue());
+        println!("  {} {}", "Compute Name:".yellow(), compute.name.cyan());
+        println!("  {} {}", "FQDN:".yellow(), compute.fqdn.cyan());
+        println!("  {} {}", "Port:".yellow(), compute.port.to_string().cyan());
+        println!("  {} {}", "Connection String:".yellow(), compute.connection_string.cyan());
+    }
     
     // Show database connection information
     println!();
@@ -330,14 +461,6 @@ async fn get_deployment(deployment_id: &str, config: &Config, output_format: Out
     println!("  {} {}", "Username:".yellow(), deployment.database_username);
     println!("  {} {}", "Password:".yellow(), deployment.database_password);
     
-    // Construct database connection URI
-    let connection_uri = format!("postgresql://{}:{}@{}:{}/{}", 
-        deployment.database_username, 
-        deployment.database_password, 
-        deployment.fqdn,
-        port,
-        deployment.repository_name
-    );
     println!();
     println!("{} Ready-to-use Connection URI:", "💡".green());
     println!("{}", connection_uri.cyan().bold());
