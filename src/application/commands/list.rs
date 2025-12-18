@@ -26,8 +26,15 @@ pub async fn list(args: &ListArgs, config: &Config, output_format: OutputFormat)
         "commits" => list_commits(args, config, output_format).await,
         "performance" => list_performance(args, config, output_format).await,
         _ => {
-            println!("{} Unknown resource: {}", "❌".red(), args.resource);
-            println!("Available resources: deployments, branches, commits, performance");
+            if output_format == OutputFormat::Table {
+                println!("{} Unknown resource: {}", "❌".red(), args.resource);
+                println!("Available resources: deployments, branches, commits, performance");
+            } else {
+                print_json(&serde_json::json!({
+                    "error": format!("Unknown resource: {}", args.resource),
+                    "available_resources": ["deployments", "branches", "commits", "performance"]
+                }));
+            }
             Ok(())
         }
     }

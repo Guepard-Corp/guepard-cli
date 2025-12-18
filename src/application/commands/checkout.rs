@@ -33,17 +33,43 @@ pub async fn checkout(args: &CheckoutArgs, config: &Config, output_format: Outpu
                 branch_id: branch_id.clone(),
             };
             checkout_branch(&checkout_args, config, output_format).await?;
+        } else if let Some(snapshot_id) = &args.snapshot_id {
+            // Restore specific snapshot
+            restore_snapshot(deployment_id, snapshot_id, config, output_format).await?;
         } else {
             // List available branches for checkout
-            println!("{} Available branches for deployment: {}", "🌿".blue(), deployment_id);
+            if output_format == OutputFormat::Table {
+                println!("{} Available branches for deployment: {}", "🌿".blue(), deployment_id);
+            }
             list_branches_for_checkout(deployment_id, config, output_format).await?;
         }
     } else {
         // Show help for checkout command
-        println!("{} Checkout command requires deployment ID", "💡".yellow());
-        println!("{} Usage: guepard checkout -x <deployment_id> -c <branch_id>", "ℹ️".blue());
-        println!("{} Or: guepard checkout -x <deployment_id> (to list available branches)", "ℹ️".blue());
+        if output_format == OutputFormat::Table {
+            println!("{} Checkout command requires deployment ID", "💡".yellow());
+            println!("{} Usage: guepard checkout -x <deployment_id> -c <branch_id>", "ℹ️".blue());
+            println!("{} Or: guepard checkout -x <deployment_id> -s <snapshot_id>", "ℹ️".blue());
+            println!("{} Or: guepard checkout -x <deployment_id> (to list available branches)", "ℹ️".blue());
+        }
     }
+    Ok(())
+}
+
+async fn restore_snapshot(deployment_id: &str, snapshot_id: &str, config: &Config, output_format: OutputFormat) -> Result<()> {
+    let branch = branch::checkout_snapshot(deployment_id, snapshot_id, config).await?;
+    
+    let checkout_row = CheckoutRow {
+        id: branch.id.clone(),
+        name: branch.label_name.unwrap_or_else(|| branch.id.clone()),
+        status: branch.job_status.unwrap_or_default(),
+        snapshot_id: branch.snapshot_id.unwrap_or_else(|| branch.branch_id.unwrap_or_else(|| branch.id.clone())),
+        environment_type: "development".to_string(),
+    };
+    
+    if output_format == OutputFormat::Table {
+        println!("{} Snapshot restored successfully!", "✅".green());
+    }
+    print_row_or_json(checkout_row, output_format);
     Ok(())
 }
 

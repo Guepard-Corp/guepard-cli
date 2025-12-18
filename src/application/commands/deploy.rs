@@ -86,10 +86,17 @@ pub async fn deploy(args: &DeployArgs, config: &Config, output_format: OutputFor
             // Create new deployment
             create_deployment(args, config, output_format).await?;
         } else {
-            println!("{} Please provide either:", "❌".red());
-            println!("  • Create args: -p, -v, -r, -i, -d, -w (and optionally -n, -u)");
-            println!("  • Get/Update/Delete: -x <deployment_id> (and optionally -n for update, -y for delete)");
-            println!("{} Use 'guepard deploy --help' for more information", "💡".yellow());
+            if output_format == OutputFormat::Table {
+                println!("{} Please provide either:", "❌".red());
+                println!("  • Create args: -p, -v, -r, -i, -d, -w (and optionally -n, -u)");
+                println!("  • Get/Update/Delete: -x <deployment_id> (and optionally -n for update, -y for delete)");
+                println!("{} Use 'guepard deploy --help' for more information", "💡".yellow());
+            } else {
+                print_json(&serde_json::json!({
+                    "error": "Missing required arguments",
+                    "usage": "Provide either creation arguments or a deployment ID for get/update/delete operations"
+                }));
+            }
         }
     }
     Ok(())

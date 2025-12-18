@@ -53,8 +53,15 @@ pub async fn compute(args: &ComputeArgs, config: &Config, output_format: OutputF
         Some("restart") => restart(args, config, output_format).await,
         Some("logs") => logs(args, config, output_format).await,
         Some(action) => {
-            println!("{} Unknown action: {}", "❌".red(), action);
-            println!("Available actions: start, stop, status, logs");
+            if output_format == OutputFormat::Table {
+                println!("{} Unknown action: {}", "❌".red(), action);
+                println!("Available actions: start, stop, status, logs");
+            } else {
+                print_json(&serde_json::json!({
+                    "error": format!("Unknown action: {}", action),
+                    "available_actions": ["start", "stop", "status", "logs", "list"]
+                }));
+            }
             Ok(())
         }
         None => {
@@ -145,8 +152,8 @@ pub async fn stop(args: &ComputeArgs, config: &Config, output_format: OutputForm
 }
 
 pub async fn restart(args: &ComputeArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
-    stop(args, config, output_format).await?;
-    start(args, config, output_format).await?;
+    compute::stop_compute(&args.deployment_id, config).await?;
+    compute::start_compute(&args.deployment_id, config).await?;
     if output_format == OutputFormat::Table {
         println!("{} Compute instance restarted successfully!", "✅".green());
     } else {

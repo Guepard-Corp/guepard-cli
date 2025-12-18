@@ -38,11 +38,7 @@ pub async fn log(args: &LogArgs, config: &Config, output_format: OutputFormat) -
             display_structured_logs(&log_response, args)?;
         } else {
             // Fallback to raw text display
-            if output_format == OutputFormat::Json {
-                print_json(&serde_json::json!({ "logs": logs_text }));
-                return Ok(());
-            }
-            display_raw_logs(&logs_text, args)?;
+            display_raw_logs(&logs_text, args, output_format)?;
         }
     } else {
         let error_text = response.text().await.unwrap_or_default();
@@ -106,24 +102,37 @@ fn display_structured_logs(log_response: &LogResponse, args: &LogArgs) -> Result
     // Apply line limit
     if lines.len() > args.lines {
         lines.truncate(args.lines);
-        println!("{} Showing last {} lines (use -n to change)", "📄".yellow(), args.lines);
+        if output_format == OutputFormat::Table {
+            println!("{} Showing last {} lines (use -n to change)", "📄".yellow(), args.lines);
+        }
     }
     
     // Display header
-    println!("{} Deployment Logs for: {}", "📋".blue(), args.deployment_id);
-    println!("{}", "=".repeat(60).dimmed());
-    
-    // Show log summary
-    if !args.stdout_only && !args.stderr_only {
-        println!("{} Log Summary: {} stdout, {} stderr", 
-                 "📊".cyan(), 
-                 stdout_count.to_string().green(), 
-                 stderr_count.to_string().red());
-        println!("{}", "-".repeat(60).dimmed());
+    if output_format == OutputFormat::Table {
+        println!("{} Deployment Logs for: {}", "📋".blue(), args.deployment_id);
+        println!("{}", "=".repeat(60).dimmed());
+        
+        // Show log summary
+        if !args.stdout_only && !args.stderr_only {
+            println!("{} Log Summary: {} stdout, {} stderr", 
+                     "📊".cyan(), 
+                     stdout_count.to_string().green(), 
+                     stderr_count.to_string().red());
+            println!("{}", "-".repeat(60).dimmed());
+        }
     }
     
     if lines.is_empty() {
-        println!("{} No logs available", "ℹ️".blue());
+        if output_format == OutputFormat::Table {
+            println!("{} No logs available", "ℹ️".blue());
+        } else {
+            print_json(&Vec::<LogLine>::new());
+        }
+        return Ok(());
+    }
+    
+    if output_format == OutputFormat::Json {
+        print_json(&lines);
         return Ok(());
     }
     
@@ -137,14 +146,20 @@ fn display_structured_logs(log_response: &LogResponse, args: &LogArgs) -> Result
     Ok(())
 }
 
-fn display_raw_logs(logs_text: &str, args: &LogArgs) -> Result<()> {
+fn display_raw_logs(logs_text: &str, args: &LogArgs, output_format: OutputFormat) -> Result<()> {
     let lines: Vec<&str> = logs_text.lines().collect();
     
-    println!("{} Deployment Logs for: {}", "📋".blue(), args.deployment_id);
-    println!("{}", "=".repeat(60).dimmed());
+    if output_format == OutputFormat::Table {
+        println!("{} Deployment Logs for: {}", "📋".blue(), args.deployment_id);
+        println!("{}", "=".repeat(60).dimmed());
+    }
     
     if lines.is_empty() {
-        println!("{} No logs available", "ℹ️".blue());
+        if output_format == OutputFormat::Table {
+            println!("{} No logs available", "ℹ️".blue());
+        } else {
+            print_json(&serde_json::json!({ "logs": [] }));
+        }
         return Ok(());
     }
     
@@ -154,12 +169,16 @@ fn display_raw_logs(logs_text: &str, args: &LogArgs) -> Result<()> {
         0
     };
     
-    if start_idx > 0 {
+    if start_idx > 0 && output_format == OutputFormat::Table {
         println!("{} Showing last {} lines (use -n to change)", "📄".yellow(), args.lines);
     }
     
-    for line in &lines[start_idx..] {
-        println!("{}", format_log_line_raw(line));
+    if output_format == OutputFormat::Json {
+        print_json(&lines[start_idx..]);
+    } else {
+        for line in &lines[start_idx..] {
+            println!("{}", format_log_line_raw(line));
+        }
     }
     
     Ok(())

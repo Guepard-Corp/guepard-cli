@@ -138,3 +138,33 @@ pub async fn checkout_branch(deployment_id: &str, branch_id: &str, config: &Conf
         Err(BranchError::from_response(response).await)
     }
 }
+
+pub async fn checkout_snapshot(deployment_id: &str, snapshot_id: &str, config: &Config) -> Result<BranchResponse, BranchError> {
+    let jwt_token = auth::get_auth_token()
+        .map_err(|e| BranchError::SessionError(format!("{}", e)))?;
+    let client = Client::new();
+    let response = client
+        .post(format!(
+            "{}/deploy/{}/snapshot/{}/checkout",
+            config.api_url, deployment_id, snapshot_id
+        ))
+        .header("Authorization", format!("Bearer {}", jwt_token))
+        .send()
+        .await
+        .map_err(BranchError::RequestFailed)?;
+
+    if response.status().is_success() {
+        let text = response.text().await.unwrap_or_default();
+        
+        // Try to parse as CheckoutResponse first
+        if let Ok(checkout_response) = serde_json::from_str::<CheckoutResponse>(&text) {
+            serde_json::from_str::<BranchResponse>(&checkout_response.body)
+                .map_err(|e| BranchError::ParseError(e.to_string()))
+        } else {
+            serde_json::from_str::<BranchResponse>(&text)
+                .map_err(|e| BranchError::ParseError(e.to_string()))
+        }
+    } else {
+        Err(BranchError::from_response(response).await)
+    }
+}

@@ -352,7 +352,9 @@ async fn list_clones(deployment_id: &str, config: &Config, output_format: Output
         }
     }).collect();
     
-    println!("{} Found {} clone(s) for deployment: {}", "✅".green(), rows.len(), deployment_id);
+    if output_format == OutputFormat::Table {
+        println!("{} Found {} clone(s) for deployment: {}", "✅".green(), rows.len(), deployment_id);
+    }
     print_table_or_json(rows, output_format);
     Ok(())
 }

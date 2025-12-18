@@ -58,11 +58,15 @@ pub async fn branch(args: &BranchArgs, config: &Config, output_format: OutputFor
         }
     } else if let Some(name) = &args.name {
         // Git-like branch creation (simplified)
-        println!("{} Creating branch '{}'", "ℹ️".blue(), name);
-        println!("{} Use 'guepard branch -x <deployment_id> -s <snapshot_id> -n {}' for full functionality", "💡".yellow(), name);
+        if output_format == OutputFormat::Table {
+            println!("{} Creating branch '{}'", "ℹ️".blue(), name);
+            println!("{} Use 'guepard branch -x <deployment_id> -s <snapshot_id> -n {}' for full functionality", "💡".yellow(), name);
+        }
     } else {
         // Git-like branch listing (simplified)
-        println!("{} Use 'guepard branch -x <deployment_id>' to list branches", "💡".yellow());
+        if output_format == OutputFormat::Table {
+            println!("{} Use 'guepard branch -x <deployment_id>' to list branches", "💡".yellow());
+        }
     }
     Ok(())
 }
@@ -127,28 +131,5 @@ pub async fn list(deployment_id: &str, config: &Config, output_format: OutputFor
         println!("{} Found {} branches for deployment: {}", "✅".green(), rows.len(), deployment_id);
     }
     print_table_or_json(rows, output_format);
-    Ok(())
-}
-
-pub async fn checkout(args: &CheckoutBranchArgs, config: &Config) -> Result<()> {
-    // Check if deployment is an F2 type
-    let deployment = deploy::get_deployment(&args.deployment_id, config).await?;
-    if deployment.deployment_type == "F2" {
-        bail!("{} Branch checkout is not supported for F2 deployments. Use a REPOSITORY deployment instead.", "❌".red());
-    }
-    
-    let branch = branch::checkout_branch(&args.deployment_id, &args.branch_id, config).await?;
-    
-    let branch_row = BranchRow {
-        id: branch.id.clone(),
-        name: branch.label_name.unwrap_or_else(|| branch.id.clone()),
-        status: branch.job_status.unwrap_or_default(),
-        snapshot_id: branch.snapshot_id.unwrap_or_else(|| branch.branch_id.unwrap_or_else(|| branch.id.clone())),
-        environment_type: "development".to_string(),
-        is_ephemeral: if branch.is_ephemeral.unwrap_or(false) { "Yes".to_string() } else { "No".to_string() },
-    };
-    
-    println!("{} Checked out branch successfully!", "✅".green());
-    println!("{}", Table::new(vec![branch_row]).with(Style::rounded()));
     Ok(())
 }
