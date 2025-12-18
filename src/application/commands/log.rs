@@ -31,11 +31,7 @@ pub async fn log(args: &LogArgs, config: &Config, output_format: OutputFormat) -
         
         // Try to parse as structured JSON first
         if let Ok(log_response) = serde_json::from_str::<LogResponse>(&logs_text) {
-            if output_format == OutputFormat::Json {
-                print_json(&log_response.parse_logs());
-                return Ok(());
-            }
-            display_structured_logs(&log_response, args)?;
+            display_structured_logs(&log_response, args, output_format)?;
         } else {
             // Fallback to raw text display
             display_raw_logs(&logs_text, args, output_format)?;
@@ -43,7 +39,12 @@ pub async fn log(args: &LogArgs, config: &Config, output_format: OutputFormat) -
     } else {
         let error_text = response.text().await.unwrap_or_default();
         if output_format == OutputFormat::Json {
-            print_json(&serde_json::json!({ "error": error_text }));
+            // Try to parse the error text if it's JSON
+            if let Ok(error_json) = serde_json::from_str::<serde_json::Value>(&error_text) {
+                print_json(&error_json);
+            } else {
+                print_json(&serde_json::json!({ "error": error_text }));
+            }
         } else {
             println!("{} Failed to fetch logs: {}", "❌".red(), error_text);
         }
@@ -52,7 +53,7 @@ pub async fn log(args: &LogArgs, config: &Config, output_format: OutputFormat) -
     Ok(())
 }
 
-fn display_structured_logs(log_response: &LogResponse, args: &LogArgs) -> Result<()> {
+fn display_structured_logs(log_response: &LogResponse, args: &LogArgs, output_format: OutputFormat) -> Result<()> {
     let mut lines = log_response.parse_logs();
     
     // Count stdout vs stderr before filtering
@@ -126,7 +127,8 @@ fn display_structured_logs(log_response: &LogResponse, args: &LogArgs) -> Result
         if output_format == OutputFormat::Table {
             println!("{} No logs available", "ℹ️".blue());
         } else {
-            print_json(&Vec::<LogLine>::new());
+            let empty: Vec<LogLine> = Vec::new();
+            print_json(&empty);
         }
         return Ok(());
     }
@@ -174,7 +176,8 @@ fn display_raw_logs(logs_text: &str, args: &LogArgs, output_format: OutputFormat
     }
     
     if output_format == OutputFormat::Json {
-        print_json(&lines[start_idx..]);
+        let json_lines: Vec<String> = lines[start_idx..].iter().map(|s| s.to_string()).collect();
+        print_json(&json_lines);
     } else {
         for line in &lines[start_idx..] {
             println!("{}", format_log_line_raw(line));
@@ -294,7 +297,7 @@ async fn follow_logs(args: &LogArgs, config: &Config, client: &Client, jwt_token
         println!("{}", "=".repeat(60).dimmed());
     }
     
-    let mut last_logs = String::new();
+    let mut last_line_count = 0;
     
     loop {
         let response = client
@@ -304,22 +307,23 @@ async fn follow_logs(args: &LogArgs, config: &Config, client: &Client, jwt_token
             .await?;
         
         if response.status().is_success() {
-            let current_logs = response.text().await?;
+            let current_logs_text = response.text().await?;
             
-            if current_logs != last_logs {
-                // Parse and display new logs
-                if let Ok(log_response) = serde_json::from_str::<LogResponse>(&current_logs) {
-                    let lines = log_response.parse_logs();
-                    let new_lines = if last_logs.is_empty() {
-                        lines
-                    } else {
-                        // Find new lines (simplified - in real implementation you'd track line counts)
-                        lines.into_iter().skip_while(|_| last_logs.is_empty()).collect()
-                    };
+            // Try to parse as structured JSON
+            if let Ok(log_response) = serde_json::from_str::<LogResponse>(&current_logs_text) {
+                let lines = log_response.parse_logs();
+                let current_count = lines.len();
+                
+                if current_count > last_line_count {
+                    // Get only the new lines
+                    let new_lines = lines.into_iter().skip(last_line_count);
                     
                     for line in new_lines {
+                        // Apply filters if any
+                        if args.stdout_only && !matches!(line.source, LogSource::Stdout) { continue; }
+                        if args.stderr_only && !matches!(line.source, LogSource::Stderr) { continue; }
+                        
                         if output_format == OutputFormat::Json {
-                            // Print as NDJSON
                             if let Ok(json) = serde_json::to_string(&line) {
                                 println!("{}", json);
                             }
@@ -327,18 +331,25 @@ async fn follow_logs(args: &LogArgs, config: &Config, client: &Client, jwt_token
                             println!("{}", format_log_line(&line, args.timestamps));
                         }
                     }
-                } else {
-                    // Raw text fallback
-                    if current_logs != last_logs {
+                    last_line_count = current_count;
+                }
+            } else {
+                // Raw text fallback
+                let lines: Vec<&str> = current_logs_text.lines().collect();
+                let current_count = lines.len();
+                
+                if current_count > last_line_count {
+                    let new_lines = &lines[last_line_count..];
+                    
+                    for line in new_lines {
                         if output_format == OutputFormat::Json {
-                            println!("{}", serde_json::json!({ "logs": current_logs }));
+                            println!("{}", serde_json::json!({ "content": line, "source": "Unknown" }));
                         } else {
-                            println!("{}", format_log_line_raw(&current_logs));
+                            println!("{}", format_log_line_raw(line));
                         }
                     }
+                    last_line_count = current_count;
                 }
-                
-                last_logs = current_logs;
             }
         }
         

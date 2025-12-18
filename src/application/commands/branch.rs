@@ -1,10 +1,10 @@
 use anyhow::{Result, bail};
 use crate::config::config::Config;
-use crate::structure::{BranchArgs, CreateBranchArgs, CheckoutBranchArgs};
+use crate::structure::{BranchArgs, CreateBranchArgs};
 use crate::application::dto::branch::BranchRequest;
 use crate::application::services::{branch, deploy};
 use colored::Colorize;
-use tabled::{Table, Tabled, settings::Style};
+use tabled::{Tabled};
 
 #[derive(Tabled, Serialize)]
 struct BranchRow {

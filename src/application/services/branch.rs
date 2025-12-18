@@ -33,11 +33,16 @@ pub async fn create_branch(
     if response.status().is_success() {
         let text = response.text().await.unwrap_or_default();
         
-        // Try to parse as CheckoutResponse first (success case)
+        // Try to parse as CheckoutResponse first
         if let Ok(checkout_response) = serde_json::from_str::<CheckoutResponse>(&text) {
+            // Check the internal status code
+            if checkout_response.status_code >= 400 {
+                return Err(BranchError::ApiError(checkout_response.body));
+            }
+
             // Parse the body string as BranchResponse
             serde_json::from_str::<BranchResponse>(&checkout_response.body)
-                .map_err(|e| BranchError::ParseError(e.to_string()))
+                .map_err(|e| BranchError::ParseError(format!("Failed to parse body as BranchResponse: {}. Body: {}", e, checkout_response.body)))
         } else {
             // Try to parse directly as BranchResponse (fallback)
             serde_json::from_str::<BranchResponse>(&text)
@@ -69,30 +74,38 @@ pub async fn list_branches(deployment_id: &str, config: &Config) -> Result<Vec<L
     }
 }
 
-pub async fn checkout_branch(deployment_id: &str, branch_id: &str, config: &Config) -> Result<BranchResponse, BranchError> {
+pub async fn checkout_branch(deployment_id: &str, branch_id: &str, request: Option<crate::application::dto::branch::CheckoutRequest>, config: &Config) -> Result<BranchResponse, BranchError> {
     let jwt_token = auth::get_auth_token()
         .map_err(|e| BranchError::SessionError(format!("{}", e)))?;
     let client = Client::new();
-    let response = client
+    let mut builder = client
         .post(format!(
             "{}/deploy/{}/{}/checkout",
             config.api_url, deployment_id, branch_id
         ))
-        .header("Authorization", format!("Bearer {}", jwt_token))
-        .send()
+        .header("Authorization", format!("Bearer {}", jwt_token));
+
+    if let Some(req) = request {
+        builder = builder.json(&req);
+    }
+
+    let response = builder.send()
         .await
         .map_err(BranchError::RequestFailed)?;
 
     if response.status().is_success() {
         let text = response.text().await.unwrap_or_default();
         
-        // Try to parse as CheckoutResponse first (success case)
+        // Try to parse as CheckoutResponse first
         if let Ok(checkout_response) = serde_json::from_str::<CheckoutResponse>(&text) {
-            
-            // Check if the body contains a message (error case)
+            // Check the internal status code
+            if checkout_response.status_code >= 400 {
+                return Err(BranchError::ApiError(checkout_response.body));
+            }
+
+            // Check if the body contains a message (already checked out case)
             if checkout_response.body.contains("already checked out") {
-                // Return a mock response for already checked out case
-                Ok(BranchResponse {
+                return Ok(BranchResponse {
                     id: branch_id.to_string(),
                     account_id: None,
                     label_name: Some("Already checked out".to_string()),
@@ -107,12 +120,12 @@ pub async fn checkout_branch(deployment_id: &str, branch_id: &str, config: &Conf
                     created_at: None,
                     created_by: None,
                     updated_by: None,
-                })
-            } else {
-                // Parse the body string as BranchResponse
-                serde_json::from_str::<BranchResponse>(&checkout_response.body)
-                    .map_err(|e| BranchError::ParseError(e.to_string()))
+                });
             }
+
+            // Parse the body string as BranchResponse
+            serde_json::from_str::<BranchResponse>(&checkout_response.body)
+                .map_err(|e| BranchError::ParseError(format!("Failed to parse body as BranchResponse: {}. Body: {}", e, checkout_response.body)))
         } else if text.contains("already checked out") {
             // Return a mock response for already checked out case
             Ok(BranchResponse {
@@ -139,16 +152,22 @@ pub async fn checkout_branch(deployment_id: &str, branch_id: &str, config: &Conf
     }
 }
 
-pub async fn checkout_snapshot(deployment_id: &str, snapshot_id: &str, config: &Config) -> Result<BranchResponse, BranchError> {
+pub async fn checkout_snapshot(deployment_id: &str, branch_id: &str, snapshot_id: &str, config: &Config) -> Result<BranchResponse, BranchError> {
     let jwt_token = auth::get_auth_token()
         .map_err(|e| BranchError::SessionError(format!("{}", e)))?;
     let client = Client::new();
+    
+    // User instruction: {{base_url}}/deploy/{{deployment_id}}/{{branch_id}}/{{snapshot_id}}/branch
     let response = client
         .post(format!(
-            "{}/deploy/{}/snapshot/{}/checkout",
-            config.api_url, deployment_id, snapshot_id
+            "{}/deploy/{}/{}/{}/branch",
+            config.api_url, deployment_id, branch_id, snapshot_id
         ))
         .header("Authorization", format!("Bearer {}", jwt_token))
+        .json(&serde_json::json!({
+            "checkout": true,
+            "discard_changes": "false"
+        }))
         .send()
         .await
         .map_err(BranchError::RequestFailed)?;
@@ -156,10 +175,14 @@ pub async fn checkout_snapshot(deployment_id: &str, snapshot_id: &str, config: &
     if response.status().is_success() {
         let text = response.text().await.unwrap_or_default();
         
-        // Try to parse as CheckoutResponse first
         if let Ok(checkout_response) = serde_json::from_str::<CheckoutResponse>(&text) {
+            // Check the internal status code
+            if checkout_response.status_code >= 400 {
+                return Err(BranchError::ApiError(checkout_response.body));
+            }
+
             serde_json::from_str::<BranchResponse>(&checkout_response.body)
-                .map_err(|e| BranchError::ParseError(e.to_string()))
+                .map_err(|e| BranchError::ParseError(format!("Failed to parse body as BranchResponse: {}. Body: {}", e, checkout_response.body)))
         } else {
             serde_json::from_str::<BranchResponse>(&text)
                 .map_err(|e| BranchError::ParseError(e.to_string()))

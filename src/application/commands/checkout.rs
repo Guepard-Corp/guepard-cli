@@ -56,7 +56,16 @@ pub async fn checkout(args: &CheckoutArgs, config: &Config, output_format: Outpu
 }
 
 async fn restore_snapshot(deployment_id: &str, snapshot_id: &str, config: &Config, output_format: OutputFormat) -> Result<()> {
-    let branch = branch::checkout_snapshot(deployment_id, snapshot_id, config).await?;
+    // Get branch ID from compute or deployment
+    let branch_id = match crate::application::services::compute::list_compute(deployment_id, config).await {
+        Ok(compute) => compute.branch_id.or(Some(compute.attached_branch)).unwrap(),
+        Err(_) => {
+            let deployment = crate::application::services::deploy::get_deployment(deployment_id, config).await?;
+            deployment.branch_id.ok_or_else(|| anyhow::anyhow!("No active branch found for deployment"))?
+        }
+    };
+
+    let branch = branch::checkout_snapshot(deployment_id, &branch_id, snapshot_id, config).await?;
     
     let checkout_row = CheckoutRow {
         id: branch.id.clone(),
@@ -74,7 +83,7 @@ async fn restore_snapshot(deployment_id: &str, snapshot_id: &str, config: &Confi
 }
 
 pub async fn checkout_branch(args: &CheckoutBranchArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
-    let branch = branch::checkout_branch(&args.deployment_id, &args.branch_id, config).await?;
+    let branch = branch::checkout_branch(&args.deployment_id, &args.branch_id, None, config).await?;
     
     let checkout_row = CheckoutRow {
         id: branch.id.clone(),

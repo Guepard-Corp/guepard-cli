@@ -145,14 +145,15 @@ pub fn load_jwt_token() -> Result<String, ConfigError> {
     {
         let entry = Entry::new("guepard-cli", "session")
             .map_err(|e| ConfigError::KeyringError(format!("Failed to access keyring entry: {}", e)))?;
-        entry
+        let token = entry
             .get_password()
             .map_err(|e| {
                 ConfigError::SessionError(format!(
                     "You need to log in first! Run `guepard login` to get started. 🐆 Error: {}",
                     e
                 ))
-            })
+            })?;
+        Ok(token.trim().to_string())
     }
     
     #[cfg(not(feature = "keyring"))]
@@ -162,13 +163,14 @@ pub fn load_jwt_token() -> Result<String, ConfigError> {
             .join(".guepard/session.jwt");
             
         if !path.exists() {
-        return Err(ConfigError::SessionError(
-            "You need to log in first! Run `guepard login` to get started. 🐆".to_string(),
-        ));
+            return Err(ConfigError::SessionError(
+                "You need to log in first! Run `guepard login` to get started. 🐆".to_string(),
+            ));
         }
         
-        fs::read_to_string(&path)
-            .map_err(|e| ConfigError::IoError(format!("Failed to read JWT file: {}", e)))
+        let token = fs::read_to_string(&path)
+            .map_err(|e| ConfigError::IoError(format!("Failed to read JWT file: {}", e)))?;
+        Ok(token.trim().to_string())
     }
 }
 

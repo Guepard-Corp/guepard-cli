@@ -18,6 +18,12 @@ pub struct CheckoutResponse {
     pub body: String, // Body is a JSON string, not a BranchResponse object
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CheckoutRequest {
+    pub snapshot_id: Option<String>,
+    pub discard_changes: Option<bool>,
+}
+
 /// matches the POST, Checkout responses.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BranchResponse {
