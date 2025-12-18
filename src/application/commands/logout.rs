@@ -6,7 +6,7 @@ use colored::Colorize;
 
 use crate::application::output::{OutputFormat, print_json};
 
-pub async fn logout(args: &LogoutArgs, _config: &Config, output_format: OutputFormat) -> Result<()> {
+pub async fn logout(_args: &LogoutArgs, _config: &Config, output_format: OutputFormat) -> Result<()> {
     // Check if user is already logged out
     if !config::is_logged_in() {
         if output_format == OutputFormat::Json {

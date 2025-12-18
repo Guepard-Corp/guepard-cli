@@ -5,7 +5,7 @@ use serde_json;
 
 #[derive(Error, Debug)]
 pub enum DeployError {
-    #[error("API error: {0}")]
+    #[error("{0}")]
     ApiError(String),
 
     #[error("Request failed: {0}")]

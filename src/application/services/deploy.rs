@@ -49,21 +49,21 @@ pub async fn create_deployment_with_deps<A: AuthProvider>(request: CreateDeploym
         
         // Try to parse as JSON to extract meaningful error messages
         let error_message = if let Ok(json) = serde_json::from_str::<serde_json::Value>(&error_text) {
-            // Extract message field if present
             if let Some(msg) = json.get("message") {
                 if msg.is_string() {
-                    msg.as_str().unwrap_or("").to_string()
-                } else if msg.is_object() {
-                    // If message is an object, try to extract details
-                    serde_json::to_string_pretty(msg).unwrap_or_else(|_| format!("{:?}", msg))
+                    let s = msg.as_str().unwrap_or("");
+                    if s == "[object Object]" {
+                        // If we got the dreaded stringified object, show the whole JSON
+                        serde_json::to_string_pretty(&json).unwrap_or(error_text)
+                    } else {
+                        s.to_string()
+                    }
                 } else {
-                    format!("{}", msg)
+                    serde_json::to_string_pretty(msg).unwrap_or_else(|_| format!("{}", msg))
                 }
             } else if let Some(errors) = json.get("errors") {
-                // Handle validation errors array
-                serde_json::to_string_pretty(errors).unwrap_or_else(|_| format!("{:?}", errors))
+                serde_json::to_string_pretty(errors).unwrap_or_else(|_| format!("{}", errors))
             } else {
-                // Fallback to pretty-printed JSON
                 serde_json::to_string_pretty(&json).unwrap_or(error_text)
             }
         } else {
@@ -71,7 +71,7 @@ pub async fn create_deployment_with_deps<A: AuthProvider>(request: CreateDeploym
         };
         
         // Build detailed error message with request info
-        let mut error_msg = format!("API error: {} {}", status, error_message);
+        let mut error_msg = format!("{} - {}", status, error_message);
         
         // Add request details for debugging
         if std::env::var("GUEPARD_DEBUG").is_ok() || std::env::var("RUST_LOG").is_ok() {
@@ -141,7 +141,6 @@ pub async fn list_deployments_with_deps<A: AuthProvider>(config: &Config, auth_p
             .json::<Vec<ListDeploymentsResponse>>()
             .await
             .map_err(|e| DeployError::ParseError(e.to_string()))?;
-        println!("✅ Success: {} deployments retrieved", deployments.len());
         Ok(deployments)
     } else {
         Err(DeployError::from_response(response).await)

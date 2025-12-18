@@ -16,7 +16,7 @@ struct UsageRow {
     #[tabled(rename = "Used")]
     used: i32,
 }
-pub async fn usage(args: &UsageArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
+pub async fn usage(_args: &UsageArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     let usage = usage::get_usage(config).await?;
     let rows = vec![
         UsageRow { resource: "Deployments".to_string(), quota: usage.quota_deployments, used: usage.usage_deployments },

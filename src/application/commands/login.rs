@@ -7,8 +7,6 @@ use colored::Colorize;
 use std::io::{self, Write};
 use std::process::Command;
 
-use crate::application::output::OutputFormat;
-
 use crate::application::output::{OutputFormat, print_json};
 
 pub async fn execute(args: &LoginArgs, config: &Config, output_format: OutputFormat) -> Result<()> {

@@ -4,8 +4,6 @@ use crate::structure::ConfigArgs;
 use colored::Colorize;
 use base64;
 
-use crate::application::output::OutputFormat;
-
 use crate::application::output::{OutputFormat, print_json};
 
 pub async fn config(args: &ConfigArgs, output_format: OutputFormat) -> Result<(), ConfigError> {

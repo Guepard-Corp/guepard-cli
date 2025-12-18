@@ -324,9 +324,6 @@ async fn create_clone(args: &CloneArgs, deployment_id: &str, snapshot_id: &str, 
     
     Ok(())
 }
-    
-    Ok(())
-}
 
 async fn list_clones(deployment_id: &str, config: &Config, output_format: OutputFormat) -> Result<()> {
     let result = clone::list_clones(deployment_id, config).await?;

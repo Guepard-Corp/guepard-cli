@@ -11,6 +11,8 @@ const DEPLOYMENT_COLUMNS: &[&str] = &[
     "region", "datacenter", "created", "type", "port", "connection"
 ];
 
+const PERFORMANCE_COLUMNS: &[&str] = &["id", "label_name", "database_provider", "database_version", "min_cpu", "min_memory", "is_default"];
+
 const BRANCH_COLUMNS: &[&str] = &["id", "branch_name", "label_name", "job_status", "snapshot_id"];
 
 const COMMIT_COLUMNS: &[&str] = &["id", "name", "message", "created", "dataset_id", "parent_id", "status", "type"];
@@ -22,9 +24,10 @@ pub async fn list(args: &ListArgs, config: &Config, output_format: OutputFormat)
         "deployments" => list_deployments(args, config, output_format).await,
         "branches" => list_branches(args, config, output_format).await,
         "commits" => list_commits(args, config, output_format).await,
+        "performance" => list_performance(args, config, output_format).await,
         _ => {
             println!("{} Unknown resource: {}", "❌".red(), args.resource);
-            println!("Available resources: deployments, branches, commits");
+            println!("Available resources: deployments, branches, commits, performance");
             Ok(())
         }
     }
@@ -45,6 +48,7 @@ fn parse_columns(columns_str: &Option<String>, available_columns: &[&str]) -> Ve
         match available_columns {
             DEPLOYMENT_COLUMNS => vec!["id".to_string(), "name".to_string(), "repository".to_string(), 
                                       "provider".to_string(), "version".to_string(), "status".to_string(), "fqdn".to_string()],
+            PERFORMANCE_COLUMNS => vec!["id".to_string(), "label_name".to_string(), "database_provider".to_string(), "database_version".to_string(), "is_default".to_string()],
             BRANCH_COLUMNS => vec!["id".to_string(), "branch_name".to_string(), "label_name".to_string(), "job_status".to_string(), "snapshot_id".to_string()],
             COMMIT_COLUMNS => vec!["id".to_string(), "name".to_string(), "message".to_string(), "created".to_string(), "dataset_id".to_string(), "parent_id".to_string()],
             _ => available_columns.iter().map(|s| s.to_string()).collect(),
@@ -58,6 +62,10 @@ fn show_available_columns(resource: &str) {
             println!("{} Available columns for deployments:", "ℹ️".blue());
             println!("{}", DEPLOYMENT_COLUMNS.join(", "));
         },
+        "performance" => {
+            println!("{} Available columns for performance:", "ℹ️".blue());
+            println!("{}", PERFORMANCE_COLUMNS.join(", "));
+        },
         "branches" => {
             println!("{} Available columns for branches:", "ℹ️".blue());
             println!("{}", BRANCH_COLUMNS.join(", "));
@@ -68,6 +76,77 @@ fn show_available_columns(resource: &str) {
         },
         _ => {}
     }
+}
+
+async fn list_performance(args: &ListArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
+    let mut profiles = crate::application::services::performance::list_performance_profiles(config).await?;
+    
+    if profiles.is_empty() {
+        if output_format == OutputFormat::Json {
+            print_json(&serde_json::json!([]));
+        } else {
+            println!("{} No performance profiles found", "ℹ️".blue());
+        }
+        return Ok(());
+    }
+    
+    // Apply limit if specified
+    let total_count = profiles.len();
+    if let Some(limit) = args.limit {
+        profiles.truncate(limit);
+    }
+    
+    let selected_columns = parse_columns(&args.columns, PERFORMANCE_COLUMNS);
+    
+    if selected_columns.is_empty() {
+        println!("{} No valid columns selected. Available columns:", "❌".red());
+        show_available_columns("performance");
+        return Ok(());
+    }
+    
+    // Create dynamic rows based on selected columns
+    let mut rows = Vec::new();
+    for profile in profiles {
+        let mut row_data = std::collections::HashMap::new();
+        
+        for col in &selected_columns {
+            let value = match col.as_str() {
+                "id" => profile.id.clone(),
+                "label_name" => profile.label_name.clone(),
+                "database_provider" => profile.database_provider.clone(),
+                "database_version" => profile.database_version.clone(),
+                "min_cpu" => profile.min_cpu.to_string(),
+                "min_memory" => profile.min_memory.to_string(),
+                "is_default" => profile.is_default.to_string(),
+                _ => "".to_string(),
+            };
+            row_data.insert(col.clone(), value);
+        }
+        rows.push(row_data);
+    }
+    
+    if output_format == OutputFormat::Json {
+        print_json(&rows);
+        return Ok(());
+    }
+
+    println!("{} Found {} performance profiles{}", 
+        "✅".green(), 
+        total_count,
+        if let Some(limit) = args.limit {
+            if limit < total_count {
+                format!(" (showing first {})", limit)
+            } else {
+                String::new()
+            }
+        } else {
+            String::new()
+        }
+    );
+    
+    // Display the table with selected columns
+    display_dynamic_table(rows, &selected_columns);
+    Ok(())
 }
 
 async fn list_deployments(args: &ListArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
