@@ -13,6 +13,27 @@ echo "API: $API_URL"
 echo "Target ID: $DEPLOY_ID"
 echo "-----------------------------------"
 
+# --- CLI Argument Parsing ---
+NON_INTERACTIVE=false
+SINGLE_TEST=""
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --non-interactive|-y)
+            NON_INTERACTIVE=true
+            shift
+            ;;
+        --test|-t)
+            SINGLE_TEST="$2"
+            NON_INTERACTIVE=true
+            shift 2
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
 # Helper for JSON display and validation
 run_cmd() {
     local cmd="$1"
@@ -26,13 +47,144 @@ run_cmd() {
     
     if [ $exit_code -ne 0 ]; then
         echo -e "❌ Command failed with exit code $exit_code"
+        if [ "$NON_INTERACTIVE" = true ]; then
+            exit $exit_code
+        fi
         return $exit_code
     fi
 
     echo "📄 Result:"
     echo "$output" | jq . || echo "$output"
     echo -e "✅ $msg"
+    
+    if [ "$NON_INTERACTIVE" = false ]; then
+        read -p "Press Enter to continue..."
+    fi
 }
+
+execute_test() {
+    local choice=$1
+    case $choice in
+        1) run_cmd "$BINARY config --show --json" "Config displayed" ;;
+        2) run_cmd "$BINARY config --api-url 'http://localhost:3000' --json" "API URL updated" ;;
+        3) run_cmd "$BINARY login --code '$TOKEN' --json" "Login successful" ;;
+        4) run_cmd "$BINARY logout --json" "Logout successful" ;;
+        
+        5) run_cmd "$BINARY list deployments --json" "Deployments listed" ;;
+        6) run_cmd "$BINARY deploy -x '$DEPLOY_ID' --json" "Details retrieved" ;;
+        7) 
+            REPO_NAME="e2e-f2-$(date +%s)"
+            NODE_ID="e1b33620-ea91-437f-9b8e-6334040a7423"
+            run_cmd "$BINARY deploy -p PostgreSQL -v 16 -r us-west -i F2 -d aws -n $REPO_NAME -w Pass123! -f gp.g1.xsmall -s $NODE_ID --json" "F2 deployment created"
+            ;;
+        8) 
+            REPO_NAME="e2e-repo-$(date +%s)"
+            NODE_ID="e1b33620-ea91-437f-9b8e-6334040a7423"
+            run_cmd "$BINARY deploy -p PostgreSQL -v 16 -r us-west -i REPOSITORY -d aws -n $REPO_NAME -w Pass123! -f gp.g1.xsmall -s $NODE_ID --json" "REPOSITORY deployment created"
+            ;;
+        9) 
+            if [ "$NON_INTERACTIVE" = true ]; then
+                echo "⏭️ Skipping interactive wizard in non-interactive mode"
+            else
+                echo "🪄 Launching interactive wizard..."; $BINARY deploy --interactive
+            fi
+            ;;
+        10) run_cmd "$BINARY deploy -x '$DEPLOY_ID' -n 'updated-name-$(date +%s)' --json" "Deployment updated" ;;
+        11) 
+            if [ "$NON_INTERACTIVE" = true ]; then
+                echo "⏭️ Skipping deletion in non-interactive mode for safety"
+            else
+                echo "⚠️ This will delete $DEPLOY_ID"; run_cmd "$BINARY deploy -x '$DEPLOY_ID' --yes --json" "Deployment deleted"
+            fi
+            ;;
+
+        12) run_cmd "$BINARY list branches -x '$DEPLOY_ID' --json" "Branches listed" ;;
+        13) run_cmd "$BINARY list commits -x '$DEPLOY_ID' --json" "Commits listed" ;;
+        14) 
+            SNAP_ID=$(cargo run -- list commits -x "$DEPLOY_ID" --json | jq -r '.[0].id')
+            run_cmd "$BINARY branch 'dev-$(date +%s)' -x '$DEPLOY_ID' -s '$SNAP_ID' --json" "Branch created"
+            ;;
+        15) 
+            SNAP_ID=$(cargo run -- list commits -x "$DEPLOY_ID" --json | jq -r '.[0].id')
+            run_cmd "$BINARY branch 'temp-$(date +%s)' -x '$DEPLOY_ID' -s '$SNAP_ID' --ephemeral --checkout --json" "Ephemeral branch created and checked out"
+            ;;
+        16)
+            SNAP_ID=$(cargo run -- list commits -x "$DEPLOY_ID" --json | jq -r '.[0].id')
+            run_cmd "$BINARY branch 'clean-$(date +%s)' -x '$DEPLOY_ID' -s '$SNAP_ID' -d true --json" "Branch created with discard_changes"
+            ;;
+        17) 
+            BRANCH_ID=$(cargo run -- list branches -x "$DEPLOY_ID" --json | jq -r '.[0].id')
+            run_cmd "$BINARY commit -m 'E2E Test Snapshot' -x '$DEPLOY_ID' -b '$BRANCH_ID' --json" "Commit created"
+            ;;
+        18) 
+            BRANCH_ID=$(cargo run -- list branches -x "$DEPLOY_ID" --json | jq -r '.[0].id')
+            run_cmd "$BINARY checkout -x '$DEPLOY_ID' -c '$BRANCH_ID' --json" "Branch checked out"
+            ;;
+        19) 
+            SNAP_ID=$(cargo run -- list commits -x "$DEPLOY_ID" --json | jq -r '.[0].id')
+            run_cmd "$BINARY checkout -x '$DEPLOY_ID' -s '$SNAP_ID' --json" "Snapshot restored"
+            ;;
+        20)
+            BRANCH_ID=$(cargo run -- list branches -x "$DEPLOY_ID" --json | jq -r '.[0].id')
+            run_cmd "$BINARY checkout -x '$DEPLOY_ID' -c '$BRANCH_ID' -d true --json" "Checkout with discard_changes"
+            ;;
+
+        21) run_cmd "$BINARY log -x '$DEPLOY_ID' -n 20 --json" "Logs retrieved" ;;
+        22) run_cmd "$BINARY log -x '$DEPLOY_ID' --stdout-only --json" "Stdout logs retrieved" ;;
+        23) run_cmd "$BINARY log -x '$DEPLOY_ID' --stderr-only --json" "Stderr logs retrieved" ;;
+        24) run_cmd "$BINARY log -x '$DEPLOY_ID' --timestamps --json" "Logs with timestamps retrieved" ;;
+        25) run_cmd "$BINARY log -x '$DEPLOY_ID' --since '2025-01-01' --json" "Filtered logs retrieved" ;;
+        26) 
+            if [ "$NON_INTERACTIVE" = true ]; then
+                echo "⏭️ Skipping log follow in non-interactive mode"
+            else
+                echo "👀 Press Ctrl+C to stop following..."; $BINARY log -x "$DEPLOY_ID" --follow --json
+            fi
+            ;;
+
+        27) run_cmd "$BINARY compute status -x '$DEPLOY_ID' --json" "Compute status retrieved" ;;
+        28) run_cmd "$BINARY compute list -x '$DEPLOY_ID' --json" "Compute details retrieved" ;;
+        29) run_cmd "$BINARY compute start -x '$DEPLOY_ID' --json" "Compute started" ;;
+        30) run_cmd "$BINARY compute stop -x '$DEPLOY_ID' --json" "Compute stopped" ;;
+        31) run_cmd "$BINARY compute restart -x '$DEPLOY_ID' --json" "Compute restarted" ;;
+        32) run_cmd "$BINARY compute logs -x '$DEPLOY_ID' --json" "Compute logs retrieved" ;;
+
+        33) 
+            SNAP_ID=$(cargo run -- list commits -x "$DEPLOY_ID" --json | jq -r '.[0].id')
+            run_cmd "$BINARY clone -x '$DEPLOY_ID' -s '$SNAP_ID' --json" "Clone created"
+            ;;
+        34)
+            SNAP_ID=$(cargo run -- list commits -x "$DEPLOY_ID" --json | jq -r '.[0].id')
+            run_cmd "$BINARY clone -x '$DEPLOY_ID' -s '$SNAP_ID' -n 'custom-clone-$(date +%s)' -f gp.g1.small --json" "Custom clone created"
+            ;;
+        35) run_cmd "$BINARY clone list -x '$DEPLOY_ID' --json" "Clones listed" ;;
+
+        36) run_cmd "$BINARY usage --json" "Usage statistics retrieved (JSON)" ;;
+        37) run_cmd "$BINARY usage" "Usage statistics retrieved (Table)" ;;
+        38) run_cmd "$BINARY list performance --json" "Performance profiles listed" ;;
+        39) run_cmd "$BINARY list deployments --columns id,name,status --json" "Custom columns listed" ;;
+        40) run_cmd "$BINARY list commits -x '$DEPLOY_ID' --all --json" "All commits listed" ;;
+        41) run_cmd "$BINARY list commits -x '$DEPLOY_ID' --graph" "Git graph displayed" ;;
+        
+        q|quit|exit) echo "👋 Goodbye!"; exit 0 ;;
+        *) echo "❌ Invalid option: $choice" ;;
+    esac
+}
+
+# --- Non-Interactive Execution ---
+if [ "$NON_INTERACTIVE" = true ]; then
+    if [ -n "$SINGLE_TEST" ]; then
+        execute_test "$SINGLE_TEST"
+    else
+        echo "🏃 Running all tests in sequence..."
+        # Exclude interactive/destructive/infinite commands by default
+        for i in 1 3 5 6 10 12 13 14 15 16 17 18 19 20 21 22 23 24 25 27 28 33 34 35 36 37 38 39 40 41; do
+            execute_test $i
+        done
+        echo "🏁 All tests completed!"
+    fi
+    exit 0
+fi
 
 # Main Menu Loop
 while true; do
@@ -94,92 +246,5 @@ while true; do
     echo "q)  Quit"
     
     read -p "👉 Select a command: " choice
-
-    case $choice in
-        1) run_cmd "$BINARY config --show --json" "Config displayed" ;;
-        2) run_cmd "$BINARY config --api-url 'http://localhost:3000' --json" "API URL updated" ;;
-        3) run_cmd "$BINARY login --code '$TOKEN' --json" "Login successful" ;;
-        4) run_cmd "$BINARY logout --json" "Logout successful" ;;
-        
-        5) run_cmd "$BINARY list deployments --json" "Deployments listed" ;;
-        6) run_cmd "$BINARY deploy -x '$DEPLOY_ID' --json" "Details retrieved" ;;
-        7) 
-            REPO_NAME="e2e-f2-$(date +%s)"
-            NODE_ID="e1b33620-ea91-437f-9b8e-6334040a7423"
-            run_cmd "$BINARY deploy -p PostgreSQL -v 16 -r us-west -i F2 -d aws -n $REPO_NAME -w Pass123! -f gp.g1.xsmall -s $NODE_ID --json" "F2 deployment created"
-            ;;
-        8) 
-            REPO_NAME="e2e-repo-$(date +%s)"
-            NODE_ID="e1b33620-ea91-437f-9b8e-6334040a7423"
-            run_cmd "$BINARY deploy -p PostgreSQL -v 16 -r us-west -i REPOSITORY -d aws -n $REPO_NAME -w Pass123! -f gp.g1.xsmall -s $NODE_ID --json" "REPOSITORY deployment created"
-            ;;
-        9) echo "🪄 Launching interactive wizard..."; $BINARY deploy --interactive ;;
-        10) run_cmd "$BINARY deploy -x '$DEPLOY_ID' -n 'updated-name-$(date +%s)' --json" "Deployment updated" ;;
-        11) echo "⚠️ This will delete $DEPLOY_ID"; run_cmd "$BINARY deploy -x '$DEPLOY_ID' --yes --json" "Deployment deleted" ;;
-
-        12) run_cmd "$BINARY list branches -x '$DEPLOY_ID' --json" "Branches listed" ;;
-        13) run_cmd "$BINARY list commits -x '$DEPLOY_ID' --json" "Commits listed" ;;
-        14) 
-            SNAP_ID=$(cargo run -- list commits -x "$DEPLOY_ID" --json | jq -r '.[0].id')
-            run_cmd "$BINARY branch 'dev-$(date +%s)' -x '$DEPLOY_ID' -s '$SNAP_ID' --json" "Branch created"
-            ;;
-        15) 
-            SNAP_ID=$(cargo run -- list commits -x "$DEPLOY_ID" --json | jq -r '.[0].id')
-            run_cmd "$BINARY branch 'temp-$(date +%s)' -x '$DEPLOY_ID' -s '$SNAP_ID' --ephemeral --checkout --json" "Ephemeral branch created and checked out"
-            ;;
-        16)
-            SNAP_ID=$(cargo run -- list commits -x "$DEPLOY_ID" --json | jq -r '.[0].id')
-            run_cmd "$BINARY branch 'clean-$(date +%s)' -x '$DEPLOY_ID' -s '$SNAP_ID' -d true --json" "Branch created with discard_changes"
-            ;;
-        17) 
-            BRANCH_ID=$(cargo run -- list branches -x "$DEPLOY_ID" --json | jq -r '.[0].id')
-            run_cmd "$BINARY commit -m 'E2E Test Snapshot' -x '$DEPLOY_ID' -b '$BRANCH_ID' --json" "Commit created"
-            ;;
-        18) 
-            BRANCH_ID=$(cargo run -- list branches -x "$DEPLOY_ID" --json | jq -r '.[0].id')
-            run_cmd "$BINARY checkout -x '$DEPLOY_ID' -c '$BRANCH_ID' --json" "Branch checked out"
-            ;;
-        19) 
-            SNAP_ID=$(cargo run -- list commits -x "$DEPLOY_ID" --json | jq -r '.[0].id')
-            run_cmd "$BINARY checkout -x '$DEPLOY_ID' -s '$SNAP_ID' --json" "Snapshot restored"
-            ;;
-        20)
-            BRANCH_ID=$(cargo run -- list branches -x "$DEPLOY_ID" --json | jq -r '.[0].id')
-            run_cmd "$BINARY checkout -x '$DEPLOY_ID' -c '$BRANCH_ID' -d true --json" "Checkout with discard_changes"
-            ;;
-
-        21) run_cmd "$BINARY log -x '$DEPLOY_ID' -n 20 --json" "Logs retrieved" ;;
-        22) run_cmd "$BINARY log -x '$DEPLOY_ID' --stdout-only --json" "Stdout logs retrieved" ;;
-        23) run_cmd "$BINARY log -x '$DEPLOY_ID' --stderr-only --json" "Stderr logs retrieved" ;;
-        24) run_cmd "$BINARY log -x '$DEPLOY_ID' --timestamps --json" "Logs with timestamps retrieved" ;;
-        25) run_cmd "$BINARY log -x '$DEPLOY_ID' --since '2025-01-01' --json" "Filtered logs retrieved" ;;
-        26) echo "👀 Press Ctrl+C to stop following..."; $BINARY log -x "$DEPLOY_ID" --follow --json ;;
-
-        27) run_cmd "$BINARY compute status -x '$DEPLOY_ID' --json" "Compute status retrieved" ;;
-        28) run_cmd "$BINARY compute list -x '$DEPLOY_ID' --json" "Compute details retrieved" ;;
-        29) run_cmd "$BINARY compute start -x '$DEPLOY_ID' --json" "Compute started" ;;
-        30) run_cmd "$BINARY compute stop -x '$DEPLOY_ID' --json" "Compute stopped" ;;
-        31) run_cmd "$BINARY compute restart -x '$DEPLOY_ID' --json" "Compute restarted" ;;
-        32) run_cmd "$BINARY compute logs -x '$DEPLOY_ID' --json" "Compute logs retrieved" ;;
-
-        33) 
-            SNAP_ID=$(cargo run -- list commits -x "$DEPLOY_ID" --json | jq -r '.[0].id')
-            run_cmd "$BINARY clone -x '$DEPLOY_ID' -s '$SNAP_ID' --json" "Clone created"
-            ;;
-        34)
-            SNAP_ID=$(cargo run -- list commits -x "$DEPLOY_ID" --json | jq -r '.[0].id')
-            run_cmd "$BINARY clone -x '$DEPLOY_ID' -s '$SNAP_ID' -n 'custom-clone-$(date +%s)' -f gp.g1.small --json" "Custom clone created"
-            ;;
-        35) run_cmd "$BINARY clone list -x '$DEPLOY_ID' --json" "Clones listed" ;;
-
-        36) run_cmd "$BINARY usage --json" "Usage statistics retrieved (JSON)" ;;
-        37) $BINARY usage ;;
-        38) run_cmd "$BINARY list performance --json" "Performance profiles listed" ;;
-        39) run_cmd "$BINARY list deployments --columns id,name,status --json" "Custom columns listed" ;;
-        40) run_cmd "$BINARY list commits -x '$DEPLOY_ID' --all --json" "All commits listed" ;;
-        41) $BINARY list commits -x "$DEPLOY_ID" --graph ;;
-        
-        q|quit|exit) echo "👋 Goodbye!"; exit 0 ;;
-        *) echo "❌ Invalid option" ;;
-    esac
+    execute_test "$choice"
 done
