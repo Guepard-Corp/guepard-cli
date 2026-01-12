@@ -66,6 +66,9 @@ pub enum SubCommand {
     ///   # View deployment details
     ///   guepard deploy -x <deployment_id>
     ///
+    ///   # View deployment commit graph
+    ///   guepard deploy -x <deployment_id> --graph
+    ///
     ///   # Update deployment repository name
     ///   guepard deploy -x <deployment_id> -n new-name
     ///
@@ -404,6 +407,13 @@ pub struct DeployArgs {
     /// step by step. Recommended for first-time users or complex deployments.
     #[clap(short = 'I', long)]
     pub interactive: bool,
+    
+    /// Show git-style graph visualization of commits
+    ///
+    /// Displays commit history in a visual graph format similar to 'git log --graph'.
+    /// Shows branch relationships and commit hierarchy. Only works when viewing deployment details (-x).
+    #[clap(short = 'g', long)]
+    pub graph: bool,
 }
 
 #[derive(Args, Debug)]

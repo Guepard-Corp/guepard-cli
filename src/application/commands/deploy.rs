@@ -4,6 +4,7 @@ use crate::structure::DeployArgs;
 use crate::application::dto::deploy::{CreateDeploymentRequest, UpdateDeploymentRequest};
 use crate::application::services::{deploy, performance, compute, branch, commit};
 use crate::application::output::{OutputFormat, print_json};
+use crate::application::commands::list;
 use colored::Colorize;
 use serde::Serialize;
 use std::io::{self, Write};
@@ -76,7 +77,7 @@ pub async fn deploy(args: &DeployArgs, config: &Config, output_format: OutputFor
             delete_deployment(deployment_id, args, config, output_format).await?;
         } else {
             // Get deployment details
-            get_deployment(deployment_id, config, output_format).await?;
+            get_deployment(deployment_id, args, config, output_format).await?;
         }
     } else {
         // No deployment ID, check if we have create args
@@ -279,7 +280,15 @@ async fn update_deployment(deployment_id: &str, args: &DeployArgs, config: &Conf
     Ok(())
 }
 
-async fn get_deployment(deployment_id: &str, config: &Config, output_format: OutputFormat) -> Result<()> {
+async fn get_deployment(deployment_id: &str, args: &DeployArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
+    // Check if user wants graph view
+    if args.graph && output_format == OutputFormat::Table {
+        // Fetch commits and display graph
+        let commits = commit::list_all_commits(deployment_id, config).await?;
+        list::display_git_graph(&commits, deployment_id, config).await?;
+        return Ok(());
+    }
+    
     let deployment = deploy::get_deployment(deployment_id, config).await?;
     
     // Determine if this is a clone (SHADOW type)

@@ -567,8 +567,17 @@ fn display_dynamic_table(rows: Vec<std::collections::HashMap<String, String>>, c
     println!("{}", table_string);
 }
 
-async fn display_git_graph(commits: &[crate::application::dto::commit::GetCommitResponse], deployment_id: &str, config: &Config) -> Result<()> {
+pub async fn display_git_graph(commits: &[crate::application::dto::commit::GetCommitResponse], deployment_id: &str, config: &Config) -> Result<()> {
     println!("{} Found {} commits for deployment: {}", "✅".green(), commits.len(), deployment_id);
+    println!();
+    
+    // Print legend/explanation (git-style)
+    println!("{} Graph Legend:", "📖".blue());
+    println!("  {} Commit marker", "*".green());
+    println!("  {} Link between commits on same branch", "|".green());
+    println!("  {} Branch splits to left", "\\".green());
+    println!("  {} Branch splits to right", "/".green());
+    println!("  {} Active commit (hash in red brackets)", "[hash]".red());
     println!();
     
     // Get branch information to map dataset_id to branch names
@@ -602,9 +611,9 @@ async fn display_git_graph(commits: &[crate::application::dto::commit::GetCommit
         branch_names.insert(dataset_id, branch_name);
     }
     
-    // Sort all commits by date (oldest first)
+    // Sort all commits by date (newest first - descending)
     let mut sorted_commits: Vec<_> = commits.iter().collect();
-    sorted_commits.sort_by(|a, b| a.created_date.cmp(&b.created_date));
+    sorted_commits.sort_by(|a, b| b.created_date.cmp(&a.created_date));
     
     // Create git-style tree visualization with proper table padding
     let mut branch_positions: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
@@ -622,6 +631,7 @@ async fn display_git_graph(commits: &[crate::application::dto::commit::GetCommit
     
     // Calculate column widths for proper alignment
     let mut max_hash_width = 0;
+    let mut max_branch_name_width = 0;
     let mut max_message_width = 0;
     let mut max_date_width = 0;
     
@@ -651,43 +661,54 @@ async fn display_git_graph(commits: &[crate::application::dto::commit::GetCommit
         current_positions[position] = Some(branch_id.clone());
         max_width = max_width.max(position + 1);
         
-        // Calculate hash width (including branch name for last commits)
-        let is_last_commit = last_commits_per_branch.get(&branch_id).map(|last_commit| last_commit.id == commit.id).unwrap_or(false);
-        let hash_width = if is_last_commit {
-            8 + 3 + branch_name.len() // hash + " (" + branch_name + ")"
-        } else {
-            8
-        };
-        max_hash_width = max_hash_width.max(hash_width);
+        // Calculate hash width (always 8 for hash)
+        max_hash_width = max_hash_width.max(8);
         
-        // Calculate message width
-        let commit_symbol = if commit.snapshot_comment.contains("AUTO SNAP") {
-            "🔧"
-        } else if commit.snapshot_comment.contains("deleted") {
-            "🗑️"
-        } else if commit.snapshot_comment.contains("inserted") {
-            "➕"
-        } else {
-            "📝"
-        };
-        let message_width = commit_symbol.len() + 1 + commit.snapshot_comment.len();
+        // Calculate max branch name width (for last commits)
+        let is_last_commit = last_commits_per_branch.get(&branch_id).map(|last_commit| last_commit.id == commit.id).unwrap_or(false);
+        if is_last_commit {
+            max_branch_name_width = max_branch_name_width.max(branch_name.len());
+        }
+        
+        // Calculate message width (without emoji, emojis are 2 bytes but display as 1 char)
+        let message_width = commit.snapshot_comment.len();
         max_message_width = max_message_width.max(message_width);
         
-        // Calculate date width
-        let date = commit.created_date.split('T').next().unwrap_or(&commit.created_date);
-        max_date_width = max_date_width.max(date.len());
+        // Calculate date+time width (format: "YYYY-MM-DD HH:MM:SS")
+        let date_time_str = if commit.created_date.contains('T') {
+            let parts: Vec<&str> = commit.created_date.split('T').collect();
+            if parts.len() == 2 {
+                let date_part = parts[0];
+                let time_part = parts[1].split('.').next().unwrap_or(parts[1]); // Remove milliseconds if present
+                let time_short = time_part.split(':').take(3).collect::<Vec<&str>>().join(":"); // HH:MM:SS
+                format!("{} {}", date_part, time_short)
+            } else {
+                commit.created_date.clone()
+            }
+        } else {
+            commit.created_date.clone()
+        };
+        max_date_width = max_date_width.max(date_time_str.len());
     }
     
     // Calculate tree line width after all positions are determined
-    let max_tree_width = max_width * 2; // Each position takes 2 characters ("* " or "| " or "  ")
+    // Each position takes 1 character ("*", "|*", "|", "\", "/", " ")
+    let max_tree_width = max_width;
     
-    // Add padding to column widths
-    let max_tree_width = max_tree_width + 2;
-    let max_hash_width = max_hash_width + 2;
-    let max_message_width = max_message_width + 4; // Extra padding for message column
-    let max_date_width = max_date_width + 2;
+    // Use fixed column widths for better alignment
+    let tree_width = max_tree_width.max(4); // Minimum tree width (ensure at least 4 chars)
+    let hash_width = 10; // Fixed width for hash column (centered, accommodates brackets)
+    // Branch column: now first column, just branch name
+    let branch_width = if max_branch_name_width > 0 {
+        max_branch_name_width.max(15) // Minimum 15 chars for branch name column
+    } else {
+        15 // Minimum space for branch column
+    };
+    // Message width is no longer fixed - messages display in full
+    let date_width = max_date_width.max(19) + 2; // "YYYY-MM-DD HH:MM:SS" = 19 chars + padding
     
     // Display commits with proper table alignment
+    // Structure: Each commit gets a row with "*", then a link row with "|", "\", "/"
     for (commit_idx, commit) in sorted_commits.iter().enumerate() {
         let branch_id = commit.dataset_id.as_ref()
             .map(|id| id.clone())
@@ -699,45 +720,8 @@ async fn display_git_graph(commits: &[crate::application::dto::commit::GetCommit
         
         let position = branch_positions.get(&branch_id).unwrap();
         
-        // Create the tree line - only show | when there are actual branches active at this point
-        let mut tree_line = String::new();
-        for i in 0..max_width {
-            if i == *position {
-                tree_line.push_str("* ");
-            } else {
-                // Check if there's a branch at this position that has commits before/at this point AND after this point
-                let has_active_branch_at_position = sorted_commits.iter().enumerate().any(|(idx, c)| {
-                    let c_branch_id = c.dataset_id.as_ref()
-                        .map(|id| id.clone())
-                        .unwrap_or_else(|| "main".to_string());
-                    let c_position = branch_positions.get(&c_branch_id);
-                    
-                    // This branch exists at position i AND has commits up to this point AND has commits after this point
-                    if c_position == Some(&i) && idx <= commit_idx {
-                        // Check if this branch has commits after the current commit
-                        sorted_commits.iter().enumerate().any(|(after_idx, after_c)| {
-                            let after_branch_id = after_c.dataset_id.as_ref()
-                                .map(|id| id.clone())
-                                .unwrap_or_else(|| "main".to_string());
-                            after_idx > commit_idx && branch_positions.get(&after_branch_id) == Some(&i)
-                        })
-                    } else {
-                        false
-                    }
-                });
-                
-                if has_active_branch_at_position {
-                    tree_line.push_str("| ");
-                } else {
-                    tree_line.push_str("  ");
-                }
-            }
-        }
-        
-        // Pad the tree line to ensure consistent width
-        while tree_line.len() < max_width * 2 {
-            tree_line.push(' ');
-        }
+        // Check if this is the current compute snapshot
+        let is_current_compute = current_compute_snapshot.as_ref().map(|snapshot_id| snapshot_id == &commit.id).unwrap_or(false);
         
         // Color coding based on commit type
         let commit_symbol = if commit.snapshot_comment.contains("AUTO SNAP") {
@@ -747,42 +731,167 @@ async fn display_git_graph(commits: &[crate::application::dto::commit::GetCommit
         } else if commit.snapshot_comment.contains("inserted") {
             "➕"
         } else {
-            "📝"
+            "•"
         };
         
-        let date = commit.created_date.split('T').next().unwrap_or(&commit.created_date);
+        // Parse and format date with time (including seconds)
+        let date_time = if commit.created_date.contains('T') {
+            // Format: "2025-12-18T14:30:00" -> "2025-12-18 14:30:00"
+            let parts: Vec<&str> = commit.created_date.split('T').collect();
+            if parts.len() == 2 {
+                let date_part = parts[0];
+                let time_part = parts[1].split('.').next().unwrap_or(parts[1]); // Remove milliseconds if present
+                let time_full = time_part.split(':').take(3).collect::<Vec<&str>>().join(":"); // HH:MM:SS
+                format!("{} {}", date_part, time_full)
+            } else {
+                commit.created_date.clone()
+            }
+        } else {
+            commit.created_date.clone()
+        };
         
         // Check if this is the last commit for this branch
         let is_last_commit = last_commits_per_branch.get(&branch_id).map(|last_commit| last_commit.id == commit.id).unwrap_or(false);
         
-        // Check if this is the current compute snapshot
-        let is_current_compute = current_compute_snapshot.as_ref().map(|snapshot_id| snapshot_id == &commit.id).unwrap_or(false);
+        // Format date column (first column) - fixed width, left-aligned
+        let date_col = format!("{:<date_w$}", date_time.dimmed(), date_w = date_width);
         
-        let hash_display = if is_last_commit {
-            if is_current_compute {
-                format!("{} ({}) 📌", &commit.id[..8].yellow(), branch_name.blue())
-            } else {
-                format!("{} ({})", &commit.id[..8].yellow(), branch_name.blue())
-            }
+        // Format branch column (second column) - fixed width
+        let branch_col = if is_last_commit {
+            // Show branch name for the latest commit on each branch
+            format!("{:<branch_w$}", branch_name.blue(), branch_w = branch_width.max(20))
         } else {
-            if is_current_compute {
-                format!("{} 📌", commit.id[..8].to_string().yellow())
-            } else {
-                commit.id[..8].to_string().yellow().to_string()
-            }
+            // Empty for non-latest commits
+            format!("{:<branch_w$}", "", branch_w = branch_width.max(20))
         };
         
-        // Format with proper table padding - right-align the date
-        println!("{:<tree_width$} {:<hash_width$} {:<message_width$} {:>date_width$}", 
-            tree_line.green(),
-            hash_display,
-            format!("{} {}", commit_symbol, commit.snapshot_comment.cyan()),
-            date.dimmed(),
-            tree_width = max_tree_width,
-            hash_width = max_hash_width,
-            message_width = max_message_width,
-            date_width = max_date_width
+        // Format hash column (fourth column, after graph) - fixed width, centered
+        // Make it framed/boxed if it's the active commit
+        let hash_short = &commit.id[..8];
+        let hash_col = if is_current_compute {
+            // Active commit - frame it with brackets and make it red
+            // \x1b[31m = red, \x1b[0m = reset
+            // Center the bracketed hash in the column
+            let bracketed = format!("\x1b[31m[{}]\x1b[0m", hash_short);
+            format!("{:^hash_w$}", bracketed, hash_w = hash_width)
+        } else {
+            // Regular commit - center the hash in the column
+            format!("{:^hash_w$}", hash_short.yellow(), hash_w = hash_width)
+        };
+        
+        // Format message column - show full message without truncation
+        let message_text = format!("{} {}", commit_symbol, commit.snapshot_comment);
+        let message_display = message_text.cyan();
+        
+        // COMMIT ROW: Build commit line with "*" at commit's column
+        let mut commit_line = String::new();
+        for i in 0..max_width {
+            if i == *position {
+                commit_line.push_str("*");
+            } else {
+                commit_line.push_str(" ");
+            }
+        }
+        // Ensure fixed width
+        if commit_line.len() < max_width {
+            commit_line.push_str(&" ".repeat(max_width - commit_line.len()));
+        }
+        let commit_tree_display = format!("{:<tree_w$}", commit_line.green(), tree_w = tree_width);
+        
+        // Print commit row: Date Time | Branch | Graph | Snapshot Hash | Commit Message
+        println!("{:<date_w$} {:<branch_w$} {:<tree_w$} {:<hash_w$} {}", 
+            date_col,
+            branch_col,
+            commit_tree_display,
+            hash_col,
+            message_display,
+            date_w = date_width,
+            branch_w = branch_width.max(20),
+            tree_w = tree_width,
+            hash_w = hash_width
         );
+        
+        // LINK ROW: Build link line with "|", "\", "/" between this commit and the next one
+        // Only show link row if this is not the last commit
+        if commit_idx < sorted_commits.len() - 1 {
+            let next_commit = &sorted_commits[commit_idx + 1];
+            let next_branch_id = next_commit.dataset_id.as_ref()
+                .map(|id| id.clone())
+                .unwrap_or_else(|| "main".to_string());
+            let next_position = branch_positions.get(&next_branch_id).unwrap();
+            
+            let mut link_line = String::new();
+            for i in 0..max_width {
+                // Check if branch at position i has commits after current commit (continues)
+                let branch_continues = sorted_commits.iter().enumerate().any(|(idx, c)| {
+                    if idx <= commit_idx {
+                        return false;
+                    }
+                    let c_branch_id = c.dataset_id.as_ref()
+                        .map(|id| id.clone())
+                        .unwrap_or_else(|| "main".to_string());
+                    branch_positions.get(&c_branch_id) == Some(&i)
+                });
+                
+                // Determine what to show at this column
+                if *position != *next_position {
+                    // Different branches - show split
+                    if i == *position {
+                        // Current branch column - show "\" or "/" depending on direction
+                        if *next_position > *position {
+                            // Next branch is to the right - show "\" (current branch splits right)
+                            link_line.push_str("\\");
+                        } else {
+                            // Next branch is to the left - show "/" (current branch splits left)
+                            link_line.push_str("/");
+                        }
+                    } else if i == *next_position {
+                        // Next branch column - show "|" (branch continues)
+                        link_line.push_str("|");
+                    } else if branch_continues {
+                        // Other branches that continue - show "|"
+                        link_line.push_str("|");
+                    } else {
+                        // Empty space
+                        link_line.push_str(" ");
+                    }
+                } else {
+                    // Same branch - show "|" for this branch, check others
+                    if i == *position {
+                        // Same branch continues - show "|"
+                        link_line.push_str("|");
+                    } else if branch_continues {
+                        // Other branches that continue - show "|"
+                        link_line.push_str("|");
+                    } else {
+                        // Empty space
+                        link_line.push_str(" ");
+                    }
+                }
+            }
+            
+            // Ensure fixed width
+            if link_line.len() < max_width {
+                link_line.push_str(&" ".repeat(max_width - link_line.len()));
+            } else if link_line.len() > max_width {
+                let link_line_chars: Vec<char> = link_line.chars().collect();
+                link_line = link_line_chars.iter().take(max_width).collect();
+            }
+            
+            let link_tree_display = format!("{:<tree_w$}", link_line.green(), tree_w = tree_width);
+            
+            // Print link row: empty date, empty branch, graph links, empty hash, empty message
+            println!("{:<date_w$} {:<branch_w$} {:<tree_w$} {:<hash_w$}", 
+                format!("{:<date_w$}", "", date_w = date_width),
+                format!("{:<branch_w$}", "", branch_w = branch_width.max(20)),
+                link_tree_display,
+                format!("{:<8}", ""),
+                date_w = date_width,
+                branch_w = branch_width.max(20),
+                tree_w = tree_width,
+                hash_w = hash_width
+            );
+        }
     }
     
     println!();
@@ -791,9 +900,9 @@ async fn display_git_graph(commits: &[crate::application::dto::commit::GetCommit
 
 fn display_simple_git_graph(commits: &[crate::application::dto::commit::GetCommitResponse]) {
     // Since we don't have branch information directly in commit data,
-    // we'll create a simple chronological graph
+    // we'll create a simple chronological graph (newest first)
     let mut sorted_commits: Vec<_> = commits.iter().collect();
-    sorted_commits.sort_by(|a, b| a.created_date.cmp(&b.created_date));
+    sorted_commits.sort_by(|a, b| b.created_date.cmp(&a.created_date));
     
     for (i, commit) in sorted_commits.iter().enumerate() {
         let is_last = i == sorted_commits.len() - 1;
@@ -807,7 +916,22 @@ fn display_simple_git_graph(commits: &[crate::application::dto::commit::GetCommi
         } else if commit.snapshot_comment.contains("inserted") {
             "➕"
         } else {
-            "📝"
+            "•"
+        };
+        
+        // Format date with time (including seconds)
+        let date_time = if commit.created_date.contains('T') {
+            let parts: Vec<&str> = commit.created_date.split('T').collect();
+            if parts.len() == 2 {
+                let date_part = parts[0];
+                let time_part = parts[1].split('.').next().unwrap_or(parts[1]);
+                let time_full = time_part.split(':').take(3).collect::<Vec<&str>>().join(":"); // HH:MM:SS
+                format!("{} {}", date_part, time_full)
+            } else {
+                commit.created_date.clone()
+            }
+        } else {
+            commit.created_date.clone()
         };
         
         let line = format!("{} {} {} {} {}", 
@@ -815,7 +939,7 @@ fn display_simple_git_graph(commits: &[crate::application::dto::commit::GetCommi
             &commit.id[..8].yellow(),
             commit_symbol,
             commit.snapshot_comment.cyan(),
-            commit.created_date.split('T').next().unwrap_or(&commit.created_date).dimmed()
+            date_time.dimmed()
         );
         println!("{}", line);
     }

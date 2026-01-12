@@ -39,6 +39,9 @@ guepard deploy -x <deployment_id> -n <new_repository_name>
 # Get deployment details
 guepard deploy -x <deployment_id>
 
+# View deployment commit graph
+guepard deploy -x <deployment_id> --graph
+
 # Get deployment details as JSON
 guepard deploy -x <deployment_id> --json
 ```

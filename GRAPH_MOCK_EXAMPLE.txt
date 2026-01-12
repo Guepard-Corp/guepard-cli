@@ -1,0 +1,70 @@
+📖 Graph Legend:
+  * Commit marker
+  | Link between commits on same branch
+  \ Branch splits to left
+  / Branch splits to right
+  Hash Active commit (hash blinks red)
+
+Example 1: Simple branch split
+2025-12-18 17:24:03   main                 *    5f9566f5 🔧 AUTO SNAP
+                     |\
+                     | *   a1ec1ca7 📝 Feature commit
+                     | |
+                     | *   a4373756 📝 Another feature commit
+                     |/
+                     *    3e6d5e12 📝 Merge back to main
+
+Example 2: Multiple branches
+2025-12-18 17:24:03   main                 *    5f9566f5 🔧 AUTO SNAP
+                     |\
+                     | *   a1ec1ca7 📝 Feature A
+                     | |\
+                     | | *   a4373756 📝 Feature B (from Feature A)
+                     | | |
+                     | | *   a4fb80ee 📝 Feature B commit 2
+                     | * |  2f67083d 📝 Feature A commit 2
+                     | |/
+                     | *    6cfa80f5 📝 Feature A merge
+                     |/
+                     *    3e6d5e12 📝 Final merge to main
+
+Example 3: Complex branching (like your screenshot)
+2025-12-18 17:24:03   ancient-rain-5urq79  *    5f9566f5 🔧 AUTO SNAP
+                     |\
+                     | *   a1ec1ca7 📝 E2E Test Snapshot
+                     | |
+                     | *   a4373756 📝 E2E Test Snapshot
+                     | |
+                     | *   a4fb80ee 📝 E2E Workflow Commit
+                     | |
+                     | *   2f67083d 📝 E2E Test Snapshot
+                     | |
+                     | *   6cfa80f5 📝 E2E Test Snapshot
+                     |/
+                     *    3e6d5e12 📝 Initial Bookmark (main)
+
+Example 4: Three branches
+2025-12-18 17:30:00   main                 *    abc12345 🔧 Main commit
+                     |\
+                     | *   def67890 📝 Branch A commit 1
+                     | |\
+                     | | *   ghi11111 📝 Branch B commit 1
+                     | * |  jkl22222 📝 Branch A commit 2
+                     | | *   mno33333 📝 Branch B commit 2
+                     | * |  pqr44444 📝 Branch A commit 3
+                     | |/
+                     | *    stu55555 📝 Branch A merge
+                     |/
+                     *     vwx66666 🔧 Final merge
+
+Example 5: Branch that doesn't merge back
+2025-12-18 17:24:03   main                 *    5f9566f5 🔧 AUTO SNAP
+                     |\
+                     | *   a1ec1ca7 📝 Feature branch
+                     | |
+                     | *   a4373756 📝 Feature commit 2
+                     | |
+                     | *   a4fb80ee 📝 Feature commit 3
+                     |
+                     *    3e6d5e12 📝 Main continues separately
+
