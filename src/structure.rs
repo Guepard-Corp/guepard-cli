@@ -132,15 +132,18 @@ pub enum SubCommand {
     /// Change your database state to match a different branch or restore to a previous
     /// snapshot. Similar to git checkout but affects your entire database state.
     ///
+    /// Requires only deployment_id. Use with branch_id or snapshot_id to perform checkout,
+    /// or use deployment_id alone to list available branches.
+    ///
     /// Examples:
+    ///   # List available branches
+    ///   guepard checkout -x <deployment_id>
+    ///
     ///   # Checkout a branch
     ///   guepard checkout -x <deployment_id> -c <branch_id>
     ///
     ///   # Restore to a specific snapshot
     ///   guepard checkout -x <deployment_id> -s <snapshot_id>
-    ///
-    ///   # List available branches (shows helpful message)
-    ///   guepard checkout -x <deployment_id>
     Checkout(CheckoutArgs),
     
     /// 💻 Manage compute instances (start, stop, status, logs)
@@ -593,15 +596,18 @@ pub struct CheckoutArgs {
     
     /// Deployment ID
     ///
-    /// Required for checkout operations. Find deployments with:
-    ///   guepard list deployments
+    /// Required. The only required parameter for checkout. Can be used alone to list
+    /// available branches, or combined with branch_id or snapshot_id to perform checkout.
+    /// Find deployments with: guepard list deployments
     #[clap(short = 'x', long)]
     pub deployment_id: Option<String>,
     
     /// Branch ID to checkout
     ///
-    /// The unique identifier of the branch to switch to. List branches with:
+    /// Optional. The unique identifier of the branch to switch to. When provided with
+    /// deployment_id, checks out the specified branch. List branches with:
     ///   guepard branch -x <deployment_id>
+    ///   guepard checkout -x <deployment_id>
     ///
     /// When you checkout a branch, your database state changes to match that branch.
     #[clap(short = 'c', long)]
@@ -609,10 +615,10 @@ pub struct CheckoutArgs {
     
     /// Snapshot ID to checkout
     ///
-    /// The unique identifier of the snapshot to restore to. List snapshots with:
-    ///   guepard list commits -x <deployment_id>
+    /// Optional. The unique identifier of the snapshot to restore to. When provided with
+    /// deployment_id, restores the database to the exact state captured in this snapshot.
+    /// List snapshots with: guepard list commits -x <deployment_id>
     ///
-    /// Restores your database to the exact state captured in this snapshot.
     /// Useful for rollbacks and testing previous states.
     #[clap(short = 's', long)]
     pub snapshot_id: Option<String>,

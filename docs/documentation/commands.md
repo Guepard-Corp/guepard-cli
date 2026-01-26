@@ -201,22 +201,27 @@ guepard branch
 
 Switch between branches or checkout specific snapshots.
 
+**Note:** Only `--deployment-id` is required. Use it alone to list available branches, or combine it with `--branch-id` or `--snapshot-id` to perform checkout.
+
 #### Syntax
 ```bash
-guepard checkout [OPTIONS] <target>
+guepard checkout [OPTIONS]
 ```
 
 #### Options
 | Option | Short | Description | Required |
 |--------|-------|-------------|----------|
-| `--deployment-id` | `-x` | Deployment ID | Yes |
-| `--branch-id` | `-c` | Branch ID to checkout | For branch checkout |
-| `--snapshot-id` | `-s` | Snapshot ID to checkout | For snapshot checkout |
-| `--checkout` | `-k` | Perform checkout | No |
-| `--discard-changes` | `-d` | Discard changes | No |
+| `--deployment-id` | `-x` | Deployment ID (only required parameter) | Yes |
+| `--branch-id` | `-c` | Branch ID to checkout | No |
+| `--snapshot-id` | `-s` | Snapshot ID to checkout | No |
 | `--json` | | Output results as JSON | No |
 
 #### Examples
+
+**List available branches (deployment_id only, required):**
+```bash
+guepard checkout --deployment-id 12345678-1234-1234-1234-123456789abc
+```
 
 **Checkout a branch:**
 ```bash
@@ -225,9 +230,11 @@ guepard checkout \
   --branch-id def67890-1234-5678-9012-345678901234
 ```
 
-**List available branches:**
+**Restore to a snapshot:**
 ```bash
-guepard checkout --deployment-id 12345678-1234-1234-1234-123456789abc
+guepard checkout \
+  --deployment-id 12345678-1234-1234-1234-123456789abc \
+  --snapshot-id abc12345-6789-1234-5678-123456789abc
 ```
 
 **Checkout branch and output as JSON:**
@@ -235,11 +242,18 @@ guepard checkout --deployment-id 12345678-1234-1234-1234-123456789abc
 guepard checkout -x <deployment_id> -c <branch_id> --json
 ```
 
-**Git-like usage:**
+**Restore snapshot and output as JSON:**
 ```bash
-# Shows helpful message
-guepard checkout develop
+guepard checkout -x <deployment_id> -s <snapshot_id> --json
 ```
+
+**Output format:**
+The checkout command displays a table with the following columns:
+- **Branch ID**: The unique identifier of the branch
+- **Name**: The branch name or label
+- **Status**: Current job status of the branch
+- **Snapshot ID**: The snapshot associated with the branch
+- **Comment**: The snapshot comment/message
 
 ### `guepard log` - View Logs
 
@@ -481,13 +495,15 @@ guepard logout
 - Use `-n` instead of `--name`
 
 ### Git-like Shortcuts
-Many commands support Git-like syntax for familiarity:
+Some commands support Git-like syntax for familiarity:
 
 ```bash
 # These show helpful messages
 guepard branch develop
-guepard checkout develop
 guepard commit -m "message"
+
+# Checkout requires explicit flags
+guepard checkout -x <deployment_id> -c <branch_id>
 ```
 
 ## Output Formats

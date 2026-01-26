@@ -67,11 +67,14 @@ guepard branch              # Shows helpful message
 
 ### Checkout Command
 ```bash
+# List available branches (deployment_id is the only required parameter)
+guepard checkout -x <deployment_id>
+
 # Checkout branch
 guepard checkout -x <deployment_id> -c <branch_id>
 
-# Git-like usage (simplified)
-guepard checkout <branch_name>  # Shows helpful message
+# Restore to a snapshot
+guepard checkout -x <deployment_id> -s <snapshot_id>
 ```
 
 ### Compute Commands
@@ -116,6 +119,7 @@ All commands use beautiful tables with:
 ### Enhanced Display
 - **Deployment tables** show ID, name, repository, provider, version, status, FQDN
 - **Branch tables** show ID, name, status, snapshot, environment, ephemeral status
+- **Checkout tables** show ID, name, status, snapshot ID, comment
 - **Compute tables** show detailed instance information
 - **Status tables** show current state with messages
 - **Log output** with colored stdout/stderr separation
