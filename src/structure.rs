@@ -73,7 +73,7 @@ pub enum SubCommand {
     ///   guepard deploy -x <deployment_id> -n new-name
     ///
     ///   # Delete deployment (use with caution)
-    ///   guepard deploy -x <deployment_id> --yes
+    ///   guepard deploy -x <deployment_id> --purge
     Deploy(DeployArgs),
     
     /// 📸 Create snapshots of your database state (like git commit)
@@ -369,7 +369,7 @@ pub struct DeployArgs {
     /// Use this flag to:
     ///   - View deployment details: guepard deploy -x <deployment_id>
     ///   - Update deployment: guepard deploy -x <deployment_id> -n new-name
-    ///   - Delete deployment: guepard deploy -x <deployment_id> --yes
+    ///   - Delete deployment: guepard deploy -x <deployment_id> --purge
     #[clap(short = 'x', long)]
     pub deployment_id: Option<String>,
     
@@ -379,13 +379,14 @@ pub struct DeployArgs {
     #[clap(short = 'u', long)]
     pub user: Option<String>,
     
-    /// Skip confirmation prompts
-    ///
-    /// Automatically confirm destructive operations like deletion without prompting.
-    /// Use with caution.
+    /// Skip confirmation when using --purge (delete without prompting).
     #[clap(short = 'y', long)]
     pub yes: bool,
-    
+
+    /// Permanently delete this deployment and associated resources. Use with -x. Requires confirmation unless --yes is set.
+    #[clap(long)]
+    pub purge: bool,
+
     /// Performance profile for the deployment
     ///
     /// Available profiles:
