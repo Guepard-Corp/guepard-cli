@@ -107,6 +107,7 @@ jobs:
     outputs:
       platforms: ${{ steps.detect.outputs.platforms }}
       version: ${{ needs.bump-version-and-tag.outputs.version }}
+      tag: ${{ needs.bump-version-and-tag.outputs.tag }}
     steps:
       - name: Set platforms and version
         id: detect
@@ -143,6 +144,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.detect-platforms.outputs.tag }}
 
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -207,6 +210,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.detect-platforms.outputs.tag }}
 
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -281,6 +286,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.detect-platforms.outputs.tag }}
 
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -326,6 +333,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.bump-version-and-tag.outputs.tag }}
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
