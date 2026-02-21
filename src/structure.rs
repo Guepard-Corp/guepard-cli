@@ -25,7 +25,7 @@ Quick Start:
   1. Authenticate: guepard login
   2. Deploy: guepard deploy --interactive
   3. Commit: guepard commit -m \"message\" -x <deployment_id> -b <branch_id>
-  4. Branch: guepard branch -x <deployment_id> -s <snapshot_id> -n <name>
+  4. Branch: guepard branch -x <deployment_id> -s <snapshot_id> <name>
 
 For detailed documentation, visit: https://docs.guepard.run",
     propagate_version = true
@@ -102,10 +102,10 @@ pub enum SubCommand {
     ///   guepard branch -x <deployment_id>
     ///
     ///   # Create a new feature branch
-    ///   guepard branch -x <deployment_id> -s <snapshot_id> -n feature-auth --checkout --ephemeral
+    ///   guepard branch -x <deployment_id> -s <snapshot_id> feature-auth --checkout --ephemeral
     ///
     ///   # Create a bugfix branch
-    ///   guepard branch -x <deployment_id> -s <snapshot_id> -n bugfix/login-error -k -e
+    ///   guepard branch -x <deployment_id> -s <snapshot_id> bugfix/login-error -k -e
     Branch(BranchArgs),
     
     /// 📋 View deployment logs and commit history
@@ -234,7 +234,7 @@ pub enum SubCommand {
     ///   # Set API endpoint
     ///   guepard config --api-url https://api.guepard.run
     ///
-    ///   # Get specific configuration value
+    ///   # Show current configuration
     ///   guepard config --get
     Config(ConfigArgs),
     
@@ -743,10 +743,9 @@ pub struct ConfigArgs {
     #[clap(flatten)]
     pub output: OutputArgs,
     
-    /// Get current configuration value
+    /// Display current configuration (same as --show)
     ///
-    /// Display the current value of a configuration setting.
-    /// Use with other flags to get specific values.
+    /// Show current API URL and login status.
     #[clap(long)]
     pub get: bool,
     
