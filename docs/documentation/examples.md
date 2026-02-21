@@ -61,7 +61,7 @@ guepard commit \
 guepard branch \
   --deployment-id prod-12345678-1234-1234-1234-123456789abc \
   --snapshot-id initial-schema-snapshot-id \
-  --name feature-auth \
+  feature-auth \
   --checkout \
   --ephemeral
 
@@ -78,7 +78,7 @@ guepard commit \
 guepard branch \
   --deployment-id prod-12345678-1234-1234-1234-123456789abc \
   --snapshot-id auth-snapshot-id \
-  --name feature-payments \
+  feature-payments \
   --checkout \
   --ephemeral
 
@@ -141,7 +141,7 @@ guepard commit \
 guepard branch \
   --deployment-id saas-87654321-4321-4321-4321-210987654321 \
   --snapshot-id base-tenant-schema-id \
-  --name tenant-acme-corp \
+  tenant-acme-corp \
   --checkout
 
 # 4. Add tenant-specific data
@@ -154,7 +154,7 @@ guepard commit \
 guepard branch \
   --deployment-id saas-87654321-4321-4321-4321-210987654321 \
   --snapshot-id base-tenant-schema-id \
-  --name tenant-tech-startup \
+  tenant-tech-startup \
   --checkout
 
 # 6. Add different tenant configuration
@@ -178,7 +178,7 @@ BASE_SNAPSHOT_ID="base-tenant-schema-id"
 guepard branch \
   --deployment-id $DEPLOYMENT_ID \
   --snapshot-id $BASE_SNAPSHOT_ID \
-  --name "tenant-$TENANT_NAME" \
+  "tenant-$TENANT_NAME" \
   --checkout
 
 # Add tenant-specific configuration
@@ -218,14 +218,14 @@ guepard deploy \
 guepard branch \
   --deployment-id team-11111111-2222-3333-4444-555555555555 \
   --snapshot-id initial-schema-id \
-  --name develop \
+  develop \
   --checkout
 
 # 3. Developer Alice works on user profiles
 guepard branch \
   --deployment-id team-11111111-2222-3333-4444-555555555555 \
   --snapshot-id develop-snapshot-id \
-  --name feature/user-profiles-alice \
+  feature/user-profiles-alice \
   --checkout \
   --ephemeral
 
@@ -239,7 +239,7 @@ guepard commit \
 guepard branch \
   --deployment-id team-11111111-2222-3333-4444-555555555555 \
   --snapshot-id develop-snapshot-id \
-  --name feature/notifications-bob \
+  feature/notifications-bob \
   --checkout \
   --ephemeral
 
@@ -406,7 +406,7 @@ Managing database schema migrations for a growing application.
 guepard branch \
   --deployment-id app-12345678-1234-1234-1234-123456789abc \
   --snapshot-id current-schema-id \
-  --name migration/add-user-roles \
+  migration/add-user-roles \
   --checkout \
   --ephemeral
 
@@ -442,7 +442,7 @@ guepard commit \
 guepard branch \
   --deployment-id app-12345678-1234-1234-1234-123456789abc \
   --snapshot-id pre-migration-snapshot-id \
-  --name rollback/user-roles \
+  rollback/user-roles \
   --checkout \
   --ephemeral
 

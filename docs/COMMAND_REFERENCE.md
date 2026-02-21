@@ -1,37 +1,37 @@
 # Complete Guepard CLI Command Reference
 
 ## Overview
-Your Guepard CLI now follows a Git-like structure while preserving all your original functionality and beautiful table outputs. Updated for API v0.4.4.
+Guepard CLI follows a Git-like structure with deploy, commit, branch, checkout, list, clone, and more. Updated for current CLI.
 
 ## Commands
 
 ### Core Commands
-- `guepard deploy` - Deploy database instances with beautiful table output
-- `guepard commit -m "message" -x <deployment_id> -c <clone_id>` - Create snapshots (bookmarks)
-- `guepard branch` - List and manage branches with detailed tables
+- `guepard deploy` - Deploy, view, update, or delete database instances
+- `guepard commit -m "message" -x <deployment_id> -b <branch_id>` - Create snapshots
+- `guepard branch` - List branches or create from snapshot (branch name is positional)
 - `guepard checkout` - Switch branches or checkout snapshots
-- `guepard log` - Show commit history
-- `guepard rev-parse` - Find .gfs directory
+- `guepard log` - View deployment logs
 
 ### Management Commands
 - `guepard compute status|start|stop|restart|list|logs -x <deployment_id>` - Compute management
-- `guepard show branches|commits -x <deployment_id>` - Show detailed information
-- `guepard usage` - Show usage information
+- `guepard list deployments|branches|commits|clones` - List resources (-x required for branches/commits/clones)
+- `guepard clone -x <deployment_id> -s <snapshot_id>` - Create clone from snapshot
+- `guepard usage` - Show usage and quotas
 
-### Authentication
-- `guepard link` - Start login process
-- `guepard login -c <code>` - Complete login with verification code
+### Authentication & Config
+- `guepard login` - Interactive login; use `-c <code>` for token
 - `guepard logout` - Log out and clear credentials
+- `guepard config --show` / `guepard config -a <api_url>` - View or set configuration
 
 ## Detailed Usage
 
 ### Deploy Command
 ```bash
 # Create new deployment
-guepard deploy -p PostgreSQL -v 16 -r us-west-aws -d us-west-aws -n myrepo -w password
+guepard deploy -p PostgreSQL -v 16 -r us-west -i REPOSITORY -d aws -n myrepo -w password
 
 # Create deployment with node ID
-guepard deploy -p PostgreSQL -v 17 -r us-west-aws -d us-west-aws -n myrepo -w password -s <node_id>
+guepard deploy -p PostgreSQL -v 17 -r us-west -i REPOSITORY -d aws -n myrepo -w password -s <node_id>
 
 # Update deployment
 guepard deploy -x <deployment_id> -n <new_repository_name>
@@ -49,7 +49,7 @@ guepard deploy -x <deployment_id> --json
 ### Commit Command (Snapshots)
 ```bash
 # Create a snapshot with message
-guepard commit -m "Production snapshot" -x <deployment_id> -c <clone_id>
+guepard commit -m "Production snapshot" -x <deployment_id> -b <branch_id>
 ```
 
 ### Branch Command
@@ -57,12 +57,12 @@ guepard commit -m "Production snapshot" -x <deployment_id> -c <clone_id>
 # List branches for deployment
 guepard branch -x <deployment_id>
 
-# Create new branch
-guepard branch -x <deployment_id> -s <snapshot_id> -n <branch_name> -k -e
+# Create new branch (name is positional, no -n)
+guepard branch -x <deployment_id> -s <snapshot_id> <branch_name> -k -e
 
-# Git-like usage (simplified)
-guepard branch <branch_name>  # Shows helpful message
-guepard branch              # Shows helpful message
+# Git-like: branch name only shows helpful message
+guepard branch <branch_name>
+guepard branch
 ```
 
 ### Checkout Command
@@ -98,13 +98,16 @@ guepard compute list -x <deployment_id>
 guepard compute logs -x <deployment_id>
 ```
 
-### Show Commands
+### List Commands
 ```bash
-# Show branches with active indicator
-guepard show branches -x <deployment_id>
+# List branches for a deployment
+guepard list branches -x <deployment_id>
 
-# Show commits
-guepard show commits -x <deployment_id>
+# List commits for a deployment
+guepard list commits -x <deployment_id>
+
+# List clones
+guepard list clones -x <deployment_id>
 ```
 
 ## Beautiful Output Features
@@ -143,24 +146,21 @@ All commands use beautiful tables with:
 
 ### Complete Workflow
 ```bash
-# Initialize environment
-guepard init .
-
 # Deploy database
-guepard deploy -p PostgreSQL -v 16 -r us-west-aws -d us-west-aws -n myrepo -w password
+guepard deploy -p PostgreSQL -v 16 -r us-west -i REPOSITORY -d aws -n myrepo -w password
 
 # Create snapshot
-guepard commit -m "Initial setup" -x <deployment_id> -c <clone_id>
+guepard commit -m "Initial setup" -x <deployment_id> -b <branch_id>
 
-# Create branch
-guepard branch -x <deployment_id> -s <snapshot_id> -n feature-branch -k
+# Create branch (name is positional)
+guepard branch -x <deployment_id> -s <snapshot_id> feature-branch -k
 
 # Manage compute
 guepard compute start -x <deployment_id>
 guepard compute status -x <deployment_id>
 
-# Show branches
-guepard show branches -x <deployment_id>
+# List branches
+guepard list branches -x <deployment_id>
 ```
 
 ### Quick Commands

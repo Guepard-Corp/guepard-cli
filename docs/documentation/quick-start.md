@@ -135,7 +135,7 @@ Create a development branch for experimentation:
 guepard branch \
   --deployment-id 12345678-1234-1234-1234-123456789abc \
   --snapshot-id abc12345-6789-1234-5678-123456789abc \
-  --name develop \
+  develop \
   --checkout \
   --ephemeral
 ```
@@ -198,7 +198,7 @@ guepard usage
 ### Development Workflow
 ```bash
 # 1. Create a feature branch
-guepard branch -x <deployment_id> -s <snapshot_id> -n feature-auth -k -e
+guepard branch -x <deployment_id> -s <snapshot_id> feature-auth -k -e
 
 # 2. Make changes to your database (via your application)
 # 3. Create a snapshot
@@ -211,7 +211,7 @@ guepard checkout -x <deployment_id> -c <main_branch_id>
 ### Production Deployment
 ```bash
 # 1. Create production branch from stable snapshot
-guepard branch -x <deployment_id> -s <stable_snapshot_id> -n production
+guepard branch -x <deployment_id> -s <stable_snapshot_id> production
 
 # 2. Deploy to production environment
 guepard compute start -x <deployment_id>

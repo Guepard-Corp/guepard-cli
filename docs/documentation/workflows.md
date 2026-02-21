@@ -27,7 +27,7 @@ guepard checkout --deployment-id <deployment_id> --branch-id main-branch-id
 guepard branch \
   --deployment-id <deployment_id> \
   --snapshot-id latest-main-snapshot-id \
-  --name feature/user-authentication \
+  feature/user-authentication \
   --checkout \
   --ephemeral
 
@@ -69,7 +69,7 @@ For urgent fixes in production:
 guepard branch \
   --deployment-id <deployment_id> \
   --snapshot-id production-snapshot-id \
-  --name hotfix/critical-bug-fix \
+  hotfix/critical-bug-fix \
   --checkout \
   --ephemeral
 
@@ -103,7 +103,7 @@ For testing new ideas without affecting main development:
 guepard branch \
   --deployment-id <deployment_id> \
   --snapshot-id latest-snapshot-id \
-  --name experiment/new-architecture \
+  experiment/new-architecture \
   --checkout \
   --ephemeral
 
@@ -154,7 +154,7 @@ experiment/performance-optimization
 guepard branch \
   --deployment-id <deployment_id> \
   --snapshot-id latest-snapshot-id \
-  --name feature/new-feature \
+  feature/new-feature \
   --checkout \
   --ephemeral
 
@@ -200,7 +200,7 @@ guepard list branches --deployment-id <deployment_id>
 guepard branch \
   --deployment-id <deployment_id> \
   --snapshot-id conflict-resolution-base-id \
-  --name resolve/feature-conflict \
+  resolve/feature-conflict \
   --checkout \
   --ephemeral
 
@@ -257,7 +257,7 @@ jobs:
           guepard branch \
             --deployment-id ${{ secrets.TEST_DEPLOYMENT_ID }} \
             --snapshot-id ${{ secrets.TEST_SNAPSHOT_ID }} \
-            --name test/${{ github.sha }} \
+            test/${{ github.sha }} \
             --checkout \
             --ephemeral
           
@@ -351,7 +351,7 @@ pipeline {
                     guepard branch \
                       --deployment-id $STAGING_DEPLOYMENT_ID \
                       --snapshot-id test-base-snapshot-id \
-                      --name test/$BUILD_NUMBER \
+                      test/$BUILD_NUMBER \
                       --checkout \
                       --ephemeral
                     # Run tests here
@@ -540,7 +540,7 @@ echo "🔄 Running forward migration: $MIGRATION_NAME"
 guepard branch \
   --deployment-id $DEPLOYMENT_ID \
   --snapshot-id latest-snapshot-id \
-  --name migration/$MIGRATION_NAME \
+  migration/$MIGRATION_NAME \
   --checkout \
   --ephemeral
 
@@ -586,7 +586,7 @@ if [ "$ACTION" = "forward" ]; then
     guepard branch \
       --deployment-id $DEPLOYMENT_ID \
       --snapshot-id latest-snapshot-id \
-      --name migration/$MIGRATION_NAME-forward \
+      migration/$MIGRATION_NAME-forward \
       --checkout \
       --ephemeral
     
@@ -604,7 +604,7 @@ else
     guepard branch \
       --deployment-id $DEPLOYMENT_ID \
       --snapshot-id pre-migration-snapshot-id \
-      --name migration/$MIGRATION_NAME-backward \
+      migration/$MIGRATION_NAME-backward \
       --checkout \
       --ephemeral
     
@@ -691,7 +691,7 @@ echo "🔬 Running unit tests..."
 guepard branch \
   --deployment-id $UNIT_DEPLOYMENT_ID \
   --snapshot-id unit-test-base-snapshot-id \
-  --name $TEST_BRANCH \
+  $TEST_BRANCH \
   --checkout \
   --ephemeral
 
@@ -710,7 +710,7 @@ echo "🔗 Running integration tests..."
 guepard branch \
   --deployment-id $INTEGRATION_DEPLOYMENT_ID \
   --snapshot-id integration-test-base-snapshot-id \
-  --name $TEST_BRANCH \
+  $TEST_BRANCH \
   --checkout \
   --ephemeral
 
@@ -729,7 +729,7 @@ echo "🎯 Running end-to-end tests..."
 guepard branch \
   --deployment-id $E2E_DEPLOYMENT_ID \
   --snapshot-id e2e-test-base-snapshot-id \
-  --name $TEST_BRANCH \
+  $TEST_BRANCH \
   --checkout \
   --ephemeral
 
@@ -842,13 +842,13 @@ echo "✅ Maintenance window completed!"
 2. **Create branches for all changes**
    ```bash
    # Always create a branch for new work
-   guepard branch -x <deployment_id> -s <snapshot_id> -n feature/new-feature -k -e
+   guepard branch -x <deployment_id> -s <snapshot_id> feature/new-feature -k -e
    ```
 
 3. **Test changes in isolation**
    ```bash
    # Use ephemeral branches for experiments
-   guepard branch -x <deployment_id> -s <snapshot_id> -n experiment/new-idea -e
+   guepard branch -x <deployment_id> -s <snapshot_id> experiment/new-idea -e
    ```
 
 4. **Keep commits atomic**

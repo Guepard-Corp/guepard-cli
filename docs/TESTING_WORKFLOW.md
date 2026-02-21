@@ -114,16 +114,16 @@ guepard branch "feature-branch"
 #### 3.2 Create Branches
 ```bash
 # Create branch from snapshot
-guepard branch -x $TEST_DEPLOYMENT_ID -s $TEST_SNAPSHOT_ID -n "feature-branch-$(date +%s)" -k -e
+guepard branch -x $TEST_DEPLOYMENT_ID -s $TEST_SNAPSHOT_ID "feature-branch-$(date +%s)" -k -e
 
 # Create ephemeral branch
-guepard branch -x $TEST_DEPLOYMENT_ID -s $TEST_SNAPSHOT_ID -n "ephemeral-branch" -e
+guepard branch -x $TEST_DEPLOYMENT_ID -s $TEST_SNAPSHOT_ID "ephemeral-branch" -e
 
 # Create branch with checkout
-guepard branch -x $TEST_DEPLOYMENT_ID -s $TEST_SNAPSHOT_ID -n "checkout-branch" -k
+guepard branch -x $TEST_DEPLOYMENT_ID -s $TEST_SNAPSHOT_ID "checkout-branch" -k
 
 # Create branch from source branch
-guepard branch -x $TEST_DEPLOYMENT_ID -s $TEST_SNAPSHOT_ID -n "from-source" -b $TEST_BRANCH_ID
+guepard branch -x $TEST_DEPLOYMENT_ID -s $TEST_SNAPSHOT_ID "from-source" -b $TEST_BRANCH_ID
 ```
 
 ### Phase 4: Snapshot Management (Commit)
@@ -288,7 +288,7 @@ done
 
 # Create multiple branches
 for i in {1..3}; do
-  guepard branch -x $TEST_DEPLOYMENT_ID -s $TEST_SNAPSHOT_ID -n "stress-branch-$i"
+  guepard branch -x $TEST_DEPLOYMENT_ID -s $TEST_SNAPSHOT_ID "stress-branch-$i"
 done
 
 # Create multiple snapshots
@@ -373,7 +373,7 @@ echo "Testing branch operations..."
 guepard branch -x $DEPLOYMENT_ID
 
 # Create test branch
-BRANCH_ID=$(guepard branch -x $DEPLOYMENT_ID -s $(guepard list commits -x $DEPLOYMENT_ID | head -2 | tail -1 | awk '{print $1}') -n "test-branch" | grep -o 'ID: [a-f0-9-]*' | cut -d' ' -f2)
+BRANCH_ID=$(guepard branch -x $DEPLOYMENT_ID -s $(guepard list commits -x $DEPLOYMENT_ID | head -2 | tail -1 | awk '{print $1}') "test-branch" | grep -o 'ID: [a-f0-9-]*' | cut -d' ' -f2)
 
 # Test commit operations
 echo "Testing commit operations..."

@@ -85,7 +85,7 @@ A **branch** is a parallel line of development for your database. It allows you 
 guepard branch \
   --deployment-id <deployment_id> \
   --snapshot-id <snapshot_id> \
-  --name feature/user-authentication \
+  feature/user-authentication \
   --checkout \
   --ephemeral
 ```
@@ -93,7 +93,7 @@ guepard branch \
 **Parameters:**
 - `--deployment-id`: The deployment to create the branch in
 - `--snapshot-id`: The snapshot to branch from
-- `--name`: Descriptive name for the branch
+- Branch name is **positional** (no `-n`): pass the name after the options
 - `--checkout`: Automatically checkout the new branch
 - `--ephemeral`: Mark as temporary (can be cleaned up later)
 
@@ -106,7 +106,7 @@ For developing new features:
 guepard branch \
   --deployment-id <deployment_id> \
   --snapshot-id <snapshot_id> \
-  --name feature/payment-integration \
+  feature/payment-integration \
   --checkout \
   --ephemeral
 ```
@@ -118,7 +118,7 @@ For fixing issues:
 guepard branch \
   --deployment-id <deployment_id> \
   --snapshot-id <snapshot_id> \
-  --name bugfix/login-error \
+  bugfix/login-error \
   --checkout \
   --ephemeral
 ```
@@ -130,7 +130,7 @@ For urgent production fixes:
 guepard branch \
   --deployment-id <deployment_id> \
   --snapshot-id <production_snapshot_id> \
-  --name hotfix/security-patch \
+  hotfix/security-patch \
   --checkout \
   --ephemeral
 ```
@@ -142,7 +142,7 @@ For testing new ideas:
 guepard branch \
   --deployment-id <deployment_id> \
   --snapshot-id <snapshot_id> \
-  --name experiment/new-architecture \
+  experiment/new-architecture \
   --checkout \
   --ephemeral
 ```
@@ -292,7 +292,7 @@ guepard checkout --deployment-id <deployment_id> --branch-id main-branch-id
 guepard branch \
   --deployment-id <deployment_id> \
   --snapshot-id latest-main-snapshot-id \
-  --name feature/user-profiles \
+  feature/user-profiles \
   --checkout \
   --ephemeral
 
@@ -332,7 +332,7 @@ guepard commit \
 guepard branch \
   --deployment-id <deployment_id> \
   --snapshot-id latest-main-snapshot-id \
-  --name bugfix/login-error \
+  bugfix/login-error \
   --checkout \
   --ephemeral
 
@@ -360,7 +360,7 @@ guepard commit \
 guepard branch \
   --deployment-id <deployment_id> \
   --snapshot-id production-snapshot-id \
-  --name hotfix/security-patch \
+  hotfix/security-patch \
   --checkout \
   --ephemeral
 
@@ -392,7 +392,7 @@ guepard commit \
 guepard branch \
   --deployment-id <deployment_id> \
   --snapshot-id latest-snapshot-id \
-  --name experiment/new-architecture \
+  experiment/new-architecture \
   --checkout \
   --ephemeral
 
@@ -415,7 +415,7 @@ guepard commit \
 guepard branch \
   --deployment-id <deployment_id> \
   --snapshot-id <specific_snapshot_id> \
-  --name feature/from-specific-point \
+  feature/from-specific-point \
   --checkout
 ```
 
@@ -423,9 +423,9 @@ guepard branch \
 
 ```bash
 # Create multiple branches for parallel development
-guepard branch -x <deployment_id> -s <snapshot_id> -n feature/auth -k -e
-guepard branch -x <deployment_id> -s <snapshot_id> -n feature/payments -k -e
-guepard branch -x <deployment_id> -s <snapshot_id> -n feature/admin -k -e
+guepard branch -x <deployment_id> -s <snapshot_id> feature/auth -k -e
+guepard branch -x <deployment_id> -s <snapshot_id> feature/payments -k -e
+guepard branch -x <deployment_id> -s <snapshot_id> feature/admin -k -e
 
 # Each developer can work on their branch independently
 ```
@@ -482,7 +482,7 @@ guepard checkout --deployment-id <deployment_id> --branch-id <correct_branch_id>
 guepard list commits --deployment-id <deployment_id>
 
 # Verify snapshot ID
-guepard branch --deployment-id <deployment_id> --snapshot-id <correct_snapshot_id> -n test-branch
+guepard branch --deployment-id <deployment_id> --snapshot-id <correct_snapshot_id> test-branch
 ```
 
 **Cannot checkout:**

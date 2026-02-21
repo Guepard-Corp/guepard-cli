@@ -83,7 +83,7 @@ A **branch** is a parallel line of development for your database. It allows you 
 guepard branch \
   --deployment-id <deployment_id> \
   --snapshot-id <snapshot_id> \
-  --name feature/new-feature \
+  feature/new-feature \
   --checkout \
   --ephemeral
 ```
@@ -146,7 +146,7 @@ Guepard optimizes storage and performance through:
 **Feature Development:**
 ```bash
 # Create feature branch
-guepard branch -x <deployment_id> -s <snapshot_id> -n feature/auth -k -e
+guepard branch -x <deployment_id> -s <snapshot_id> feature/auth -k -e
 
 # Make changes
 guepard commit -m "Add user table" -x <deployment_id> -b <branch_id>
@@ -160,7 +160,7 @@ guepard commit -m "Merge auth feature" -x <deployment_id> -b main-branch-id
 **Experimenting:**
 ```bash
 # Create experimental branch
-guepard branch -x <deployment_id> -s <snapshot_id> -n experiment/new-arch -e
+guepard branch -x <deployment_id> -s <snapshot_id> experiment/new-arch -e
 
 # Try different approaches
 guepard commit -m "Try microservices approach" -x <deployment_id> -b <branch_id>
@@ -199,10 +199,10 @@ guepard checkout -x <prod_deployment_id> -s <backup_snapshot_id>
 **Parallel Development:**
 ```bash
 # Developer A works on feature X
-guepard branch -x <deployment_id> -s <snapshot_id> -n feature/user-profiles -k -e
+guepard branch -x <deployment_id> -s <snapshot_id> feature/user-profiles -k -e
 
 # Developer B works on feature Y
-guepard branch -x <deployment_id> -s <snapshot_id> -n feature/payments -k -e
+guepard branch -x <deployment_id> -s <snapshot_id> feature/payments -k -e
 
 # Both can work independently without conflicts
 ```
@@ -257,7 +257,7 @@ guepard commit -m "Merge approved feature" -x <deployment_id> -b main-branch-id
 1. **Authenticate**: `guepard login`
 2. **Create deployment**: `guepard deploy --interactive`
 3. **Create snapshot**: `guepard commit -m "Initial state" -x <deployment_id> -b <branch_id>`
-4. **Create branch**: `guepard branch -x <deployment_id> -s <snapshot_id> -n develop -k -e`
+4. **Create branch**: `guepard branch -x <deployment_id> -s <snapshot_id> develop -k -e`
 5. **Start developing**: Make changes and create snapshots
 
 ### Learning Path

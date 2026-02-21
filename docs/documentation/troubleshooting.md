@@ -286,7 +286,7 @@ Get help with common issues and find answers to frequently asked questions about
 
 3. **Create branch first**:
    ```bash
-   guepard branch -x <deployment_id> -s <snapshot_id> -n <branch_name>
+   guepard branch -x <deployment_id> -s <snapshot_id> <branch_name>
    ```
 
 ### Snapshot Not Found
@@ -303,7 +303,7 @@ Get help with common issues and find answers to frequently asked questions about
 2. **Check snapshot ID**:
    ```bash
    # Verify the snapshot ID is correct
-   guepard branch -x <deployment_id> -s <snapshot_id> -n <branch_name>
+   guepard branch -x <deployment_id> -s <snapshot_id> <branch_name>
    ```
 
 3. **Create snapshot first**:

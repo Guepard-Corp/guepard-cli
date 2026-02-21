@@ -7,8 +7,9 @@ This comprehensive reference covers all Guepard CLI commands with detailed examp
 Guepard CLI follows a Git-like structure with these main command categories:
 
 - **Core Commands**: `deploy`, `commit`, `branch`, `checkout`, `log`
-- **Management Commands**: `compute`, `list`, `usage`
+- **Management Commands**: `compute`, `list`, `usage`, `clone`
 - **Authentication**: `login`, `logout`
+- **Configuration**: `config`
 
 ## Core Commands
 
@@ -97,6 +98,7 @@ guepard deploy \
 ```bash
 guepard deploy \
   --deployment-id 12345678-1234-1234-1234-123456789abc \
+  --purge \
   --yes
 ```
 
@@ -154,9 +156,9 @@ guepard branch [OPTIONS] [NAME]
 #### Options
 | Option | Short | Description | Required |
 |--------|-------|-------------|----------|
+| `[NAME]` | | Branch name (positional) | For creation |
 | `--deployment-id` | `-x` | Deployment ID | For listing/creating |
 | `--snapshot-id` | `-s` | Snapshot ID to branch from | For creation |
-| `--name` | `-n` | Branch name | For creation |
 | `--checkout` | `-k` | Checkout after creation | No |
 | `--json` | | Output results as JSON | No |
 | `--ephemeral` | `-e` | Create ephemeral branch | No |
@@ -180,14 +182,14 @@ guepard branch --deployment-id 12345678-1234-1234-1234-123456789abc --json
 guepard branch \
   --deployment-id 12345678-1234-1234-1234-123456789abc \
   --snapshot-id abc12345-6789-1234-5678-123456789abc \
-  --name feature-auth \
+  feature-auth \
   --checkout \
   --ephemeral
 ```
 
 **Create branch and output as JSON:**
 ```bash
-guepard branch -x <deployment_id> -s <snapshot_id> -n feature-auth --json
+guepard branch -x <deployment_id> -s <snapshot_id> feature-auth --json
 ```
 
 **Git-like usage:**
@@ -367,6 +369,7 @@ guepard list <resource> [OPTIONS]
 - `deployments` - List all deployments (default)
 - `branches` - List branches for a deployment
 - `commits` - List commits for a deployment
+- `clones` - List clones for a deployment
 
 #### Options
 | Option | Short | Description | Required |
@@ -486,13 +489,60 @@ guepard logout
 guepard logout
 ```
 
+### `guepard config` - Configuration
+
+View or set CLI configuration (API URL, etc.).
+
+#### Syntax
+```bash
+guepard config [OPTIONS]
+```
+
+#### Options
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--show` | | Show all current configuration |
+| `--get` | | Show current configuration (same as --show) |
+| `--api-url` | `-a` | Set API endpoint URL |
+| `--json` | | Output as JSON |
+
+#### Examples
+```bash
+guepard config --show
+guepard config --api-url https://api.guepard.run
+```
+
+### `guepard clone` - Clone from Snapshot
+
+Create a clone (shadow deployment) from a snapshot.
+
+#### Syntax
+```bash
+guepard clone [OPTIONS]
+```
+
+#### Options
+| Option | Short | Description | Required |
+|--------|-------|-------------|----------|
+| `--deployment-id` | `-x` | Source deployment ID | For create |
+| `--snapshot-id` | `-s` | Snapshot to clone from | For create |
+| `--repository-name` | `-n` | Name for the clone | No |
+| `--branch-name` | `-b` | Branch name for the clone | No |
+| `--performance-profile` | `-f` | Performance profile | No |
+| `--json` | | Output as JSON | No |
+
+#### Example
+```bash
+guepard clone -x <deployment_id> -s <snapshot_id>
+```
+
 ## Command Aliases and Shortcuts
 
 ### Common Aliases
 - `guepard` command is the primary binary name
 - Use `-x` instead of `--deployment-id`
 - Use `-m` instead of `--message`
-- Use `-n` instead of `--name`
+- Use `-n` for repository name (deploy, clone); branch name is positional: `guepard branch -x <id> -s <snap> <name>`
 
 ### Git-like Shortcuts
 Some commands support Git-like syntax for familiarity:
