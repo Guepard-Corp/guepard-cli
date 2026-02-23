@@ -6,8 +6,10 @@ use crate::application::services::{deploy, performance, compute, branch, commit}
 use crate::application::output::{OutputFormat, print_json};
 use crate::application::commands::list;
 use colored::Colorize;
+use indicatif::{ProgressBar, ProgressStyle};
 use serde::Serialize;
 use std::io::{self, Write};
+use std::time::Duration;
 
 #[derive(Serialize)]
 struct DeploymentDetails {
@@ -489,31 +491,154 @@ async fn get_deployment(deployment_id: &str, args: &DeployArgs, config: &Config,
     Ok(())
 }
 
+fn spinner_with_message(msg: &str) -> ProgressBar {
+    let pb = ProgressBar::new_spinner();
+    pb.set_style(
+        ProgressStyle::default_spinner()
+            .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
+            .template("{spinner:.dim} {msg}").unwrap(),
+    );
+    pb.set_message(msg.to_string());
+    pb.enable_steady_tick(Duration::from_millis(80));
+    pb
+}
+
 async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
-    // Confirm deletion unless -y flag is used
     if !args.yes {
-        print!("{} Are you sure you want to delete deployment {}? (y/N): ", 
+        print!("{} Are you sure you want to delete deployment {}? (y/N): ",
                "⚠️".yellow(), deployment_id);
         io::stdout().flush()?;
-        
+
         let mut input = String::new();
         io::stdin().read_line(&mut input)?;
-        
+
         if !input.trim().to_lowercase().starts_with('y') {
             println!("{} Deletion cancelled.", "ℹ️".blue());
             return Ok(());
         }
     }
-    
-    // Call the actual delete API
-    deploy::delete_deployment(deployment_id, config).await?;
-    
+
+    let status_res = if output_format == OutputFormat::Table {
+        let pb = spinner_with_message("Step 1/3: Checking compute status…");
+        let r = compute::get_status(deployment_id, config).await;
+        let ok = r.is_ok();
+        pb.finish_with_message(format!("{} Step 1/3: Checking compute status", if ok { "✓".green().to_string() } else { "✗".red().to_string() }));
+        r
+    } else {
+        compute::get_status(deployment_id, config).await
+    };
+
+    let compute_considered_running = status_res
+        .as_ref()
+        .ok()
+        .and_then(|res| res.status.as_deref())
+        .map(|s| s == "enabled")
+        .unwrap_or(false);
+    if compute_considered_running {
+        if output_format == OutputFormat::Table {
+            let pb = spinner_with_message("Step 2/3: Stopping compute…");
+            let stop_res = compute::stop_compute(deployment_id, config).await;
+            let ok = stop_res.is_ok();
+            pb.finish_with_message(format!("{} Step 2/3: Stopping compute", if ok { "✓".green().to_string() } else { "✗".red().to_string() }));
+            if stop_res.is_err() {
+                eprintln!("{} Warning: failed to stop compute", "⚠️".yellow());
+            }
+        } else {
+            let _ = compute::stop_compute(deployment_id, config).await;
+        }
+    } else if output_format == OutputFormat::Table {
+        let pb = spinner_with_message("Step 2/3: Stopping compute (skipped, already stopped)…");
+        pb.finish_with_message(format!("{} Step 2/3: Stopping compute (skipped)", "✓".green().to_string()));
+    }
+
+    let body = if output_format == OutputFormat::Table {
+        let substeps = [
+            "Step 3/3: Purging deployment — updating repository and branches…",
+            "Step 3/3: Purging deployment — running purge job…",
+            "Step 3/3: Purging deployment — waiting for job completion…",
+        ];
+        let pb = spinner_with_message(substeps[0]);
+        let mut step_idx = 0usize;
+        let deployment_id_ = deployment_id.to_string();
+        let config_ = config.clone();
+        let mut delete_handle = tokio::spawn(async move { deploy::delete_deployment(&deployment_id_, &config_).await });
+        let res = loop {
+            tokio::select! {
+                r = &mut delete_handle => {
+                    break r.map_err(|e| e.into()).and_then(|x| x.map_err(Into::into));
+                }
+                _ = tokio::time::sleep(Duration::from_secs(2)) => {
+                    step_idx = (step_idx + 1) % substeps.len();
+                    pb.set_message(substeps[step_idx].to_string());
+                }
+            }
+        };
+        match res {
+            Ok(b) => {
+                pb.finish_with_message(format!("{} Step 3/3: Purging deployment", "✓".green().to_string()));
+                b
+            }
+            Err(e) => {
+                pb.finish_with_message(format!("{} Step 3/3: Purging deployment", "✗".red().to_string()));
+                return Err(e);
+            }
+        }
+    } else {
+        deploy::delete_deployment(deployment_id, config).await?
+    };
+
+    let debug_purge = std::env::var("GUEPARD_DEBUG").is_ok();
+
     if output_format == OutputFormat::Table {
         println!("{} Deployment {} deleted successfully!", "✅".green(), deployment_id);
+        if debug_purge {
+            if let Ok(pretty) = serde_json::to_string_pretty(&body) {
+                eprintln!("\n{}", "--- DEBUG: full API response ---".dimmed());
+                eprintln!("{}", pretty);
+                eprintln!("{}", "--- end response ---".dimmed());
+            }
+        }
+        if let Some(deployment) = body.get("deployment") {
+            if debug_purge {
+                eprintln!("\n{}", "--- deployment ---".dimmed());
+                if let Ok(pretty) = serde_json::to_string_pretty(deployment) {
+                    eprintln!("{}", pretty);
+                }
+            }
+        }
+        if let Some(purge) = body.get("purge_result") {
+            let stdout = purge.get("stdout").and_then(|v| v.as_str()).unwrap_or("");
+            let stderr = purge.get("stderr").and_then(|v| v.as_str()).unwrap_or("");
+            if debug_purge {
+                eprintln!("\n{}", "--- purge_result ---".dimmed());
+                eprintln!("success: {}", purge.get("success").and_then(|v| v.as_bool()).unwrap_or(true));
+            }
+            if !stdout.is_empty() || !stderr.is_empty() {
+                eprintln!("\n{}", "Purge output".cyan());
+                if !stdout.is_empty() {
+                    eprintln!("{}", "  --- stdout ---".dimmed());
+                    for line in stdout.lines() {
+                        eprintln!("  {}", line);
+                    }
+                }
+                if !stderr.is_empty() {
+                    eprintln!("{}", "  --- stderr ---".dimmed());
+                    for line in stderr.lines() {
+                        eprintln!("  {}", line);
+                    }
+                }
+            }
+        }
     } else {
-        print_json(&serde_json::json!({"status": "deleted", "deployment_id": deployment_id}));
+        if debug_purge {
+            eprintln!("{}", "--- DEBUG: full API response ---".dimmed());
+            if let Ok(pretty) = serde_json::to_string_pretty(&body) {
+                eprintln!("{}", pretty);
+            }
+        }
+        print_json(&body);
     }
-    
+
     Ok(())
 }
 

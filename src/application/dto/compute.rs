@@ -26,4 +26,5 @@ pub struct StatusErrorResponse {
 #[derive(Debug, Deserialize)]
 pub struct ComputeStatusResponse {
     pub message: Option<String>,
+    pub status: Option<String>,
 }

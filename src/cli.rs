@@ -25,6 +25,9 @@ async fn main() {
             exit_code = 7;
         } else if let Some(deploy_error) = err.downcast_ref::<DeployError>() {
             eprintln!("❌ Deployment Error: {}", deploy_error);
+            if format!("{}", deploy_error).contains("Purge plan") {
+                eprintln!("   (Check API/Lambda logs for full purge job stdout and stderr)");
+            }
             exit_code = 2;
         } else if let Some(branch_error) = err.downcast_ref::<BranchError>() {
             eprintln!("❌ Branch Error: {}", branch_error);

@@ -74,6 +74,47 @@ impl DeployError {
     }
 }
 
+/// Handles DELETE /deploy/:id response: returns parsed body on 200, Err with message and purge_result on non-200.
+pub async fn handle_delete_response(response: reqwest::Response) -> Result<serde_json::Value> {
+    let status = response.status();
+    let text = response.text().await.unwrap_or_default();
+    if status == reqwest::StatusCode::OK {
+        serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("Failed to parse response: {}", e))
+    } else {
+        let err_msg = build_error_message(status, &text);
+        Err(anyhow::anyhow!("{}", err_msg))
+    }
+}
+
+fn build_error_message(status: reqwest::StatusCode, text: &str) -> String {
+    let (mut msg, purge_stderr, purge_stdout) = if let Ok(json) = serde_json::from_str::<serde_json::Value>(text) {
+        let m = json.get("message").and_then(|x| x.as_str()).unwrap_or("").to_string();
+        let m = if m.is_empty() && status == reqwest::StatusCode::INTERNAL_SERVER_ERROR {
+            "Server error".to_string()
+        } else {
+            m
+        };
+        let stderr = json.get("purge_result").and_then(|p| p.get("stderr")).and_then(|s| s.as_str()).map(String::from);
+        let stdout = json.get("purge_result").and_then(|p| p.get("stdout")).and_then(|s| s.as_str()).map(String::from);
+        (m, stderr, stdout)
+    } else {
+        (text.to_string(), None, None)
+    };
+    if let Some(s) = purge_stderr {
+        msg.push_str("\n\n--- Purge stderr ---\n");
+        msg.push_str(&s);
+    }
+    if let Some(s) = purge_stdout {
+        msg.push_str("\n\n--- Purge stdout ---\n");
+        msg.push_str(&s);
+    }
+    if std::env::var("GUEPARD_DEBUG").is_ok() && !text.is_empty() {
+        msg.push_str("\n\n--- Raw API response ---\n");
+        msg.push_str(text);
+    }
+    format!("❌ {}: {}", status, msg)
+}
+
 /// handles API responses
 pub async fn handle_api_response(response: reqwest::Response) -> Result<()> {
     match response.status() {
@@ -107,13 +148,37 @@ pub async fn handle_api_response(response: reqwest::Response) -> Result<()> {
             
             Err(anyhow::anyhow!("❌ 400 Bad Request: {}", err_msg))
         }
-        reqwest::StatusCode::FORBIDDEN => Err(anyhow::anyhow!(
-            "❌ 403 Forbidden: Invalid API token or permissions"
-        )),
+        reqwest::StatusCode::UNAUTHORIZED | reqwest::StatusCode::FORBIDDEN => {
+            let status = response.status();
+            let text = response.text().await.unwrap_or_default();
+            let detail = if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) {
+                json.get("message")
+                    .and_then(|m| m.as_str())
+                    .unwrap_or("Invalid API token or permissions")
+                    .to_string()
+            } else if text.is_empty() {
+                "Invalid API token or permissions".to_string()
+            } else {
+                text
+            };
+            let status_str = if status == reqwest::StatusCode::UNAUTHORIZED {
+                "401 Unauthorized"
+            } else {
+                "403 Forbidden"
+            };
+            Err(anyhow::anyhow!("❌ {}: {}", status_str, detail))
+        }
         reqwest::StatusCode::SERVICE_UNAVAILABLE => Err(anyhow::anyhow!(
             "❌ 503 Service Unavailable: The API is currently down"
         )),
+        reqwest::StatusCode::INTERNAL_SERVER_ERROR => {
+            let status = response.status();
+            let text = response.text().await.unwrap_or("Unknown error".to_string());
+            let err_msg = build_error_message(status, &text);
+            Err(anyhow::anyhow!("{}", err_msg))
+        }
         _ => {
+            let status = response.status();
             let text = response.text().await.unwrap_or("Unknown error".to_string());
             let err_msg = if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) {
                 if let Some(msg) = json.get("message") {
@@ -128,7 +193,7 @@ pub async fn handle_api_response(response: reqwest::Response) -> Result<()> {
             } else {
                 text
             };
-            Err(anyhow::anyhow!("❌ Unexpected Error: {}", err_msg))
+            Err(anyhow::anyhow!("❌ {}: {}", status, err_msg))
         }
     }
 }

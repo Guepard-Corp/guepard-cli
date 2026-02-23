@@ -8,7 +8,7 @@ use crate::application::dto::deploy::{
     UpdateDeploymentRequest,
 };
 use crate::config::config::Config;
-use crate::domain::errors::deploy_error::{handle_api_response, DeployError};
+use crate::domain::errors::deploy_error::{handle_api_response, handle_delete_response, DeployError};
 
 // Trait for dependency injection to make testing easier
 #[cfg_attr(test, mockall::automock)]
@@ -186,7 +186,7 @@ pub async fn get_deployment(
     get_deployment_with_deps(deployment_id, config, &auth_provider).await
 }
 
-pub async fn delete_deployment_with_deps<A: AuthProvider>(deployment_id: &str, config: &Config, auth_provider: &A) -> Result<()> {
+pub async fn delete_deployment_with_deps<A: AuthProvider>(deployment_id: &str, config: &Config, auth_provider: &A) -> Result<serde_json::Value> {
     let jwt_token = auth_provider
         .get_auth_token()
         .map_err(|e| DeployError::SessionError(format!("{}", e)))
@@ -199,10 +199,10 @@ pub async fn delete_deployment_with_deps<A: AuthProvider>(deployment_id: &str, c
         .await
         .context("Failed to send delete request")?;
 
-    handle_api_response(response).await
+    handle_delete_response(response).await
 }
 
-pub async fn delete_deployment(deployment_id: &str, config: &Config) -> Result<()> {
+pub async fn delete_deployment(deployment_id: &str, config: &Config) -> Result<serde_json::Value> {
     let auth_provider = DefaultAuthProvider;
     delete_deployment_with_deps(deployment_id, config, &auth_provider).await
 }
