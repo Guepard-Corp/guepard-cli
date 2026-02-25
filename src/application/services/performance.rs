@@ -127,7 +127,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_performance_profiles_session_error() {
-        let config = Config { api_url: "https://api.guepard.run".to_string() };
+        let config = Config { api_url: "https://api.guepard.run".to_string(), app_url: "https://app.guepard.run".to_string() };
 
         let mut mock_auth = MockAuthProvider::new();
         mock_auth
@@ -149,7 +149,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_performance_profiles_network_or_auth_error() {
-        let config = Config { api_url: "https://api.guepard.run".to_string() };
+        let config = Config { api_url: "https://api.guepard.run".to_string(), app_url: "https://app.guepard.run".to_string() };
 
         let mut mock_auth = MockAuthProvider::new();
         mock_auth

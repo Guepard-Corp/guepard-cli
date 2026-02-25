@@ -758,6 +758,11 @@ pub struct ConfigArgs {
     ///   guepard config --api-url https://api.guepard.run
     #[clap(short = 'a', long)]
     pub api_url: Option<String>,
+
+    /// Set App URL (login page and web console).
+    /// Default: https://app.guepard.run
+    #[clap(long)]
+    pub app_url: Option<String>,
     
     /// Show all current configuration settings
     ///

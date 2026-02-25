@@ -10,10 +10,14 @@ use crate::domain::errors::config_error::ConfigError;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 
+const DEFAULT_APP_URL: &str = "https://app.guepard.run";
+const DEFAULT_API_URL: &str = "https://api.guepard.run";
+
+
 #[derive(Debug, Clone)]
 pub struct Config {
     pub api_url: String,
-    // pub api_token: String,
+    pub app_url: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -25,16 +29,16 @@ pub struct SessionData {
 pub fn load_config() -> Result<Config, ConfigError> {
     dotenv().ok();
 
-    // First check config file, then environment variable, then default
     let api_url = load_config_data()
-        .map(|config| config.api_url)
+        .map(|c| c.api_url)
         .or_else(|_| env::var("PUBLIC_API"))
-        .unwrap_or_else(|_| "https://api.guepard.run".to_string());
-    
-    // let api_token = env::var("API_TOKEN")
-    //     .map_err(|_| ConfigError::MissingEnv("Missing API_TOKEN in .env file".to_string()))?;
+        .unwrap_or_else(|_| DEFAULT_API_URL.to_string());
+    let app_url = load_config_data()
+        .map(|c| c.app_url)
+        .or_else(|_| env::var("APP_URL"))
+        .unwrap_or_else(|_| DEFAULT_APP_URL.to_string());
 
-    Ok(Config { api_url,})
+    Ok(Config { api_url, app_url })
 }
 
 pub fn save_session_id(session_id: &str) -> Result<(), ConfigError> {
@@ -254,6 +258,12 @@ pub fn is_logged_in() -> bool {
 #[derive(Serialize, Deserialize)]
 pub struct ConfigData {
     pub api_url: String,
+    #[serde(default = "default_app_url")]
+    pub app_url: String,
+}
+
+fn default_app_url() -> String {
+    DEFAULT_APP_URL.to_string()
 }
 
 pub fn save_config_data(config_data: &ConfigData) -> Result<(), ConfigError> {
@@ -282,9 +292,9 @@ pub fn load_config_data() -> Result<ConfigData, ConfigError> {
         .join(".guepard/config.json");
 
     if !path.exists() {
-        // Return default config if file doesn't exist
         return Ok(ConfigData {
             api_url: "https://api.guepard.run".to_string(),
+            app_url: default_app_url(),
         });
     }
 

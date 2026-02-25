@@ -66,14 +66,15 @@ pub async fn start_login_with_deps<S: SessionStore>(config: &Config, session_sto
         .await
         .map_err(|e| LoginError::ApiError(format!("Invalid response: {}", e)))?;
 
-    // Extract session_id from URL
     let session_id = extract_session_id(&result.url)?;
 
     session_store
         .save_session_id(&session_id)
         .map_err(|e| LoginError::SessionError(e.to_string()))?;
-    
-    Ok(result.url)
+
+    let base = config.app_url.trim_end_matches('/');
+    let url = format!("{}/cli-login?session_id={}", base, session_id);
+    Ok(url)
 }
 
 pub async fn start_login(config: &Config) -> Result<String, LoginError> {
@@ -149,7 +150,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_complete_login_session_error() {
-        let config = Config { api_url: "https://api.guepard.run".to_string() };
+        let config = Config { api_url: "https://api.guepard.run".to_string(), app_url: "https://app.guepard.run".to_string() };
 
         let mut store = MockSessionStore::new();
         store
@@ -168,7 +169,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_complete_login_network_or_api_error_after_session_ok() {
-        let config = Config { api_url: "https://api.guepard.run".to_string() };
+        let config = Config { api_url: "https://api.guepard.run".to_string(), app_url: "https://app.guepard.run".to_string() };
 
         let mut store = MockSessionStore::new();
         store

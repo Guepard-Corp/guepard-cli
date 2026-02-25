@@ -75,6 +75,7 @@ mod tests {
     async fn test_get_usage_session_error() {
         let config = Config {
             api_url: "https://api.guepard.run".to_string(),
+            app_url: "https://app.guepard.run".to_string(),
         };
 
         let mut mock_auth = MockAuthProvider::new();
@@ -102,6 +103,7 @@ mod tests {
     async fn test_get_usage_success_auth_provider() {
         let config = Config {
             api_url: "https://api.guepard.run".to_string(),
+            app_url: "https://app.guepard.run".to_string(),
         };
 
         let mut mock_auth = MockAuthProvider::new();
@@ -131,6 +133,7 @@ mod tests {
     async fn test_auth_provider_integration() {
         let config = Config {
             api_url: "https://api.guepard.run".to_string(),
+            app_url: "https://app.guepard.run".to_string(),
         };
 
         // Test with a mock auth provider that returns different error types
@@ -158,6 +161,7 @@ mod tests {
     async fn test_get_usage_public_api() {
         let config = Config {
             api_url: "https://api.guepard.run".to_string(),
+            app_url: "https://app.guepard.run".to_string(),
         };
 
         // This will fail with auth error since we don't have a real session

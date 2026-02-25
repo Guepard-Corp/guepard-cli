@@ -9,10 +9,9 @@ use crate::application::output::{OutputFormat, print_json};
 pub async fn config(args: &ConfigArgs, output_format: OutputFormat) -> Result<(), ConfigError> {
     if args.show || args.get {
         show_config(output_format).await
-    } else if let Some(api_url) = &args.api_url {
-        set_api_url(api_url, output_format).await
+    } else if args.api_url.is_some() || args.app_url.is_some() {
+        set_config(args, output_format).await
     } else {
-        // Default behavior: show current config
         show_config(output_format).await
     }
 }
@@ -29,14 +28,16 @@ async fn show_config(output_format: OutputFormat) -> Result<(), ConfigError> {
     if output_format == OutputFormat::Json {
         print_json(&serde_json::json!({
             "api_url": config_data.api_url,
+            "app_url": config_data.app_url,
             "logged_in": logged_in,
             "user": user
         }));
         return Ok(());
     }
-    
+
     println!("⚙️  Current Configuration:");
     println!("   API URL: {}", config_data.api_url);
+    println!("   App URL: {}", config_data.app_url);
     
     // Show login status
     if logged_in {
@@ -48,48 +49,57 @@ async fn show_config(output_format: OutputFormat) -> Result<(), ConfigError> {
     Ok(())
 }
 
-async fn set_api_url(api_url: &str, output_format: OutputFormat) -> Result<(), ConfigError> {
-    // ... validation ...
+async fn set_config(args: &ConfigArgs, output_format: OutputFormat) -> Result<(), ConfigError> {
+    let existing = load_config_data().unwrap_or_else(|_| ConfigData {
+        api_url: "https://api.guepard.run".to_string(),
+        app_url: "https://app.guepard.run".to_string(),
+    });
+
+    let api_url = args.api_url.as_deref().unwrap_or(&existing.api_url);
+    let app_url = args.app_url.as_deref().unwrap_or(&existing.app_url);
+
     if !api_url.starts_with("http://") && !api_url.starts_with("https://") {
         return Err(ConfigError::IoError(
-            "Invalid URL format. Must start with http:// or https://".to_string()
+            "Invalid API URL format. Must start with http:// or https://".to_string()
         ));
     }
-    
-    // Check if user is logged in and force logout if changing API URL
-    if is_logged_in() {
+    if !app_url.starts_with("http://") && !app_url.starts_with("https://") {
+        return Err(ConfigError::IoError(
+            "Invalid App URL format. Must start with http:// or https://".to_string()
+        ));
+    }
+
+    if args.api_url.is_some() && is_logged_in() {
         if output_format == OutputFormat::Table {
             println!("⚠️  Changing API URL requires re-authentication.");
             println!("   Logging out current session...");
         }
-        
         delete_session().map_err(|e| ConfigError::IoError(format!("Failed to delete session: {}", e)))?;
         delete_jwt_token().map_err(|e| ConfigError::IoError(format!("Failed to delete JWT token: {}", e)))?;
-        
         if output_format == OutputFormat::Table {
             println!("{}", "✓ Logged out successfully!".green());
             println!("   Please run `guepard login` to authenticate with the new API endpoint.");
         }
     }
-    
+
     let config_data = ConfigData {
         api_url: api_url.to_string(),
+        app_url: app_url.to_string(),
     };
-    
     save_config_data(&config_data)?;
-    
+
     if output_format == OutputFormat::Json {
         print_json(&serde_json::json!({
             "status": "success",
             "api_url": api_url,
+            "app_url": app_url,
             "message": "Configuration updated successfully"
         }));
     } else {
         println!("✅ Configuration updated successfully!");
         println!("   API URL: {}", api_url);
-        println!("   Note: Environment variable PUBLIC_API takes precedence over this setting.");
+        println!("   App URL: {}", app_url);
     }
-    
     Ok(())
 }
 
