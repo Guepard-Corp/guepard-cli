@@ -87,7 +87,7 @@ pub async fn handle_delete_response(response: reqwest::Response) -> Result<serde
 }
 
 fn build_error_message(status: reqwest::StatusCode, text: &str) -> String {
-    let (mut msg, purge_stderr, purge_stdout) = if let Ok(json) = serde_json::from_str::<serde_json::Value>(text) {
+    let (mut msg, purge_stderr, purge_stdout, steps) = if let Ok(json) = serde_json::from_str::<serde_json::Value>(text) {
         let m = json.get("message").and_then(|x| x.as_str()).unwrap_or("").to_string();
         let m = if m.is_empty() && status == reqwest::StatusCode::INTERNAL_SERVER_ERROR {
             "Server error".to_string()
@@ -96,16 +96,29 @@ fn build_error_message(status: reqwest::StatusCode, text: &str) -> String {
         };
         let stderr = json.get("purge_result").and_then(|p| p.get("stderr")).and_then(|s| s.as_str()).map(String::from);
         let stdout = json.get("purge_result").and_then(|p| p.get("stdout")).and_then(|s| s.as_str()).map(String::from);
-        (m, stderr, stdout)
+        let steps: Option<Vec<String>> = json.get("steps")
+            .and_then(|s| s.as_array())
+            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect());
+        (m, stderr, stdout, steps)
     } else {
-        (text.to_string(), None, None)
+        (text.to_string(), None, None, None)
     };
+    if let Some(s) = &steps {
+        if !s.is_empty() {
+            msg.push_str("\n\n--- purge details ---\n");
+            for step in s {
+                msg.push_str("  ");
+                msg.push_str(step);
+                msg.push('\n');
+            }
+        }
+    }
     if let Some(s) = purge_stderr {
-        msg.push_str("\n\n--- Purge stderr ---\n");
+        msg.push_str("\n--- Purge stderr ---\n");
         msg.push_str(&s);
     }
     if let Some(s) = purge_stdout {
-        msg.push_str("\n\n--- Purge stdout ---\n");
+        msg.push_str("\n--- Purge stdout ---\n");
         msg.push_str(&s);
     }
     if std::env::var("GUEPARD_DEBUG").is_ok() && !text.is_empty() {

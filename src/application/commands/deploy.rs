@@ -2,10 +2,12 @@ use anyhow::Result;
 use crate::config::config::Config;
 use crate::structure::DeployArgs;
 use crate::application::dto::deploy::{CreateDeploymentRequest, UpdateDeploymentRequest};
-use crate::application::services::{deploy, performance, compute, branch, commit};
+use crate::application::services::{deploy, performance, compute, branch, commit, clone};
+use crate::domain::errors::deploy_error::DeployError;
 use crate::application::output::{OutputFormat, print_json};
 use crate::application::commands::list;
 use colored::Colorize;
+use indicatif::{ProgressBar, ProgressStyle};
 use serde::Serialize;
 use std::io::{self, Write};
 use std::time::Duration;
@@ -505,59 +507,197 @@ async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Conf
         }
     }
 
-    if output_format == OutputFormat::Table {
-        print!("Step 1/3: Checking compute status… ");
-        io::stdout().flush()?;
-    }
-    let status_res = compute::get_status(deployment_id, config).await;
-    if output_format == OutputFormat::Table {
-        let ok = status_res.is_ok();
-        println!("{}", if ok { "✓".green() } else { "✗".red() });
+    struct ComputeToStop {
+        id: String,
+        name: String,
+        role: &'static str,
     }
 
-    let compute_considered_running = status_res
-        .as_ref()
-        .ok()
-        .and_then(|res| res.status.as_deref())
-        .map(|s| s == "enabled")
-        .unwrap_or(false);
-
-    if output_format == OutputFormat::Table {
-        print!("Step 2/3: Stopping compute… ");
-        io::stdout().flush()?;
-    }
-    if compute_considered_running {
-        let stop_res = compute::stop_compute(deployment_id, config).await;
+    let computes_to_stop: Vec<ComputeToStop> = {
         if output_format == OutputFormat::Table {
-            let ok = stop_res.is_ok();
-            println!("{}", if ok { "✓".green() } else { "✗".red() });
-            if stop_res.is_err() {
-                eprintln!("{} Warning: failed to stop compute", "⚠️".yellow());
+            print!("Step 1/4: Resolving computes… ");
+            io::stdout().flush()?;
+        }
+        let dep = match deploy::get_deployment(deployment_id, config).await {
+            Ok(d) => d,
+            Err(DeployError::NotFound) => {
+                if output_format == OutputFormat::Table {
+                    let _ = writeln!(io::stderr(), "{}", "✗".red());
+                    eprintln!(
+                        "{} Deployment {} not found or already deleted.",
+                        "ℹ️".blue(),
+                        deployment_id
+                    );
+                }
+                return Ok(());
+            }
+            Err(e) => {
+                if output_format == OutputFormat::Table {
+                    let _ = writeln!(io::stderr(), "{}", "✗".red());
+                }
+                return Err(anyhow::anyhow!("{}", e));
+            }
+        };
+        let list = if dep.deployment_type == "F2" {
+            match clone::list_clones(deployment_id, config).await {
+                Ok(shadows) => {
+                    let mut v: Vec<ComputeToStop> = shadows
+                        .into_iter()
+                        .map(|s| ComputeToStop {
+                            id: s.id.clone(),
+                            name: s.name,
+                            role: "shadow",
+                        })
+                        .collect();
+                    v.push(ComputeToStop {
+                        id: deployment_id.to_string(),
+                        name: dep.name,
+                        role: "principal",
+                    });
+                    v
+                }
+                Err(_) => vec![ComputeToStop {
+                    id: deployment_id.to_string(),
+                    name: dep.name,
+                    role: "principal",
+                }],
+            }
+        } else {
+            vec![ComputeToStop {
+                id: deployment_id.to_string(),
+                name: dep.name,
+                role: "principal",
+            }]
+        };
+        if output_format == OutputFormat::Table {
+            println!("{}", "✓".green());
+            for c in &list {
+                let id_short = if c.id.len() > 8 {
+                    format!("{}…", &c.id[..8])
+                } else {
+                    c.id.clone()
+                };
+                println!(
+                    "    {} {} {}",
+                    "▪".dimmed(),
+                    format!("{} ({})", c.name.cyan(), id_short).dimmed(),
+                    format!("[{}]", c.role).dimmed()
+                );
             }
         }
-    } else if output_format == OutputFormat::Table {
-        println!("{} (skipped)", "✓".green());
-    }
+        list
+    };
 
     if output_format == OutputFormat::Table {
-        print!("Step 3/3: Purging deployment… ");
-        io::stdout().flush()?;
+        println!("Step 2/4: Stopping computes");
     }
+    for c in &computes_to_stop {
+        if output_format == OutputFormat::Table {
+            let id_short = if c.id.len() > 8 {
+                format!("{}…", &c.id[..8])
+            } else {
+                c.id.clone()
+            };
+            let msg = format!("Stopping {} ({})…", c.name, id_short);
+            let pb = ProgressBar::new_spinner();
+            pb.set_style(
+                ProgressStyle::default_spinner()
+                    .template("{spinner:.dim} {msg}")
+                    .unwrap(),
+            );
+            pb.set_message(msg);
+            pb.enable_steady_tick(Duration::from_millis(80));
+            let res = compute::stop_compute(&c.id, config).await;
+            pb.finish_with_message(if res.is_ok() {
+                format!("{} {} {}", "✓".green(), c.name.cyan(), "stopped".dimmed())
+            } else {
+                format!("{} {} {}", "○".yellow(), c.name.cyan(), "(skipped)".dimmed())
+            });
+        } else {
+            let _ = compute::stop_compute(&c.id, config).await;
+        }
+    }
+
+    const POLL_INTERVAL_SECS: u64 = 3;
+    const MAX_WAIT_SECS: u64 = 120;
+    let mut elapsed = 0u64;
+    let mut stopped = false;
+    let pb_wait = if output_format == OutputFormat::Table {
+        let pb = ProgressBar::new_spinner();
+        pb.set_style(
+            ProgressStyle::default_spinner()
+                .template("{spinner:.dim} Step 3/4: {msg}")
+                .unwrap(),
+        );
+        pb.set_message("Waiting for volume unmount…");
+        pb.enable_steady_tick(Duration::from_millis(80));
+        Some(pb)
+    } else {
+        None
+    };
+    while elapsed < MAX_WAIT_SECS {
+        tokio::time::sleep(Duration::from_secs(POLL_INTERVAL_SECS)).await;
+        elapsed += POLL_INTERVAL_SECS;
+        if let Ok(res) = compute::get_status(deployment_id, config).await {
+            if res.status.as_deref() != Some("enabled") {
+                stopped = true;
+                break;
+            }
+        }
+        if let Some(ref pb) = pb_wait {
+            pb.set_message(format!("Waiting for volume unmount… {}s", elapsed));
+        }
+    }
+    if let Some(pb) = pb_wait {
+        pb.finish_with_message(format!(
+            "{} {}",
+            if stopped { "✓".green() } else { "⚠ timeout".yellow() },
+            if stopped { "Volume unmounted" } else { "Continuing anyway" }
+        ));
+    }
+
+    let pb_purge = if output_format == OutputFormat::Table {
+        let pb = ProgressBar::new_spinner();
+        pb.set_style(
+            ProgressStyle::default_spinner()
+                .template("{spinner:.dim} Step 4/4: {msg}")
+                .unwrap(),
+        );
+        pb.set_message("Purging deployment…");
+        pb.enable_steady_tick(Duration::from_millis(80));
+        Some(pb)
+    } else {
+        None
+    };
 
     const PURGE_RETRY_ATTEMPTS: u32 = 3;
     const PURGE_RETRY_DELAY_SECS: u64 = 20;
     let mut body = None;
     let mut last_err = None;
     for attempt in 1..=PURGE_RETRY_ATTEMPTS {
+        if let Some(ref pb) = pb_purge {
+            pb.set_message(format!(
+                "Purging deployment…{}",
+                if attempt > 1 {
+                    format!(" (retry {}/{})", attempt, PURGE_RETRY_ATTEMPTS)
+                } else {
+                    String::new()
+                }
+            ));
+        }
         match deploy::delete_deployment(deployment_id, config).await {
             Ok(b) => {
                 body = Some(b);
-                if output_format == OutputFormat::Table {
-                    if attempt > 1 {
-                        eprintln!("  {} Purge completed (succeeded on retry {})", "✓".green(), attempt);
-                    } else {
-                        println!("{}", "✓".green());
-                    }
+                if let Some(pb) = pb_purge {
+                    pb.finish_with_message(format!(
+                        "{} {}",
+                        "✓".green(),
+                        if attempt > 1 {
+                            format!("Purge completed (retry {})", attempt)
+                        } else {
+                            "Purge complete".to_string()
+                        }
+                    ));
                 }
                 break;
             }
@@ -568,19 +708,18 @@ async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Conf
                     || s.contains("timed out") || s.contains("Internal server error");
                 if retryable && attempt < PURGE_RETRY_ATTEMPTS {
                     if output_format == OutputFormat::Table {
-                        println!("{}", "✗".red());
-                        eprintln!(
-                            "  {} Retrying ({}/{}) in {}s…",
-                            "⏳".yellow(),
-                            attempt + 1,
-                            PURGE_RETRY_ATTEMPTS,
-                            PURGE_RETRY_DELAY_SECS
-                        );
+                        if let Some(ref pb) = pb_purge {
+                            pb.set_message(format!(
+                                "{} Retrying in {}s…",
+                                "⏳".yellow(),
+                                PURGE_RETRY_DELAY_SECS
+                            ));
+                        }
                     }
                     tokio::time::sleep(Duration::from_secs(PURGE_RETRY_DELAY_SECS)).await;
                 } else {
-                    if output_format == OutputFormat::Table {
-                        println!("{}", "✗".red());
+                    if let Some(pb) = pb_purge {
+                        pb.finish_with_message(format!("{} Purge failed", "✗".red()));
                     }
                     return Err(last_err.unwrap());
                 }
@@ -593,6 +732,27 @@ async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Conf
 
     if output_format == OutputFormat::Table {
         println!("{} Deployment {} deleted successfully!", "✅".green(), deployment_id);
+        if let Some(steps) = body.get("steps").and_then(|s| s.as_array()) {
+            if !steps.is_empty() {
+                println!("\n{}", " purge details ".black().on_white());
+                for step in steps {
+                    if let Some(s) = step.as_str() {
+                        let t = s.trim_start();
+                        let line = if let Some(rest) = t.strip_prefix("✓") {
+                            format!("  {} {}", "✓".green(), rest.trim())
+                        } else if let Some(rest) = t.strip_prefix("⚠") {
+                            format!("  {} {}", "⚠".yellow(), rest.trim())
+                        } else if s.starts_with("  ") {
+                            format!("    {}", s.trim().dimmed())
+                        } else {
+                            format!("  {}", s)
+                        };
+                        println!("{}", line);
+                    }
+                }
+                println!();
+            }
+        }
         if debug_purge {
             if let Ok(pretty) = serde_json::to_string_pretty(&body) {
                 eprintln!("\n{}", "--- DEBUG: full API response ---".dimmed());
@@ -609,24 +769,17 @@ async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Conf
             }
         }
         if let Some(purge) = body.get("purge_result") {
+            let has_steps = body.get("steps").and_then(|s| s.as_array()).map(|a| !a.is_empty()).unwrap_or(false);
             let stdout = purge.get("stdout").and_then(|v| v.as_str()).unwrap_or("");
             let stderr = purge.get("stderr").and_then(|v| v.as_str()).unwrap_or("");
             if debug_purge {
                 eprintln!("\n{}", "--- purge_result ---".dimmed());
                 eprintln!("success: {}", purge.get("success").and_then(|v| v.as_bool()).unwrap_or(true));
             }
-            if !stdout.is_empty() || !stderr.is_empty() {
+            if !has_steps && (!stdout.is_empty() || !stderr.is_empty()) {
                 println!("\n{}", "Purge output:".cyan());
-                if !stdout.is_empty() {
-                    for line in stdout.lines() {
-                        println!("  {}", line);
-                    }
-                }
-                if !stderr.is_empty() {
-                    for line in stderr.lines() {
-                        eprintln!("  {}", line);
-                    }
-                }
+                if !stdout.is_empty() { for line in stdout.lines() { println!("  {}", line); } }
+                if !stderr.is_empty() { for line in stderr.lines() { eprintln!("  {}", line); } }
             }
         }
     } else {
