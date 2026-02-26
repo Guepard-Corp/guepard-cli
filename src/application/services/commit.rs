@@ -1,10 +1,12 @@
 use crate::application::auth;
-use crate::application::dto::commit::{GetCommitResponse, CreateCommitRequest, CreateCommitResponse, CheckoutCommitResponse};
+use crate::application::dto::commit::{CreateCommitRequest, CreateCommitResponse, GetCommitResponse, CheckoutCommitResponse};
 use crate::application::dto::branch::BranchRequest;
 use crate::config::config::Config;
 use crate::domain::errors::bookmark_error::BookmarkError;
 use anyhow::Result;
 use reqwest::Client;
+use std::time::Duration;
+use tokio::time::sleep;
 
 // Trait for dependency injection to make testing easier
 #[cfg_attr(test, mockall::automock)]
@@ -73,10 +75,57 @@ pub async fn list_bookmark(deployment_id: &str, branch_id: &str, config: &Config
     list_bookmark_with_deps(deployment_id, branch_id, config, &auth_provider).await
 }
 
+const POLL_INTERVAL: Duration = Duration::from_secs(3);
+const POLL_TIMEOUT: Duration = Duration::from_secs(120);
+
+fn is_bookmark_init_error(msg: &str) -> bool {
+    msg.contains("Cannot create new bookmark")
+        && msg.contains("INIT")
+        && msg.contains("needs healing")
+}
+
+async fn wait_for_snapshots_ready<A: AuthProvider>(
+    deployment_id: &str,
+    branch_id: &str,
+    config: &Config,
+    auth_provider: &A,
+) -> Result<(), BookmarkError> {
+    let deadline = tokio::time::Instant::now() + POLL_TIMEOUT;
+    while tokio::time::Instant::now() < deadline {
+        let snapshots = list_bookmark_with_deps(deployment_id, branch_id, config, auth_provider).await?;
+        let all_ready = snapshots.iter().all(|s| s.status == "CREATED" || s.status == "COMPLETED");
+        if all_ready {
+            return Ok(());
+        }
+        sleep(POLL_INTERVAL).await;
+    }
+    Err(BookmarkError::InternalServerError(
+        "Timeout waiting for previous snapshot to complete. Please retry later.".to_string(),
+    ))
+}
+
 pub async fn create_commit_with_deps<A: AuthProvider>(
     deployment_id: &str,
     branch_id: &str,
     request: CreateCommitRequest,
+    config: &Config,
+    auth_provider: &A,
+) -> Result<CreateCommitResponse, BookmarkError> {
+    let result = create_commit_once(deployment_id, branch_id, &request, config, auth_provider).await;
+    match result {
+        Ok(resp) => Ok(resp),
+        Err(BookmarkError::InternalServerError(ref msg)) if is_bookmark_init_error(msg) => {
+            wait_for_snapshots_ready(deployment_id, branch_id, config, auth_provider).await?;
+            create_commit_once(deployment_id, branch_id, &request, config, auth_provider).await
+        }
+        Err(e) => Err(e),
+    }
+}
+
+async fn create_commit_once<A: AuthProvider>(
+    deployment_id: &str,
+    branch_id: &str,
+    request: &CreateCommitRequest,
     config: &Config,
     auth_provider: &A,
 ) -> Result<CreateCommitResponse, BookmarkError> {
@@ -87,13 +136,14 @@ pub async fn create_commit_with_deps<A: AuthProvider>(
     let response = client
         .post(format!("{}/deploy/{}/{}/snap", config.api_url, deployment_id, branch_id))
         .header("Authorization", format!("Bearer {}", jwt_token))
-        .json(&request)
+        .json(request)
         .send()
         .await
         .map_err(BookmarkError::RequestFailed)?;
 
     if response.status().is_success() {
-        response.json::<CreateCommitResponse>()
+        response
+            .json::<CreateCommitResponse>()
             .await
             .map_err(|e| BookmarkError::ParseError(e.to_string()))
     } else {
