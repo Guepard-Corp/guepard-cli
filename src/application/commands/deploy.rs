@@ -493,103 +493,137 @@ async fn get_deployment(deployment_id: &str, args: &DeployArgs, config: &Config,
 }
 
 async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
-    if !args.yes {
-        print!("{} Are you sure you want to delete deployment {}? (y/N): ",
-               "⚠️".yellow(), deployment_id);
-        io::stdout().flush()?;
-
-        let mut input = String::new();
-        io::stdin().read_line(&mut input)?;
-
-        if !input.trim().to_lowercase().starts_with('y') {
-            println!("{} Deletion cancelled.", "ℹ️".blue());
-            return Ok(());
-        }
-    }
-
     struct ComputeToStop {
         id: String,
         name: String,
         role: &'static str,
     }
 
-    let computes_to_stop: Vec<ComputeToStop> = {
-        if output_format == OutputFormat::Table {
-            print!("Step 1/4: Resolving computes… ");
-            io::stdout().flush()?;
-        }
-        let dep = match deploy::get_deployment(deployment_id, config).await {
-            Ok(d) => d,
-            Err(DeployError::NotFound) => {
-                if output_format == OutputFormat::Table {
-                    let _ = writeln!(io::stderr(), "{}", "✗".red());
-                    eprintln!(
-                        "{} Deployment {} not found or already deleted.",
-                        "ℹ️".blue(),
-                        deployment_id
-                    );
-                }
-                return Ok(());
-            }
-            Err(e) => {
-                if output_format == OutputFormat::Table {
-                    let _ = writeln!(io::stderr(), "{}", "✗".red());
-                }
-                return Err(anyhow::anyhow!("{}", e));
-            }
-        };
-        let list = if dep.deployment_type == "F2" {
-            match clone::list_clones(deployment_id, config).await {
-                Ok(shadows) => {
-                    let mut v: Vec<ComputeToStop> = shadows
-                        .into_iter()
-                        .map(|s| ComputeToStop {
-                            id: s.id.clone(),
-                            name: s.name,
-                            role: "shadow",
-                        })
-                        .collect();
-                    v.push(ComputeToStop {
-                        id: deployment_id.to_string(),
-                        name: dep.name,
-                        role: "principal",
-                    });
-                    v
-                }
-                Err(_) => vec![ComputeToStop {
-                    id: deployment_id.to_string(),
-                    name: dep.name,
-                    role: "principal",
-                }],
-            }
-        } else {
-            vec![ComputeToStop {
-                id: deployment_id.to_string(),
-                name: dep.name,
-                role: "principal",
-            }]
-        };
-        if output_format == OutputFormat::Table {
-            println!("{}", "✓".green());
-            for c in &list {
-                let id_short = if c.id.len() > 8 {
-                    format!("{}…", &c.id[..8])
-                } else {
-                    c.id.clone()
-                };
-                println!(
-                    "    {} {} {}",
-                    "▪".dimmed(),
-                    format!("{} ({})", c.name.cyan(), id_short).dimmed(),
-                    format!("[{}]", c.role).dimmed()
+    let dep = match deploy::get_deployment(deployment_id, config).await {
+        Ok(d) => d,
+        Err(DeployError::NotFound) => {
+            if output_format == OutputFormat::Table {
+                eprintln!(
+                    "{} Deployment {} not found or already deleted.",
+                    "ℹ️".blue(),
+                    deployment_id
                 );
             }
+            return Ok(());
         }
-        list
+        Err(e) => return Err(anyhow::anyhow!("{}", e)),
     };
 
     if output_format == OutputFormat::Table {
-        println!("Step 2/4: Stopping computes");
+        println!("\n{} Deployment", "📋".blue());
+        println!("  {} {}", "Name:".dimmed(), dep.name.cyan());
+        println!("  {} {}", "ID:".dimmed(), dep.id);
+        println!("  {} {}", "Type:".dimmed(), dep.deployment_type);
+        println!("  {} {}", "Repository:".dimmed(), dep.repository_name);
+        println!("  {} {}", "Region:".dimmed(), dep.region);
+        println!("  {} {}", "Status:".dimmed(), dep.status);
+        print!("\nResolving computes… ");
+        io::stdout().flush()?;
+    }
+    let computes_to_stop: Vec<ComputeToStop> = if dep.deployment_type == "F2" {
+        match clone::list_clones(deployment_id, config).await {
+            Ok(shadows) => {
+                let mut v: Vec<ComputeToStop> = shadows
+                    .into_iter()
+                    .map(|s| ComputeToStop {
+                        id: s.id.clone(),
+                        name: s.name,
+                        role: "shadow",
+                    })
+                    .collect();
+                v.push(ComputeToStop {
+                    id: deployment_id.to_string(),
+                    name: dep.name.clone(),
+                    role: "principal",
+                });
+                v
+            }
+            Err(_) => vec![ComputeToStop {
+                id: deployment_id.to_string(),
+                name: dep.name.clone(),
+                role: "principal",
+            }],
+        }
+    } else {
+        vec![ComputeToStop {
+            id: deployment_id.to_string(),
+            name: dep.name.clone(),
+            role: "principal",
+        }]
+    };
+    if output_format == OutputFormat::Table {
+        println!("{}", "✓".green());
+    }
+
+    let branches = branch::list_branches(deployment_id, config).await.unwrap_or_default();
+    let purge_items: Vec<(String, String)> = branches
+        .iter()
+        .map(|b| {
+            let branch_name = b
+                .branch_name
+                .clone()
+                .or_else(|| b.label_name.clone())
+                .unwrap_or_else(|| b.id.clone());
+            let label = b.label_name.as_deref().unwrap_or(b.id.as_str());
+            let dataset_path = format!("{}/{}", dep.customer_id, label);
+            (branch_name, dataset_path)
+        })
+        .collect();
+
+    if output_format == OutputFormat::Table {
+        println!("\n{} Purge plan for {} ({})", "🗑️".red(), dep.name.cyan(), deployment_id);
+        if purge_items.is_empty() {
+            println!("  {} {}", "Branches/datasets to purge:".dimmed(), "(none)".dimmed());
+        } else {
+            println!("  {}", "Branches and datasets to purge:".dimmed());
+            for (branch_name, dataset_path) in &purge_items {
+                println!("    {} {} {}", "▪".dimmed(), branch_name.cyan(), format!("({})", dataset_path).dimmed());
+            }
+        }
+        println!("\n  {} {} {}", "Computes to stop:", computes_to_stop.len(), "compute(s)".dimmed());
+        for c in &computes_to_stop {
+            let id_short = if c.id.len() > 8 {
+                format!("{}…", &c.id[..8])
+            } else {
+                c.id.clone()
+            };
+            println!(
+                "    {} {} {}",
+                "▪".dimmed(),
+                format!("{} ({})", c.name.cyan(), id_short).dimmed(),
+                format!("[{}]", c.role).dimmed()
+            );
+        }
+        println!("\n{}", "Steps that will run:".dimmed());
+        println!("  1. Stop {} compute(s)", computes_to_stop.len());
+        println!("  2. Wait for volume unmount");
+        println!("  3. Purge deployment and all associated resources");
+        println!();
+    }
+
+    if !args.yes {
+        if output_format == OutputFormat::Table {
+            println!("{} {} This action is irreversible. All data will be permanently deleted.", "⚠️".red().bold(), "DESTRUCTIVE:".red().bold());
+            println!();
+        }
+        print!("{} Proceed with purge? (y/N): ", "⚠️".yellow());
+        io::stdout().flush()?;
+        let mut input = String::new();
+        io::stdin().read_line(&mut input)?;
+        if !input.trim().to_lowercase().starts_with('y') {
+            println!("{} Purge cancelled.", "ℹ️".blue());
+            return Ok(());
+        }
+        println!();
+    }
+
+    if output_format == OutputFormat::Table {
+        println!("Step 1/3: Stopping computes");
     }
     for c in &computes_to_stop {
         if output_format == OutputFormat::Table {
@@ -626,7 +660,7 @@ async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Conf
         let pb = ProgressBar::new_spinner();
         pb.set_style(
             ProgressStyle::default_spinner()
-                .template("{spinner:.dim} Step 3/4: {msg}")
+                .template("{spinner:.dim} Step 2/3: {msg}")
                 .unwrap(),
         );
         pb.set_message("Waiting for volume unmount…");
@@ -638,11 +672,16 @@ async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Conf
     while elapsed < MAX_WAIT_SECS {
         tokio::time::sleep(Duration::from_secs(POLL_INTERVAL_SECS)).await;
         elapsed += POLL_INTERVAL_SECS;
-        if let Ok(res) = compute::get_status(deployment_id, config).await {
-            if res.status.as_deref() != Some("enabled") {
+        match compute::get_status(deployment_id, config).await {
+            Ok(res) if res.status.as_deref() != Some("enabled") => {
                 stopped = true;
                 break;
             }
+            Err(e) if e.to_string().contains("404") => {
+                stopped = true;
+                break;
+            }
+            _ => {}
         }
         if let Some(ref pb) = pb_wait {
             pb.set_message(format!("Waiting for volume unmount… {}s", elapsed));
@@ -660,7 +699,7 @@ async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Conf
         let pb = ProgressBar::new_spinner();
         pb.set_style(
             ProgressStyle::default_spinner()
-                .template("{spinner:.dim} Step 4/4: {msg}")
+                .template("{spinner:.dim} Step 3/3: {msg}")
                 .unwrap(),
         );
         pb.set_message("Purging deployment…");
