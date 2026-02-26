@@ -6,7 +6,6 @@ use crate::application::services::{deploy, performance, compute, branch, commit}
 use crate::application::output::{OutputFormat, print_json};
 use crate::application::commands::list;
 use colored::Colorize;
-use indicatif::{ProgressBar, ProgressStyle};
 use serde::Serialize;
 use std::io::{self, Write};
 use std::time::Duration;
@@ -491,18 +490,6 @@ async fn get_deployment(deployment_id: &str, args: &DeployArgs, config: &Config,
     Ok(())
 }
 
-fn spinner_with_message(msg: &str) -> ProgressBar {
-    let pb = ProgressBar::new_spinner();
-    pb.set_style(
-        ProgressStyle::default_spinner()
-            .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
-            .template("{spinner:.dim} {msg}").unwrap(),
-    );
-    pb.set_message(msg.to_string());
-    pb.enable_steady_tick(Duration::from_millis(80));
-    pb
-}
-
 async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     if !args.yes {
         print!("{} Are you sure you want to delete deployment {}? (y/N): ",
@@ -518,15 +505,15 @@ async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Conf
         }
     }
 
-    let status_res = if output_format == OutputFormat::Table {
-        let pb = spinner_with_message("Step 1/3: Checking compute status…");
-        let r = compute::get_status(deployment_id, config).await;
-        let ok = r.is_ok();
-        pb.finish_with_message(format!("{} Step 1/3: Checking compute status", if ok { "✓".green().to_string() } else { "✗".red().to_string() }));
-        r
-    } else {
-        compute::get_status(deployment_id, config).await
-    };
+    if output_format == OutputFormat::Table {
+        print!("Step 1/3: Checking compute status… ");
+        io::stdout().flush()?;
+    }
+    let status_res = compute::get_status(deployment_id, config).await;
+    if output_format == OutputFormat::Table {
+        let ok = status_res.is_ok();
+        println!("{}", if ok { "✓".green() } else { "✗".red() });
+    }
 
     let compute_considered_running = status_res
         .as_ref()
@@ -534,58 +521,73 @@ async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Conf
         .and_then(|res| res.status.as_deref())
         .map(|s| s == "enabled")
         .unwrap_or(false);
+
+    if output_format == OutputFormat::Table {
+        print!("Step 2/3: Stopping compute… ");
+        io::stdout().flush()?;
+    }
     if compute_considered_running {
+        let stop_res = compute::stop_compute(deployment_id, config).await;
         if output_format == OutputFormat::Table {
-            let pb = spinner_with_message("Step 2/3: Stopping compute…");
-            let stop_res = compute::stop_compute(deployment_id, config).await;
             let ok = stop_res.is_ok();
-            pb.finish_with_message(format!("{} Step 2/3: Stopping compute", if ok { "✓".green().to_string() } else { "✗".red().to_string() }));
+            println!("{}", if ok { "✓".green() } else { "✗".red() });
             if stop_res.is_err() {
                 eprintln!("{} Warning: failed to stop compute", "⚠️".yellow());
             }
-        } else {
-            let _ = compute::stop_compute(deployment_id, config).await;
         }
     } else if output_format == OutputFormat::Table {
-        let pb = spinner_with_message("Step 2/3: Stopping compute (skipped, already stopped)…");
-        pb.finish_with_message(format!("{} Step 2/3: Stopping compute (skipped)", "✓".green().to_string()));
+        println!("{} (skipped)", "✓".green());
     }
 
-    let body = if output_format == OutputFormat::Table {
-        let substeps = [
-            "Step 3/3: Purging deployment — updating repository and branches…",
-            "Step 3/3: Purging deployment — running purge job…",
-            "Step 3/3: Purging deployment — waiting for job completion…",
-        ];
-        let pb = spinner_with_message(substeps[0]);
-        let mut step_idx = 0usize;
-        let deployment_id_ = deployment_id.to_string();
-        let config_ = config.clone();
-        let mut delete_handle = tokio::spawn(async move { deploy::delete_deployment(&deployment_id_, &config_).await });
-        let res = loop {
-            tokio::select! {
-                r = &mut delete_handle => {
-                    break r.map_err(|e| e.into()).and_then(|x| x.map_err(Into::into));
-                }
-                _ = tokio::time::sleep(Duration::from_secs(2)) => {
-                    step_idx = (step_idx + 1) % substeps.len();
-                    pb.set_message(substeps[step_idx].to_string());
-                }
-            }
-        };
-        match res {
+    if output_format == OutputFormat::Table {
+        print!("Step 3/3: Purging deployment… ");
+        io::stdout().flush()?;
+    }
+
+    const PURGE_RETRY_ATTEMPTS: u32 = 3;
+    const PURGE_RETRY_DELAY_SECS: u64 = 20;
+    let mut body = None;
+    let mut last_err = None;
+    for attempt in 1..=PURGE_RETRY_ATTEMPTS {
+        match deploy::delete_deployment(deployment_id, config).await {
             Ok(b) => {
-                pb.finish_with_message(format!("{} Step 3/3: Purging deployment", "✓".green().to_string()));
-                b
+                body = Some(b);
+                if output_format == OutputFormat::Table {
+                    if attempt > 1 {
+                        eprintln!("  {} Purge completed (succeeded on retry {})", "✓".green(), attempt);
+                    } else {
+                        println!("{}", "✓".green());
+                    }
+                }
+                break;
             }
             Err(e) => {
-                pb.finish_with_message(format!("{} Step 3/3: Purging deployment", "✗".red().to_string()));
-                return Err(e);
+                last_err = Some(e);
+                let s = last_err.as_ref().unwrap().to_string();
+                let retryable = s.contains("502") || s.contains("500") || s.contains("Bad Gateway")
+                    || s.contains("timed out") || s.contains("Internal server error");
+                if retryable && attempt < PURGE_RETRY_ATTEMPTS {
+                    if output_format == OutputFormat::Table {
+                        println!("{}", "✗".red());
+                        eprintln!(
+                            "  {} Retrying ({}/{}) in {}s…",
+                            "⏳".yellow(),
+                            attempt + 1,
+                            PURGE_RETRY_ATTEMPTS,
+                            PURGE_RETRY_DELAY_SECS
+                        );
+                    }
+                    tokio::time::sleep(Duration::from_secs(PURGE_RETRY_DELAY_SECS)).await;
+                } else {
+                    if output_format == OutputFormat::Table {
+                        println!("{}", "✗".red());
+                    }
+                    return Err(last_err.unwrap());
+                }
             }
         }
-    } else {
-        deploy::delete_deployment(deployment_id, config).await?
-    };
+    }
+    let body = body.ok_or_else(|| last_err.unwrap())?;
 
     let debug_purge = std::env::var("GUEPARD_DEBUG").is_ok();
 
@@ -614,15 +616,13 @@ async fn delete_deployment(deployment_id: &str, args: &DeployArgs, config: &Conf
                 eprintln!("success: {}", purge.get("success").and_then(|v| v.as_bool()).unwrap_or(true));
             }
             if !stdout.is_empty() || !stderr.is_empty() {
-                eprintln!("\n{}", "Purge output".cyan());
+                println!("\n{}", "Purge output:".cyan());
                 if !stdout.is_empty() {
-                    eprintln!("{}", "  --- stdout ---".dimmed());
                     for line in stdout.lines() {
-                        eprintln!("  {}", line);
+                        println!("  {}", line);
                     }
                 }
                 if !stderr.is_empty() {
-                    eprintln!("{}", "  --- stderr ---".dimmed());
                     for line in stderr.lines() {
                         eprintln!("  {}", line);
                     }

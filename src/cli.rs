@@ -33,7 +33,7 @@ async fn main() {
             eprintln!("❌ Branch Error: {}", branch_error);
             exit_code = 3;
         } else if let Some(bookmark_error) = err.downcast_ref::<BookmarkError>() {
-            eprintln!("❌ Bookmark Error: {}", bookmark_error);
+            eprintln!("❌ {}", bookmark_error);
             exit_code = 4;
         } else if let Some(compute_error) = err.downcast_ref::<ComputeError>() {
             eprintln!("❌ Compute Error: {}", compute_error);

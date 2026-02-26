@@ -12,19 +12,19 @@ pub enum BookmarkError {
     #[error("Failed to parse response: {0}")]
     ParseError(String),
 
-    #[error("400 Bad Request: {0}")]
+    #[error("Bad request: {0}")]
     BadRequest(String),
 
-    #[error("403 Forbidden: {0}")]
+    #[error("Forbidden: {0}")]
     Forbidden(String),
 
-    #[error("404 Not Found: {0}")]
+    #[error("Not found: {0}")]
     NotFound(String),
 
-    #[error("500 Internal Server Error: {0}")]
+    #[error("Server error: {0}")]
     InternalServerError(String),
 
-    #[error("503 Service Unavailable: {0}")]
+    #[error("Service unavailable: {0}")]
     ServiceUnavailable(String),
 
     #[error("Unexpected error: {0}")]
@@ -35,20 +35,30 @@ pub enum BookmarkError {
 }
 
 impl BookmarkError {
+    fn extract_message(text: &str) -> String {
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(text) {
+            if let Some(msg) = v.get("message").and_then(|m| m.as_str()) {
+                return msg.to_string();
+            }
+        }
+        text.to_string()
+    }
+
     pub async fn from_response(response: reqwest::Response) -> Self {
         let status = response.status();
         let text = response
             .text()
             .await
             .unwrap_or_else(|_| "No additional details provided by server".to_string());
+        let message = Self::extract_message(&text);
 
         match status {
-            StatusCode::BAD_REQUEST => BookmarkError::BadRequest(text),
-            StatusCode::FORBIDDEN => BookmarkError::Forbidden(text),
-            StatusCode::NOT_FOUND => BookmarkError::NotFound(text),
-            StatusCode::INTERNAL_SERVER_ERROR => BookmarkError::InternalServerError(text),
-            StatusCode::SERVICE_UNAVAILABLE => BookmarkError::ServiceUnavailable(text),
-            _ => BookmarkError::Unexpected(format!("Status {}: {}", status, text)),
+            StatusCode::BAD_REQUEST => BookmarkError::BadRequest(message),
+            StatusCode::FORBIDDEN => BookmarkError::Forbidden(message),
+            StatusCode::NOT_FOUND => BookmarkError::NotFound(message),
+            StatusCode::INTERNAL_SERVER_ERROR => BookmarkError::InternalServerError(message),
+            StatusCode::SERVICE_UNAVAILABLE => BookmarkError::ServiceUnavailable(message),
+            _ => BookmarkError::Unexpected(format!("Status {}: {}", status, message)),
         }
     }
 }
