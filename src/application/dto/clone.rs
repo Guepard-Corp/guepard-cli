@@ -38,4 +38,3 @@ pub struct CreateCloneResponse {
 }
 
 pub type ListClonesResponse = Vec<CreateCloneResponse>;
-

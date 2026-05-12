@@ -25,6 +25,7 @@ A CLI to interact with Guepard Platform, providing version control and managemen
 - **Git-like Interface**: Familiar commands for developers (`init`, `commit`, `branch`, `checkout`, etc.)
 - **Multi-platform Support**: Built for Windows, macOS, and Linux on both AMD64 and ARM64 architectures
 - **Database Management**: Deploy and manage database instances with version control
+- **Tenet**: Deploy and manage the transparent DB proxy (PII masking via `proxy.yaml`) via `guepard tenet`
 - **Cross-platform**: Consistent experience across all supported platforms
 
 ## Installation
@@ -62,6 +63,8 @@ make build-all
 # Install locally
 make install
 ```
+
+- **Tenet**: `guepard tenet` — deploy and manage the transparent DB proxy (PII masking via `proxy.yaml`) through the public API
 
 ## Usage
 

@@ -1,12 +1,12 @@
-use anyhow::Result;
+use crate::application::dto::commit::CreateCommitRequest;
+use crate::application::output::{print_row_or_json, OutputFormat};
+use crate::application::services::commit;
 use crate::config::config::Config;
 use crate::structure::CommitArgs;
-use crate::application::services::commit;
-use crate::application::dto::commit::CreateCommitRequest;
-use crate::application::output::{OutputFormat, print_row_or_json};
+use anyhow::Result;
 use colored::Colorize;
 use serde::Serialize;
-use tabled::{Tabled};
+use tabled::Tabled;
 
 #[derive(Tabled, Serialize)]
 struct CommitRow {
@@ -26,14 +26,10 @@ pub async fn commit(args: &CommitArgs, config: &Config, output_format: OutputFor
     let request = CreateCommitRequest {
         snapshot_comment: args.message.clone(),
     };
-    
-    let commit = commit::create_commit(
-        &args.deployment_id,
-        &args.branch_id,
-        request,
-        config,
-    ).await?;
-    
+
+    let commit =
+        commit::create_commit(&args.deployment_id, &args.branch_id, request, config).await?;
+
     // Create a beautiful table showing the created commit
     let commit_row = CommitRow {
         commit_id: commit.id,
@@ -41,11 +37,11 @@ pub async fn commit(args: &CommitArgs, config: &Config, output_format: OutputFor
         status: commit.status,
         created_date: commit.created_date,
     };
-    
+
     if output_format == OutputFormat::Table {
         println!("{} Created commit successfully!", "✅".green());
     }
     print_row_or_json(commit_row, output_format);
-    
+
     Ok(())
 }

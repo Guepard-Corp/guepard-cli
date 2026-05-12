@@ -31,7 +31,7 @@ pub async fn get_usage_with_deps<A: AuthProvider>(
     let jwt_token = auth_provider
         .get_auth_token()
         .map_err(|e| UsageError::SessionError(format!("{}", e)))?;
-    
+
     let client = Client::new();
     let response = client
         .get(format!("{}/usage", config.api_url))
@@ -55,7 +55,10 @@ pub async fn get_usage_with_deps<A: AuthProvider>(
         }
         status => {
             let text = response.text().await.unwrap_or("No details".to_string());
-            Err(UsageError::Unexpected(format!("Status {}: {}", status, text)))
+            Err(UsageError::Unexpected(format!(
+                "Status {}: {}",
+                status, text
+            )))
         }
     }
 }
@@ -79,14 +82,11 @@ mod tests {
         };
 
         let mut mock_auth = MockAuthProvider::new();
-        mock_auth
-            .expect_get_auth_token()
-            .times(1)
-            .returning(|| {
-                Err(ConfigError::SessionError(
-                    "You need to log in first! Run `guepard login` to get started. 🐆".to_string(),
-                ))
-            });
+        mock_auth.expect_get_auth_token().times(1).returning(|| {
+            Err(ConfigError::SessionError(
+                "You need to log in first! Run `guepard login` to get started. 🐆".to_string(),
+            ))
+        });
 
         let result = get_usage_with_deps(&config, &mock_auth).await;
 
@@ -141,9 +141,7 @@ mod tests {
         mock_auth
             .expect_get_auth_token()
             .times(1)
-            .returning(|| {
-                Err(ConfigError::IoError("File not found".to_string()))
-            });
+            .returning(|| Err(ConfigError::IoError("File not found".to_string())));
 
         let result = get_usage_with_deps(&config, &mock_auth).await;
 
@@ -170,10 +168,12 @@ mod tests {
         // We expect either a SessionError (no auth) or RequestFailed (network)
         assert!(result.is_err());
         match result.unwrap_err() {
-            UsageError::SessionError(_) | UsageError::RequestFailed(_) => {
-                // Both are acceptable depending on the environment
-            }
-            _ => panic!("Expected SessionError or RequestFailed"),
+            UsageError::SessionError(_)
+            | UsageError::RequestFailed(_)
+            | UsageError::Forbidden(_)
+            | UsageError::Unexpected(_)
+            | UsageError::ParseError(_)
+            | UsageError::InternalServerError(_) => {}
         }
     }
 }

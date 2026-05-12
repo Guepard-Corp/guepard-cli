@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GetCommitResponse {
-    pub id: String, // bookmark_id = snapshot_id
-    pub name: String,  // bookmark_name = snapshot_name
+    pub id: String,   // bookmark_id = snapshot_id
+    pub name: String, // bookmark_name = snapshot_name
     pub status: String,
     pub dataset_id: Option<String>, // dataset_id = branch_id
     pub parent_id: Option<String>,
@@ -24,7 +24,7 @@ pub struct CreateCommitResponse {
     pub snapshot_comment: String,
     pub snapshot_schema: BookmarkSchema,
     pub customer_id: String,
-    pub dataset_id: String, // branch_id
+    pub dataset_id: String,    // branch_id
     pub deployment_id: String, // repository_id
     pub parent_id: Option<String>,
     pub is_ephemeral: bool,

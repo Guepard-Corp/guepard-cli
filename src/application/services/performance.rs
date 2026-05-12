@@ -65,7 +65,9 @@ pub async fn list_performance_profiles_with_deps<A: AuthProvider>(
 }
 
 // Public function that maintains the original API
-pub async fn list_performance_profiles(config: &Config) -> Result<Vec<PerformanceProfile>, DeployError> {
+pub async fn list_performance_profiles(
+    config: &Config,
+) -> Result<Vec<PerformanceProfile>, DeployError> {
     let auth_provider = DefaultAuthProvider;
     list_performance_profiles_with_deps(config, &auth_provider).await
 }
@@ -77,11 +79,12 @@ pub async fn get_performance_profile_by_label(
     config: &Config,
 ) -> Result<String, DeployError> {
     let profiles = list_performance_profiles(config).await?;
-    
-    if let Some(id) = select_profile_id(&profiles, label_name, database_provider, database_version) {
+
+    if let Some(id) = select_profile_id(&profiles, label_name, database_provider, database_version)
+    {
         return Ok(id);
     }
-    
+
     Err(DeployError::ApiError(format!(
         "No performance profile found for label '{}' with provider '{}' version '{}'",
         label_name, database_provider, database_version
@@ -97,23 +100,23 @@ pub(crate) fn select_profile_id(
 ) -> Option<String> {
     // First try to find exact match with provider and version
     if let Some(profile) = profiles.iter().find(|p| {
-        p.label_name == label_name &&
-        p.database_provider == database_provider &&
-        p.database_version == database_version
+        p.label_name == label_name
+            && p.database_provider == database_provider
+            && p.database_version == database_version
     }) {
         return Some(profile.id.clone());
     }
-    
+
     // If no exact match, try to find by label name only
     if let Some(profile) = profiles.iter().find(|p| p.label_name == label_name) {
         return Some(profile.id.clone());
     }
-    
+
     // If still no match, try to find default profile for the provider/version
     if let Some(profile) = profiles.iter().find(|p| {
-        p.is_default &&
-        p.database_provider == database_provider &&
-        p.database_version == database_version
+        p.is_default
+            && p.database_provider == database_provider
+            && p.database_version == database_version
     }) {
         return Some(profile.id.clone());
     }
@@ -127,17 +130,19 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_performance_profiles_session_error() {
-        let config = Config { api_url: "https://api.guepard.run".to_string(), app_url: "https://app.guepard.run".to_string() };
+        let config = Config {
+            api_url: "https://api.guepard.run".to_string(),
+            app_url: "https://app.guepard.run".to_string(),
+        };
 
         let mut mock_auth = MockAuthProvider::new();
-        mock_auth
-            .expect_get_auth_token()
-            .times(1)
-            .returning(|| {
-                Err(crate::domain::errors::config_error::ConfigError::SessionError(
+        mock_auth.expect_get_auth_token().times(1).returning(|| {
+            Err(
+                crate::domain::errors::config_error::ConfigError::SessionError(
                     "You need to log in first! Run `guepard login` to get started. 🐆".to_string(),
-                ))
-            });
+                ),
+            )
+        });
 
         let result = list_performance_profiles_with_deps(&config, &mock_auth).await;
         assert!(result.is_err());
@@ -149,7 +154,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_performance_profiles_network_or_auth_error() {
-        let config = Config { api_url: "https://api.guepard.run".to_string(), app_url: "https://app.guepard.run".to_string() };
+        let config = Config {
+            api_url: "https://api.guepard.run".to_string(),
+            app_url: "https://app.guepard.run".to_string(),
+        };
 
         let mut mock_auth = MockAuthProvider::new();
         mock_auth

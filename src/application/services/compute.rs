@@ -1,5 +1,7 @@
 use crate::application::auth;
-use crate::application::dto::compute::{ListComputeResponse, LogsResponse, StatusErrorResponse, ComputeStatusResponse};
+use crate::application::dto::compute::{
+    ComputeStatusResponse, ListComputeResponse, LogsResponse, StatusErrorResponse,
+};
 use crate::config::config::Config;
 use crate::domain::errors::compute_error::ComputeError;
 
@@ -21,13 +23,20 @@ impl AuthProvider for DefaultAuthProvider {
     }
 }
 
-pub async fn list_compute_with_deps<A: AuthProvider>(deployment_id: &str, config: &Config, auth_provider: &A) -> Result<ListComputeResponse, ComputeError> {
+pub async fn list_compute_with_deps<A: AuthProvider>(
+    deployment_id: &str,
+    config: &Config,
+    auth_provider: &A,
+) -> Result<ListComputeResponse, ComputeError> {
     let jwt_token = auth_provider
         .get_auth_token()
         .map_err(|e| ComputeError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
-        .get(format!("{}/deploy/{}/compute", config.api_url, deployment_id))
+        .get(format!(
+            "{}/deploy/{}/compute",
+            config.api_url, deployment_id
+        ))
         .header("Authorization", format!("Bearer {}", jwt_token))
         .send()
         .await
@@ -40,21 +49,31 @@ pub async fn list_compute_with_deps<A: AuthProvider>(deployment_id: &str, config
             .map_err(|e| ComputeError::ParseError(e.to_string())),
         status => {
             let text = response.text().await.unwrap_or("No details".to_string());
-            Err(ComputeError::Unexpected(format!("Status {}: {}", status, text)))
+            Err(ComputeError::Unexpected(format!(
+                "Status {}: {}",
+                status, text
+            )))
         }
     }
 }
 
-pub async fn list_compute(deployment_id: &str, config: &Config) -> Result<ListComputeResponse, ComputeError> {
+pub async fn list_compute(
+    deployment_id: &str,
+    config: &Config,
+) -> Result<ListComputeResponse, ComputeError> {
     let auth_provider = DefaultAuthProvider;
     list_compute_with_deps(deployment_id, config, &auth_provider).await
 }
 
-pub async fn start_compute_with_deps<A: AuthProvider>(deployment_id: &str, config: &Config, auth_provider: &A) -> Result<(), ComputeError> {
+pub async fn start_compute_with_deps<A: AuthProvider>(
+    deployment_id: &str,
+    config: &Config,
+    auth_provider: &A,
+) -> Result<(), ComputeError> {
     let jwt_token = auth_provider
         .get_auth_token()
         .map_err(|e| ComputeError::SessionError(format!("{}", e)))?;
-    
+
     let client = Client::new();
     let response = client
         .get(format!("{}/deploy/{}/start", config.api_url, deployment_id))
@@ -68,7 +87,10 @@ pub async fn start_compute_with_deps<A: AuthProvider>(deployment_id: &str, confi
         StatusCode::OK => Ok(()),
         status => {
             let text = response.text().await.unwrap_or("No details".to_string());
-            Err(ComputeError::Unexpected(format!("Status {}: {}", status, text)))
+            Err(ComputeError::Unexpected(format!(
+                "Status {}: {}",
+                status, text
+            )))
         }
     }
 }
@@ -78,7 +100,11 @@ pub async fn start_compute(deployment_id: &str, config: &Config) -> Result<(), C
     start_compute_with_deps(deployment_id, config, &auth_provider).await
 }
 
-pub async fn stop_compute_with_deps<A: AuthProvider>(deployment_id: &str, config: &Config, auth_provider: &A) -> Result<(), ComputeError> {
+pub async fn stop_compute_with_deps<A: AuthProvider>(
+    deployment_id: &str,
+    config: &Config,
+    auth_provider: &A,
+) -> Result<(), ComputeError> {
     let jwt_token = auth_provider
         .get_auth_token()
         .map_err(|e| ComputeError::SessionError(format!("{}", e)))?;
@@ -94,7 +120,10 @@ pub async fn stop_compute_with_deps<A: AuthProvider>(deployment_id: &str, config
         StatusCode::OK => Ok(()),
         status => {
             let text = response.text().await.unwrap_or("No details".to_string());
-            Err(ComputeError::Unexpected(format!("Status {}: {}", status, text)))
+            Err(ComputeError::Unexpected(format!(
+                "Status {}: {}",
+                status, text
+            )))
         }
     }
 }
@@ -104,13 +133,20 @@ pub async fn stop_compute(deployment_id: &str, config: &Config) -> Result<(), Co
     stop_compute_with_deps(deployment_id, config, &auth_provider).await
 }
 
-pub async fn get_logs_with_deps<A: AuthProvider>(deployment_id: &str, config: &Config, auth_provider: &A) -> Result<LogsResponse, ComputeError> {
+pub async fn get_logs_with_deps<A: AuthProvider>(
+    deployment_id: &str,
+    config: &Config,
+    auth_provider: &A,
+) -> Result<LogsResponse, ComputeError> {
     let jwt_token = auth_provider
         .get_auth_token()
         .map_err(|e| ComputeError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
-        .get(format!("{}/deploy/{}/compute/logs", config.api_url, deployment_id))
+        .get(format!(
+            "{}/deploy/{}/compute/logs",
+            config.api_url, deployment_id
+        ))
         .header("Authorization", format!("Bearer {}", jwt_token))
         .send()
         .await
@@ -127,7 +163,10 @@ pub async fn get_logs_with_deps<A: AuthProvider>(deployment_id: &str, config: &C
         }
         status => {
             let text = response.text().await.unwrap_or("No details".to_string());
-            Err(ComputeError::Unexpected(format!("Status {}: {}", status, text)))
+            Err(ComputeError::Unexpected(format!(
+                "Status {}: {}",
+                status, text
+            )))
         }
     }
 }
@@ -137,13 +176,20 @@ pub async fn get_logs(deployment_id: &str, config: &Config) -> Result<LogsRespon
     get_logs_with_deps(deployment_id, config, &auth_provider).await
 }
 
-pub async fn get_status_with_deps<A: AuthProvider>(deployment_id: &str, config: &Config, auth_provider: &A) -> Result<ComputeStatusResponse, ComputeError> {
+pub async fn get_status_with_deps<A: AuthProvider>(
+    deployment_id: &str,
+    config: &Config,
+    auth_provider: &A,
+) -> Result<ComputeStatusResponse, ComputeError> {
     let jwt_token = auth_provider
         .get_auth_token()
         .map_err(|e| ComputeError::SessionError(format!("{}", e)))?;
     let client = Client::new();
     let response = client
-        .get(format!("{}/deploy/{}/status", config.api_url, deployment_id))
+        .get(format!(
+            "{}/deploy/{}/status",
+            config.api_url, deployment_id
+        ))
         .header("Authorization", format!("Bearer {}", jwt_token))
         .send()
         .await
@@ -163,12 +209,18 @@ pub async fn get_status_with_deps<A: AuthProvider>(deployment_id: &str, config: 
         }
         status => {
             let text = response.text().await.unwrap_or("No details".to_string());
-            Err(ComputeError::Unexpected(format!("Status {}: {}", status, text)))
+            Err(ComputeError::Unexpected(format!(
+                "Status {}: {}",
+                status, text
+            )))
         }
     }
 }
 
-pub async fn get_status(deployment_id: &str, config: &Config) -> Result<ComputeStatusResponse, ComputeError> {
+pub async fn get_status(
+    deployment_id: &str,
+    config: &Config,
+) -> Result<ComputeStatusResponse, ComputeError> {
     let auth_provider = DefaultAuthProvider;
     get_status_with_deps(deployment_id, config, &auth_provider).await
 }
@@ -179,14 +231,18 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_compute_session_error() {
-        let config = Config { api_url: "https://api.guepard.run".to_string(), app_url: "https://app.guepard.run".to_string() };
+        let config = Config {
+            api_url: "https://api.guepard.run".to_string(),
+            app_url: "https://app.guepard.run".to_string(),
+        };
         let mut auth = MockAuthProvider::new();
-        auth
-            .expect_get_auth_token()
-            .times(1)
-            .returning(|| Err(crate::domain::errors::config_error::ConfigError::SessionError(
-                "You need to log in first! Run `guepard login` to get started. 🐆".to_string()
-            )));
+        auth.expect_get_auth_token().times(1).returning(|| {
+            Err(
+                crate::domain::errors::config_error::ConfigError::SessionError(
+                    "You need to log in first! Run `guepard login` to get started. 🐆".to_string(),
+                ),
+            )
+        });
 
         let result = list_compute_with_deps("dep-1", &config, &auth).await;
         assert!(result.is_err());
@@ -198,10 +254,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_start_stop_logs_status_network_or_api_errors() {
-        let config = Config { api_url: "https://api.guepard.run".to_string(), app_url: "https://app.guepard.run".to_string() };
+        let config = Config {
+            api_url: "https://api.guepard.run".to_string(),
+            app_url: "https://app.guepard.run".to_string(),
+        };
         let mut auth = MockAuthProvider::new();
-        auth
-            .expect_get_auth_token()
+        auth.expect_get_auth_token()
             .times(4)
             .returning(|| Ok("test-jwt-token".to_string()));
 

@@ -1,10 +1,10 @@
-use serde::{Deserialize};
+use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct ListComputeResponse {
-    pub id: String, // deployment_id
+    pub id: String,                // deployment_id
     pub branch_id: Option<String>, // Branch ID Compute is on (optional for backward compatibility)
-    pub name: String, // Compute name
+    pub name: String,              // Compute name
     pub fqdn: String,
     pub connection_string: String,
     pub attached_branch: String, // Branch ID Compute is on

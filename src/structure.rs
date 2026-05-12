@@ -1,4 +1,4 @@
-use clap::{Args, Parser, Subcommand};
+use clap::{ArgGroup, Args, Parser, Subcommand};
 
 pub fn get_version() -> &'static str {
     env!("CARGO_PKG_VERSION")
@@ -6,7 +6,7 @@ pub fn get_version() -> &'static str {
 
 #[derive(Parser, Debug)]
 #[clap(
-    version = get_version(), 
+    version = get_version(),
     about = "🐆 Guepard CLI - Git for databases",
     long_about = "Guepard CLI brings Git-like version control capabilities to your databases.
 
@@ -75,7 +75,7 @@ pub enum SubCommand {
     ///   # Delete deployment (use with caution)
     ///   guepard deploy -x <deployment_id> --purge
     Deploy(DeployArgs),
-    
+
     /// 📸 Create snapshots of your database state (like git commit)
     ///
     /// Create a point-in-time snapshot of your database. Snapshots capture schema changes,
@@ -90,7 +90,7 @@ pub enum SubCommand {
     ///   guepard commit -m "Add user profiles" -x <deployment_id> -b <branch_id>
     ///   guepard commit -m "Add payment tables" -x <deployment_id> -b <branch_id>
     Commit(CommitArgs),
-    
+
     /// 🌿 List and manage branches for your deployments
     ///
     /// List all branches for a deployment or create new branches from snapshots.
@@ -107,7 +107,7 @@ pub enum SubCommand {
     ///   # Create a bugfix branch
     ///   guepard branch -x <deployment_id> -s <snapshot_id> bugfix/login-error -k -e
     Branch(BranchArgs),
-    
+
     /// 📋 View deployment logs and commit history
     ///
     /// Monitor deployment activity, view logs in real-time, or filter logs by date.
@@ -126,7 +126,7 @@ pub enum SubCommand {
     ///   # Filter logs by date range
     ///   guepard log -x <deployment_id> --since "2025-01-08" --until "2025-01-09"
     Log(LogArgs),
-    
+
     /// 🔄 Switch branches or checkout specific snapshots
     ///
     /// Change your database state to match a different branch or restore to a previous
@@ -145,7 +145,7 @@ pub enum SubCommand {
     ///   # Restore to a specific snapshot
     ///   guepard checkout -x <deployment_id> -s <snapshot_id>
     Checkout(CheckoutArgs),
-    
+
     /// 💻 Manage compute instances (start, stop, status, logs)
     ///
     /// Control the compute resources for your deployments. Start or stop compute instances,
@@ -167,7 +167,19 @@ pub enum SubCommand {
     ///   # List compute details
     ///   guepard compute list -x <deployment_id>
     Compute(ComputeArgs),
-    
+
+    /// 🎭 Tenet: transparent DB proxy (deploy, lifecycle, proxy.yaml)
+    ///
+    /// Manage Tenet through the Guepard API. Clients connect to Tenet instead of the DB;
+    /// masking rules live in proxy.yaml (local file or inline).
+    ///
+    /// Examples:
+    ///   guepard tenet deploy --tenant-id T --upstream-host H --upstream-port 5432 \\
+    ///     --masking-salt s --proxy-config ./proxy.yaml --json
+    ///   guepard tenet start <job_id>
+    ///   guepard tenet proxy get <job_id> --output ./proxy.yaml
+    Tenet(TenetArgs),
+
     /// 📊 Show account usage and quota information
     ///
     /// Display your current usage statistics including deployments, snapshots, and clones.
@@ -176,7 +188,7 @@ pub enum SubCommand {
     /// Example:
     ///   guepard usage
     Usage(UsageArgs),
-    
+
     /// 📋 List deployments, branches, commits, clones, and other resources
     ///
     /// Display resources in beautiful, colorized tables. Supports custom column selection
@@ -201,7 +213,7 @@ pub enum SubCommand {
     ///   # List all commits including AUTO SNAPs
     ///   guepard list commits -x <deployment_id> --all
     List(ListArgs),
-    
+
     /// 🔐 Authenticate with your Guepard account
     ///
     /// Login to Guepard using interactive browser-based authentication or provide
@@ -214,7 +226,7 @@ pub enum SubCommand {
     ///   # Direct token login
     ///   guepard login --code your-access-token
     Login(LoginArgs),
-    
+
     /// 🚪 Logout and clear stored credentials
     ///
     /// Sign out from Guepard and remove locally stored authentication credentials.
@@ -222,7 +234,7 @@ pub enum SubCommand {
     /// Example:
     ///   guepard logout
     Logout(LogoutArgs),
-    
+
     /// ⚙️ Configure API endpoint and other settings
     ///
     /// View or modify CLI configuration including API endpoint URL and other settings.
@@ -237,7 +249,7 @@ pub enum SubCommand {
     ///   # Show current configuration
     ///   guepard config --get
     Config(ConfigArgs),
-    
+
     /// 🎭 Clone deployments from snapshots
     ///
     /// Create shadow/clone deployments from snapshots.
@@ -254,7 +266,7 @@ pub enum SubCommand {
 pub struct ListArgs {
     #[clap(flatten)]
     pub output: OutputArgs,
-    
+
     /// Resource type to list: deployments, branches, commits, or clones
     ///
     /// - deployments: List all database deployments (default)
@@ -263,7 +275,7 @@ pub struct ListArgs {
     /// - clones: List shadow/clone deployments for a deployment (requires --deployment-id)
     #[clap(value_parser, default_value = "deployments")]
     pub resource: String,
-    
+
     /// Columns to display (comma-separated list)
     ///
     /// Available columns for deployments:
@@ -272,28 +284,28 @@ pub struct ListArgs {
     /// Example: --columns id,name,status,fqdn
     #[clap(short = 'c', long)]
     pub columns: Option<String>,
-    
+
     /// Deployment ID (required for listing branches or commits)
     ///
     /// Use this flag when listing branches or commits to specify which deployment
     /// to query. Can be omitted when listing deployments.
     #[clap(short = 'x', long)]
     pub deployment_id: Option<String>,
-    
+
     /// Show git-style graph visualization (for commits only)
     ///
     /// Displays commit history in a visual graph format similar to 'git log --graph'.
     /// Shows branch relationships and commit hierarchy.
     #[clap(short = 'g', long)]
     pub graph: bool,
-    
+
     /// Show all commits including AUTO SNAPs (for commits only)
     ///
     /// By default, AUTO SNAPs (automatic snapshots) are hidden. Use this flag
     /// to include them in the output.
     #[clap(short = 'a', long)]
     pub all: bool,
-    
+
     /// Limit number of results to display
     ///
     /// Restrict the number of items shown in the output. Useful for pagination
@@ -306,14 +318,14 @@ pub struct ListArgs {
 pub struct DeployArgs {
     #[clap(flatten)]
     pub output: OutputArgs,
-    
+
     /// Database provider type
     ///
     /// Supported providers: PostgreSQL, MySQL, MongoDB
     /// Required when creating a new deployment.
     #[clap(short = 'p', long)]
     pub database_provider: Option<String>,
-    
+
     /// Database version number
     ///
     /// Examples:
@@ -324,7 +336,7 @@ pub struct DeployArgs {
     /// Required when creating a new deployment.
     #[clap(short = 'v', long)]
     pub database_version: Option<String>,
-    
+
     /// Geographic region for deployment
     ///
     /// Available regions: us-west, us-east, eu-west, asia-pacific
@@ -332,7 +344,7 @@ pub struct DeployArgs {
     /// Required when creating a new deployment.
     #[clap(short = 'r', long)]
     pub region: Option<String>,
-    
+
     /// Deployment instance type
     ///
     /// - REPOSITORY: Full version control, optimized for development and branching
@@ -341,14 +353,14 @@ pub struct DeployArgs {
     /// Required when creating a new deployment.
     #[clap(short = 'i', long)]
     pub instance_type: Option<String>,
-    
+
     /// Cloud provider datacenter
     ///
     /// Supported providers: aws, gcp, azure
     /// Required when creating a new deployment.
     #[clap(short = 'd', long)]
     pub datacenter: Option<String>,
-    
+
     /// Repository name for the deployment
     ///
     /// A unique identifier for your deployment. Must be alphanumeric with hyphens allowed.
@@ -356,14 +368,14 @@ pub struct DeployArgs {
     /// Required when creating a new deployment.
     #[clap(short = 'n', long)]
     pub repository_name: Option<String>,
-    
+
     /// Database password
     ///
     /// The password for the database user. Use a strong, unique password.
     /// Required when creating a new deployment.
     #[clap(short = 'w', long)]
     pub database_password: Option<String>,
-    
+
     /// Deployment ID for get/update/delete operations
     ///
     /// Use this flag to:
@@ -372,13 +384,13 @@ pub struct DeployArgs {
     ///   - Delete deployment: guepard deploy -x <deployment_id> --purge
     #[clap(short = 'x', long)]
     pub deployment_id: Option<String>,
-    
+
     /// Database username
     ///
     /// The username for database connections. Defaults to 'guepard' if not specified.
     #[clap(short = 'u', long)]
     pub user: Option<String>,
-    
+
     /// Skip confirmation when using --purge (delete without prompting).
     #[clap(short = 'y', long)]
     pub yes: bool,
@@ -398,20 +410,20 @@ pub struct DeployArgs {
     /// If not specified, defaults to gp.g1.xsmall.
     #[clap(short = 'f', long)]
     pub performance_profile: Option<String>,
-    
+
     /// Node ID for the deployment
     ///
     /// Optional node identifier for the deployment. Used for specific node targeting.
     #[clap(short = 's', long)]
     pub node_id: Option<String>,
-    
+
     /// Interactive mode - guided setup wizard
     ///
     /// Launches an interactive wizard that guides you through deployment creation
     /// step by step. Recommended for first-time users or complex deployments.
     #[clap(short = 'I', long)]
     pub interactive: bool,
-    
+
     /// Show git-style graph visualization of commits
     ///
     /// Displays commit history in a visual graph format similar to 'git log --graph'.
@@ -424,7 +436,7 @@ pub struct DeployArgs {
 pub struct CommitArgs {
     #[clap(flatten)]
     pub output: OutputArgs,
-    
+
     /// Commit message describing the snapshot
     ///
     /// Similar to git commit messages. Use descriptive messages that explain what
@@ -436,14 +448,14 @@ pub struct CommitArgs {
     /// Bad examples: "fix", "update", "changes"
     #[clap(short = 'm', long, required = true)]
     pub message: String,
-    
+
     /// Deployment ID where the snapshot will be created
     ///
     /// The unique identifier of the deployment. You can find this using:
     ///   guepard list deployments
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
-    
+
     /// Branch ID where the snapshot will be created
     ///
     /// The unique identifier of the branch. List branches with:
@@ -459,7 +471,7 @@ pub struct CommitArgs {
 pub struct BranchArgs {
     #[clap(flatten)]
     pub output: OutputArgs,
-    
+
     /// Branch name to create (optional - if omitted, lists all branches)
     ///
     /// Use descriptive names following conventions:
@@ -471,14 +483,14 @@ pub struct BranchArgs {
     /// If not provided, the command will list all branches for the deployment.
     #[clap(value_parser)]
     pub name: Option<String>,
-    
+
     /// Deployment ID
     ///
     /// Required for both listing and creating branches. Find deployments with:
     ///   guepard list deployments
     #[clap(short = 'x', long)]
     pub deployment_id: Option<String>,
-    
+
     /// Snapshot ID to branch from
     ///
     /// The snapshot that will serve as the starting point for the new branch.
@@ -488,28 +500,28 @@ pub struct BranchArgs {
     /// Required when creating a new branch.
     #[clap(short = 's', long)]
     pub snapshot_id: Option<String>,
-    
+
     /// Whether to discard uncommitted changes when creating branch
     ///
     /// Set to "true" to discard any uncommitted changes before creating the branch.
     /// Use when you want a clean branch from the specified snapshot.
     #[clap(short = 'd', long)]
     pub discard_changes: Option<String>,
-    
+
     /// Automatically checkout the branch after creation
     ///
     /// If set, switches to the newly created branch immediately after creation.
     /// Equivalent to running 'guepard checkout' after branch creation.
     #[clap(short = 'k', long)]
     pub checkout: bool,
-    
+
     /// Mark branch as ephemeral (temporary)
     ///
     /// Ephemeral branches are intended for experiments and can be safely cleaned up
     /// after merging or discarding. Use for feature branches, bugfixes, and experiments.
     #[clap(short = 'e', long)]
     pub ephemeral: bool,
-    
+
     /// Source branch ID to create from
     ///
     /// The branch to use as the source when creating a new branch. If not specified,
@@ -522,49 +534,49 @@ pub struct BranchArgs {
 pub struct LogArgs {
     #[clap(flatten)]
     pub output: OutputArgs,
-    
+
     /// Deployment ID to view logs for
     ///
     /// Required. Find deployment IDs with:
     ///   guepard list deployments
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
-    
+
     /// Number of log lines to display
     ///
     /// Controls how many lines of log history to show. Default: 50.
     /// Use a larger number to see more history, or combine with --follow for real-time streaming.
     #[clap(short = 'n', long, default_value = "50")]
     pub lines: usize,
-    
+
     /// Follow mode - stream logs in real-time
     ///
     /// Similar to 'tail -f', continuously displays new log entries as they are generated.
     /// Press Ctrl+C to stop following. Useful for monitoring active deployments.
     #[clap(short = 'f', long)]
     pub follow: bool,
-    
+
     /// Show only stdout logs
     ///
     /// Filter to display only standard output logs, excluding error logs.
     /// Useful when you only want to see application output.
     #[clap(long)]
     pub stdout_only: bool,
-    
+
     /// Show only stderr logs
     ///
     /// Filter to display only error logs, excluding standard output.
     /// Useful for debugging errors and warnings.
     #[clap(long)]
     pub stderr_only: bool,
-    
+
     /// Display timestamps with each log line
     ///
     /// Adds timestamp information to each log entry, making it easier to correlate
     /// logs with specific events or time periods.
     #[clap(short = 't', long)]
     pub timestamps: bool,
-    
+
     /// Filter logs from this date/time onwards
     ///
     /// Show only logs created on or after this date/time.
@@ -575,7 +587,7 @@ pub struct LogArgs {
     ///   --since "2025-01-08 14:30:00"
     #[clap(long)]
     pub since: Option<String>,
-    
+
     /// Filter logs until this date/time
     ///
     /// Show only logs created on or before this date/time.
@@ -594,7 +606,7 @@ pub struct LogArgs {
 pub struct CheckoutArgs {
     #[clap(flatten)]
     pub output: OutputArgs,
-    
+
     /// Deployment ID
     ///
     /// Required. The only required parameter for checkout. Can be used alone to list
@@ -602,7 +614,7 @@ pub struct CheckoutArgs {
     /// Find deployments with: guepard list deployments
     #[clap(short = 'x', long)]
     pub deployment_id: Option<String>,
-    
+
     /// Branch ID to checkout
     ///
     /// Optional. The unique identifier of the branch to switch to. When provided with
@@ -613,7 +625,7 @@ pub struct CheckoutArgs {
     /// When you checkout a branch, your database state changes to match that branch.
     #[clap(short = 'c', long)]
     pub branch_id: Option<String>,
-    
+
     /// Snapshot ID to checkout
     ///
     /// Optional. The unique identifier of the snapshot to restore to. When provided with
@@ -623,21 +635,21 @@ pub struct CheckoutArgs {
     /// Useful for rollbacks and testing previous states.
     #[clap(short = 's', long)]
     pub snapshot_id: Option<String>,
-    
+
     /// Discard uncommitted changes before checkout
     ///
     /// Set to "true" to discard any uncommitted changes before switching branches
     /// or restoring to a snapshot. Use when you want a clean state.
     #[clap(short = 'd', long)]
     pub discard_changes: Option<String>,
-    
+
     /// Perform the checkout operation
     ///
     /// Explicitly perform the checkout. This flag is typically used internally
     /// but can be specified for clarity.
     #[clap(short = 'k', long)]
     pub checkout: bool,
-    
+
     /// Source branch ID for branch creation
     ///
     /// When creating a new branch during checkout, specify the source branch.
@@ -646,19 +658,18 @@ pub struct CheckoutArgs {
     pub source_branch_id: Option<String>,
 }
 
-
 #[derive(Args, Debug)]
 pub struct ComputeArgs {
     #[clap(flatten)]
     pub output: OutputArgs,
-    
+
     /// Deployment ID to manage compute for
     ///
     /// Required. Find deployment IDs with:
     ///   guepard list deployments
     #[clap(short = 'x', long, required = true)]
     pub deployment_id: String,
-    
+
     /// Action to perform on compute instance
     ///
     /// Available actions:
@@ -675,6 +686,109 @@ pub struct ComputeArgs {
     ///   guepard compute stop -x <deployment_id>
     #[clap(value_parser)]
     pub action: Option<String>,
+}
+
+#[derive(Args, Debug)]
+pub struct TenetArgs {
+    #[clap(subcommand)]
+    pub command: TenetCommand,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum TenetCommand {
+    /// Deploy Tenet for a tenant
+    Deploy(TenetDeployCliArgs),
+    /// Start a Tenet job
+    Start(TenetLifecycleArgs),
+    /// Stop a Tenet job
+    Stop(TenetLifecycleArgs),
+    /// Purge a Tenet job
+    Purge(TenetLifecycleArgs),
+    /// Get or set proxy.yaml
+    Proxy(TenetProxyCli),
+}
+
+#[derive(Args, Debug)]
+pub struct TenetLifecycleArgs {
+    #[clap(flatten)]
+    pub output: OutputArgs,
+    /// Tenet job ID
+    pub job_id: String,
+}
+
+#[derive(Args, Debug)]
+pub struct TenetProxyCli {
+    #[clap(subcommand)]
+    pub action: TenetProxyAction,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum TenetProxyAction {
+    /// Print or save proxy.yaml
+    Get(TenetProxyGetArgs),
+    /// Upload proxy.yaml from a local file
+    Set(TenetProxySetArgs),
+}
+
+#[derive(Args, Debug)]
+#[command(group(
+    ArgGroup::new("tenet_proxy_yaml")
+        .args(["proxy_config", "config_yaml"])
+        .required(true),
+))]
+pub struct TenetDeployCliArgs {
+    #[clap(flatten)]
+    pub output: OutputArgs,
+    #[arg(long)]
+    pub tenant_id: String,
+    #[arg(long)]
+    pub upstream_host: String,
+    #[arg(long)]
+    pub upstream_port: u16,
+    #[arg(long)]
+    pub masking_salt: String,
+    #[arg(long)]
+    pub compute_job_id: Option<String>,
+    #[arg(long)]
+    pub config_dir: Option<String>,
+    #[arg(long, group = "tenet_proxy_yaml")]
+    pub proxy_config: Option<std::path::PathBuf>,
+    #[arg(long, group = "tenet_proxy_yaml")]
+    pub config_yaml: Option<String>,
+    /// Reserve this host port for the Tenet DB proxy (omit for dynamic Nomad port)
+    #[arg(long)]
+    pub proxy_port: Option<u16>,
+    /// Reserve this host port for the Tenet HTTP API (omit for dynamic Nomad port)
+    #[arg(long)]
+    pub api_port: Option<u16>,
+}
+
+#[derive(Args, Debug)]
+pub struct TenetProxyGetArgs {
+    #[clap(flatten)]
+    pub output: OutputArgs,
+    /// Tenet job ID
+    pub job_id: String,
+    /// Write proxy YAML to this file instead of stdout
+    #[arg(short = 'o', long = "output")]
+    pub out_file: Option<std::path::PathBuf>,
+}
+
+#[derive(Args, Debug)]
+pub struct TenetProxySetArgs {
+    #[clap(flatten)]
+    pub output: OutputArgs,
+    /// Tenet job ID
+    pub job_id: String,
+    #[arg(long)]
+    pub proxy_config: std::path::PathBuf,
+    #[arg(
+        long,
+        num_args = 0..=1,
+        default_missing_value = "true",
+        value_parser = clap::builder::BoolishValueParser::new(),
+    )]
+    pub apply: Option<bool>,
 }
 
 // Additional structs for original API compatibility
@@ -724,7 +838,7 @@ pub struct CheckoutBranchArgs {
 pub struct LoginArgs {
     #[clap(flatten)]
     pub output: OutputArgs,
-    
+
     /// Direct access token input (skip interactive login)
     ///
     /// Provide your Guepard access token directly instead of using interactive
@@ -742,13 +856,13 @@ pub struct LoginArgs {
 pub struct ConfigArgs {
     #[clap(flatten)]
     pub output: OutputArgs,
-    
+
     /// Display current configuration (same as --show)
     ///
     /// Show current API URL and login status.
     #[clap(long)]
     pub get: bool,
-    
+
     /// Set API endpoint URL
     ///
     /// Configure the API endpoint that the CLI uses to communicate with Guepard.
@@ -763,7 +877,7 @@ pub struct ConfigArgs {
     /// Default: https://app.guepard.run
     #[clap(long)]
     pub app_url: Option<String>,
-    
+
     /// Show all current configuration settings
     ///
     /// Display all configuration values including API endpoint and other settings.
@@ -778,31 +892,31 @@ pub struct ConfigArgs {
 pub struct CloneArgs {
     #[clap(flatten)]
     pub output: OutputArgs,
-    
+
     /// Deployment ID
     ///
     /// Required for creating a clone. Also used with 'list' subcommand.
     #[clap(short = 'x', long)]
     pub deployment_id: Option<String>,
-    
+
     /// Snapshot ID to clone from
     ///
     /// Required when creating a clone. If provided with deployment_id, creates a new clone.
     #[clap(short = 's', long)]
     pub snapshot_id: Option<String>,
-    
+
     /// Repository name for the clone
     ///
     /// A unique identifier for the clone deployment.
     #[clap(short = 'n', long)]
     pub repository_name: Option<String>,
-    
+
     /// Branch name for the clone
     ///
     /// The branch name to use for the clone.
     #[clap(short = 'b', long)]
     pub branch_name: Option<String>,
-    
+
     /// Performance profile for the clone
     ///
     /// Available profiles:

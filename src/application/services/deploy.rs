@@ -4,11 +4,13 @@ use serde_json;
 
 use crate::application::auth;
 use crate::application::dto::deploy::{
-    CreateDeploymentRequest, CreateDeploymentResponse, GetDeploymentResponse, ListDeploymentsResponse,
-    UpdateDeploymentRequest,
+    CreateDeploymentRequest, CreateDeploymentResponse, GetDeploymentResponse,
+    ListDeploymentsResponse, UpdateDeploymentRequest,
 };
 use crate::config::config::Config;
-use crate::domain::errors::deploy_error::{handle_api_response, handle_delete_response, DeployError};
+use crate::domain::errors::deploy_error::{
+    handle_api_response, handle_delete_response, DeployError,
+};
 
 // Trait for dependency injection to make testing easier
 #[cfg_attr(test, mockall::automock)]
@@ -25,16 +27,20 @@ impl AuthProvider for DefaultAuthProvider {
     }
 }
 
-pub async fn create_deployment_with_deps<A: AuthProvider>(request: CreateDeploymentRequest, config: &Config, auth_provider: &A) -> Result<CreateDeploymentResponse, DeployError> {
+pub async fn create_deployment_with_deps<A: AuthProvider>(
+    request: CreateDeploymentRequest,
+    config: &Config,
+    auth_provider: &A,
+) -> Result<CreateDeploymentResponse, DeployError> {
     let jwt_token = auth_provider
         .get_auth_token()
         .map_err(|e| DeployError::SessionError(format!("{}", e)))?;
     let client = Client::new();
-    
+
     // Serialize request for debug output
-    let request_json = serde_json::to_string_pretty(&request)
-        .unwrap_or_else(|_| format!("{:?}", request));
-    
+    let request_json =
+        serde_json::to_string_pretty(&request).unwrap_or_else(|_| format!("{:?}", request));
+
     let response = client
         .post(format!("{}/deploy", config.api_url))
         .header("Authorization", format!("Bearer {}", jwt_token))
@@ -46,9 +52,10 @@ pub async fn create_deployment_with_deps<A: AuthProvider>(request: CreateDeploym
     if !response.status().is_success() {
         let status = response.status();
         let error_text = response.text().await.unwrap_or_default();
-        
+
         // Try to parse as JSON to extract meaningful error messages
-        let error_message = if let Ok(json) = serde_json::from_str::<serde_json::Value>(&error_text) {
+        let error_message = if let Ok(json) = serde_json::from_str::<serde_json::Value>(&error_text)
+        {
             if let Some(msg) = json.get("message") {
                 if msg.is_string() {
                     let s = msg.as_str().unwrap_or("");
@@ -69,16 +76,16 @@ pub async fn create_deployment_with_deps<A: AuthProvider>(request: CreateDeploym
         } else {
             error_text
         };
-        
+
         // Build detailed error message with request info
         let mut error_msg = format!("{} - {}", status, error_message);
-        
+
         // Add request details for debugging
         if std::env::var("GUEPARD_DEBUG").is_ok() || std::env::var("RUST_LOG").is_ok() {
             error_msg.push_str(&format!("\n\nRequest payload:\n{}", request_json));
             error_msg.push_str(&format!("\n\nAPI URL: {}/deploy", config.api_url));
         }
-        
+
         return Err(DeployError::ApiError(error_msg));
     }
 
@@ -88,7 +95,10 @@ pub async fn create_deployment_with_deps<A: AuthProvider>(request: CreateDeploym
         .map_err(|e| DeployError::ApiError(format!("Failed to parse response: {}", e)))
 }
 
-pub async fn create_deployment(request: CreateDeploymentRequest, config: &Config) -> Result<CreateDeploymentResponse, DeployError> {
+pub async fn create_deployment(
+    request: CreateDeploymentRequest,
+    config: &Config,
+) -> Result<CreateDeploymentResponse, DeployError> {
     let auth_provider = DefaultAuthProvider;
     create_deployment_with_deps(request, config, &auth_provider).await
 }
@@ -124,7 +134,10 @@ pub async fn update_deployment(
     update_deployment_with_deps(deployment_id, request, config, &auth_provider).await
 }
 
-pub async fn list_deployments_with_deps<A: AuthProvider>(config: &Config, auth_provider: &A) -> Result<Vec<ListDeploymentsResponse>, DeployError> {
+pub async fn list_deployments_with_deps<A: AuthProvider>(
+    config: &Config,
+    auth_provider: &A,
+) -> Result<Vec<ListDeploymentsResponse>, DeployError> {
     let jwt_token = auth_provider
         .get_auth_token()
         .map_err(|e| DeployError::SessionError(format!("{}", e)))?;
@@ -147,7 +160,9 @@ pub async fn list_deployments_with_deps<A: AuthProvider>(config: &Config, auth_p
     }
 }
 
-pub async fn list_deployments(config: &Config) -> Result<Vec<ListDeploymentsResponse>, DeployError> {
+pub async fn list_deployments(
+    config: &Config,
+) -> Result<Vec<ListDeploymentsResponse>, DeployError> {
     let auth_provider = DefaultAuthProvider;
     list_deployments_with_deps(config, &auth_provider).await
 }
@@ -186,7 +201,11 @@ pub async fn get_deployment(
     get_deployment_with_deps(deployment_id, config, &auth_provider).await
 }
 
-pub async fn delete_deployment_with_deps<A: AuthProvider>(deployment_id: &str, config: &Config, auth_provider: &A) -> Result<serde_json::Value> {
+pub async fn delete_deployment_with_deps<A: AuthProvider>(
+    deployment_id: &str,
+    config: &Config,
+    auth_provider: &A,
+) -> Result<serde_json::Value> {
     let jwt_token = auth_provider
         .get_auth_token()
         .map_err(|e| DeployError::SessionError(format!("{}", e)))
@@ -213,14 +232,18 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_deployments_session_error() {
-        let config = Config { api_url: "https://api.guepard.run".to_string(), app_url: "https://app.guepard.run".to_string() };
+        let config = Config {
+            api_url: "https://api.guepard.run".to_string(),
+            app_url: "https://app.guepard.run".to_string(),
+        };
         let mut auth = MockAuthProvider::new();
-        auth
-            .expect_get_auth_token()
-            .times(1)
-            .returning(|| Err(crate::domain::errors::config_error::ConfigError::SessionError(
-                "You need to log in first! Run `guepard login` to get started. 🐆".to_string()
-            )));
+        auth.expect_get_auth_token().times(1).returning(|| {
+            Err(
+                crate::domain::errors::config_error::ConfigError::SessionError(
+                    "You need to log in first! Run `guepard login` to get started. 🐆".to_string(),
+                ),
+            )
+        });
 
         let result = list_deployments_with_deps(&config, &auth).await;
         assert!(result.is_err());
@@ -232,14 +255,18 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_deployment_session_error() {
-        let config = Config { api_url: "https://api.guepard.run".to_string(), app_url: "https://app.guepard.run".to_string() };
+        let config = Config {
+            api_url: "https://api.guepard.run".to_string(),
+            app_url: "https://app.guepard.run".to_string(),
+        };
         let mut auth = MockAuthProvider::new();
-        auth
-            .expect_get_auth_token()
-            .times(1)
-            .returning(|| Err(crate::domain::errors::config_error::ConfigError::SessionError(
-                "You need to log in first! Run `guepard login` to get started. 🐆".to_string()
-            )));
+        auth.expect_get_auth_token().times(1).returning(|| {
+            Err(
+                crate::domain::errors::config_error::ConfigError::SessionError(
+                    "You need to log in first! Run `guepard login` to get started. 🐆".to_string(),
+                ),
+            )
+        });
 
         let result = get_deployment_with_deps("dep-1", &config, &auth).await;
         assert!(result.is_err());
@@ -251,10 +278,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_update_delete_network_or_api_error_paths() {
-        let config = Config { api_url: "https://api.guepard.run".to_string(), app_url: "https://app.guepard.run".to_string() };
+        let config = Config {
+            api_url: "https://api.guepard.run".to_string(),
+            app_url: "https://app.guepard.run".to_string(),
+        };
         let mut auth = MockAuthProvider::new();
-        auth
-            .expect_get_auth_token()
+        auth.expect_get_auth_token()
             .times(3)
             .returning(|| Ok("test-jwt-token".to_string()));
 
@@ -275,7 +304,9 @@ mod tests {
         assert!(r1.is_err());
 
         // update
-        let upd_req = UpdateDeploymentRequest { repository_name: "repo2".to_string() };
+        let upd_req = UpdateDeploymentRequest {
+            repository_name: "repo2".to_string(),
+        };
         let r2 = update_deployment_with_deps("dep-1", upd_req, &config, &auth).await;
         assert!(r2.is_err());
 

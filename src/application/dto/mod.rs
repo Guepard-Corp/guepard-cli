@@ -1,8 +1,9 @@
-pub mod commit;
-pub mod deploy;
 pub mod branch;
-pub mod compute;
-pub mod usage;
-pub mod login;
-pub mod log;
 pub mod clone;
+pub mod commit;
+pub mod compute;
+pub mod deploy;
+pub mod log;
+pub mod login;
+pub mod tenet;
+pub mod usage;

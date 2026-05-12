@@ -32,7 +32,7 @@ pub enum LogSource {
 impl LogResponse {
     pub fn parse_logs(&self) -> Vec<LogLine> {
         let mut lines = Vec::new();
-        
+
         // Parse stdout logs
         for line in self.stdout_logs.lines() {
             if !line.trim().is_empty() {
@@ -44,7 +44,7 @@ impl LogResponse {
                 });
             }
         }
-        
+
         // Parse stderr logs
         for line in self.stderr_logs.lines() {
             if !line.trim().is_empty() {
@@ -56,19 +56,17 @@ impl LogResponse {
                 });
             }
         }
-        
-        lines.sort_by(|a, b| {
-            match (&a.timestamp, &b.timestamp) {
-                (Some(ts_a), Some(ts_b)) => ts_a.cmp(ts_b),
-                (Some(_), None) => std::cmp::Ordering::Less,
-                (None, Some(_)) => std::cmp::Ordering::Greater,
-                (None, None) => std::cmp::Ordering::Equal,
-            }
+
+        lines.sort_by(|a, b| match (&a.timestamp, &b.timestamp) {
+            (Some(ts_a), Some(ts_b)) => ts_a.cmp(ts_b),
+            (Some(_), None) => std::cmp::Ordering::Less,
+            (None, Some(_)) => std::cmp::Ordering::Greater,
+            (None, None) => std::cmp::Ordering::Equal,
         });
-        
+
         lines
     }
-    
+
     fn extract_timestamp(line: &str) -> Option<String> {
         // Look for PostgreSQL timestamp format: "2025-10-08 08:52:16.178 UTC"
         if let Some(start) = line.find("2025-") {
@@ -78,7 +76,7 @@ impl LogResponse {
         }
         None
     }
-    
+
     fn extract_level(line: &str) -> LogLevel {
         if line.contains("ERROR") || line.contains("FATAL") {
             LogLevel::Error

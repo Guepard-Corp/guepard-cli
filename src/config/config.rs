@@ -1,18 +1,17 @@
+use crate::domain::errors::config_error::ConfigError;
 use chrono::{DateTime, Utc};
 use dotenvy::dotenv;
 #[cfg(feature = "keyring")]
 use keyring::Entry;
+use log::debug;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs::{self, File};
-use log::debug;
-use crate::domain::errors::config_error::ConfigError;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 
 const DEFAULT_APP_URL: &str = "https://app.guepard.run";
 const DEFAULT_API_URL: &str = "https://api.guepard.run";
-
 
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -85,29 +84,31 @@ pub fn save_jwt_token_direct(jwt_token: &str) -> Result<(), ConfigError> {
     let session_dir = dirs::home_dir()
         .ok_or_else(|| ConfigError::IoError("Home directory not found".to_string()))?
         .join(".guepard");
-    
+
     fs::create_dir_all(&session_dir)
         .map_err(|e| ConfigError::IoError(format!("Failed to create .guepard directory: {}", e)))?;
 
     #[cfg(feature = "keyring")]
     {
-        let entry = Entry::new("guepard-cli", "session")
-            .map_err(|e| ConfigError::KeyringError(format!("Failed to access keyring entry: {}", e)))?;
-        entry
-            .set_password(jwt_token)
-            .map_err(|e| ConfigError::KeyringError(format!("Failed to store JWT token securely: {}", e)))?;
+        let entry = Entry::new("guepard-cli", "session").map_err(|e| {
+            ConfigError::KeyringError(format!("Failed to access keyring entry: {}", e))
+        })?;
+        entry.set_password(jwt_token).map_err(|e| {
+            ConfigError::KeyringError(format!("Failed to store JWT token securely: {}", e))
+        })?;
     }
-    
+
     #[cfg(not(feature = "keyring"))]
     {
         // Store JWT in a separate file for cross-compilation builds
         let jwt_path = session_dir.join("session.jwt");
         fs::write(&jwt_path, jwt_token)
             .map_err(|e| ConfigError::IoError(format!("Failed to write JWT file: {}", e)))?;
-        
+
         #[cfg(unix)]
-        fs::set_permissions(&jwt_path, fs::Permissions::from_mode(0o600))
-            .map_err(|e| ConfigError::IoError(format!("Failed to set JWT file permissions: {}", e)))?;
+        fs::set_permissions(&jwt_path, fs::Permissions::from_mode(0o600)).map_err(|e| {
+            ConfigError::IoError(format!("Failed to set JWT file permissions: {}", e))
+        })?;
     }
 
     Ok(())
@@ -133,8 +134,9 @@ pub fn load_session_id() -> Result<String, ConfigError> {
         .map_err(|e| ConfigError::IoError(format!("Invalid timestamp: {}", e)))?;
 
     if Utc::now().signed_duration_since(created).num_minutes() > 10 {
-        fs::remove_file(&path)
-            .map_err(|e| ConfigError::IoError(format!("Failed to remove expired session: {}", e)))?;
+        fs::remove_file(&path).map_err(|e| {
+            ConfigError::IoError(format!("Failed to remove expired session: {}", e))
+        })?;
         delete_jwt_token().ok();
         return Err(ConfigError::SessionError(
             "Your login session has expired. Run `guepard login` to sign in again. 🐆".to_string(),
@@ -147,31 +149,30 @@ pub fn load_session_id() -> Result<String, ConfigError> {
 pub fn load_jwt_token() -> Result<String, ConfigError> {
     #[cfg(feature = "keyring")]
     {
-        let entry = Entry::new("guepard-cli", "session")
-            .map_err(|e| ConfigError::KeyringError(format!("Failed to access keyring entry: {}", e)))?;
-        let token = entry
-            .get_password()
-            .map_err(|e| {
-                ConfigError::SessionError(format!(
-                    "You need to log in first! Run `guepard login` to get started. 🐆 Error: {}",
-                    e
-                ))
-            })?;
+        let entry = Entry::new("guepard-cli", "session").map_err(|e| {
+            ConfigError::KeyringError(format!("Failed to access keyring entry: {}", e))
+        })?;
+        let token = entry.get_password().map_err(|e| {
+            ConfigError::SessionError(format!(
+                "You need to log in first! Run `guepard login` to get started. 🐆 Error: {}",
+                e
+            ))
+        })?;
         Ok(token.trim().to_string())
     }
-    
+
     #[cfg(not(feature = "keyring"))]
     {
         let path = dirs::home_dir()
             .ok_or_else(|| ConfigError::IoError("Home directory not found".to_string()))?
             .join(".guepard/session.jwt");
-            
+
         if !path.exists() {
             return Err(ConfigError::SessionError(
                 "You need to log in first! Run `guepard login` to get started. 🐆".to_string(),
             ));
         }
-        
+
         let token = fs::read_to_string(&path)
             .map_err(|e| ConfigError::IoError(format!("Failed to read JWT file: {}", e)))?;
         Ok(token.trim().to_string())
@@ -182,8 +183,9 @@ pub fn delete_jwt_token() -> Result<(), ConfigError> {
     #[cfg(feature = "keyring")]
     {
         debug!("Creating keyring entry for guepard:session");
-        let entry = Entry::new("guepard-cli", "session")
-            .map_err(|e| ConfigError::KeyringError(format!("Failed to access keyring entry: {}", e)))?;
+        let entry = Entry::new("guepard-cli", "session").map_err(|e| {
+            ConfigError::KeyringError(format!("Failed to access keyring entry: {}", e))
+        })?;
         debug!("Attempting to delete JWT from keyring");
         match entry.delete_credential() {
             Ok(_) => {
@@ -192,18 +194,21 @@ pub fn delete_jwt_token() -> Result<(), ConfigError> {
             }
             Err(e) => {
                 error!("Failed to delete JWT from keyring: {}", e);
-                Err(ConfigError::KeyringError(format!("Failed to delete JWT token: {}", e)))
+                Err(ConfigError::KeyringError(format!(
+                    "Failed to delete JWT token: {}",
+                    e
+                )))
             }
         }
     }
-    
+
     #[cfg(not(feature = "keyring"))]
     {
         debug!("Deleting JWT file for cross-compilation build");
         let path = dirs::home_dir()
             .ok_or_else(|| ConfigError::IoError("Home directory not found".to_string()))?
             .join(".guepard/session.jwt");
-            
+
         if path.exists() {
             fs::remove_file(&path)
                 .map_err(|e| ConfigError::IoError(format!("Failed to remove JWT file: {}", e)))?;
@@ -244,7 +249,7 @@ pub fn is_logged_in() -> bool {
         };
         return entry.get_password().is_ok();
     }
-    
+
     #[cfg(not(feature = "keyring"))]
     {
         let jwt_path = match dirs::home_dir() {

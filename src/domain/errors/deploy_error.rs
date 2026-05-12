@@ -1,7 +1,7 @@
 use anyhow::Result;
 use reqwest::StatusCode;
-use thiserror::Error;
 use serde_json;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum DeployError {
@@ -12,7 +12,7 @@ pub enum DeployError {
     RequestFailed(#[from] reqwest::Error),
 
     #[error("Failed to parse response: {0}")]
-    ParseError(String), 
+    ParseError(String),
 
     #[error("400 Bad Request: {0}")]
     BadRequest(String),
@@ -87,18 +87,34 @@ pub async fn handle_delete_response(response: reqwest::Response) -> Result<serde
 }
 
 fn build_error_message(status: reqwest::StatusCode, text: &str) -> String {
-    let (mut msg, purge_stderr, purge_stdout, steps) = if let Ok(json) = serde_json::from_str::<serde_json::Value>(text) {
-        let m = json.get("message").and_then(|x| x.as_str()).unwrap_or("").to_string();
+    let (mut msg, purge_stderr, purge_stdout, steps) = if let Ok(json) =
+        serde_json::from_str::<serde_json::Value>(text)
+    {
+        let m = json
+            .get("message")
+            .and_then(|x| x.as_str())
+            .unwrap_or("")
+            .to_string();
         let m = if m.is_empty() && status == reqwest::StatusCode::INTERNAL_SERVER_ERROR {
             "Server error".to_string()
         } else {
             m
         };
-        let stderr = json.get("purge_result").and_then(|p| p.get("stderr")).and_then(|s| s.as_str()).map(String::from);
-        let stdout = json.get("purge_result").and_then(|p| p.get("stdout")).and_then(|s| s.as_str()).map(String::from);
-        let steps: Option<Vec<String>> = json.get("steps")
-            .and_then(|s| s.as_array())
-            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect());
+        let stderr = json
+            .get("purge_result")
+            .and_then(|p| p.get("stderr"))
+            .and_then(|s| s.as_str())
+            .map(String::from);
+        let stdout = json
+            .get("purge_result")
+            .and_then(|p| p.get("stdout"))
+            .and_then(|s| s.as_str())
+            .map(String::from);
+        let steps: Option<Vec<String>> = json.get("steps").and_then(|s| s.as_array()).map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect()
+        });
         (m, stderr, stdout, steps)
     } else {
         (text.to_string(), None, None, None)
@@ -131,15 +147,13 @@ fn build_error_message(status: reqwest::StatusCode, text: &str) -> String {
 /// handles API responses
 pub async fn handle_api_response(response: reqwest::Response) -> Result<()> {
     match response.status() {
-        reqwest::StatusCode::OK => {
-            Ok(())
-        }
+        reqwest::StatusCode::OK => Ok(()),
         reqwest::StatusCode::BAD_REQUEST => {
             let text = response
                 .text()
                 .await
                 .unwrap_or("Invalid request data".to_string());
-            
+
             // Try to parse JSON error response
             let err_msg = if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) {
                 if let Some(msg) = json.get("message") {
@@ -158,7 +172,7 @@ pub async fn handle_api_response(response: reqwest::Response) -> Result<()> {
             } else {
                 text
             };
-            
+
             Err(anyhow::anyhow!("❌ 400 Bad Request: {}", err_msg))
         }
         reqwest::StatusCode::UNAUTHORIZED | reqwest::StatusCode::FORBIDDEN => {

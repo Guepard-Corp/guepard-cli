@@ -1,21 +1,32 @@
+use crate::application::dto::login::{
+    CompleteLoginRequest, CompleteLoginResponse, StartLoginResponse,
+};
 use crate::config::config::{self, Config};
 use crate::domain::errors::login_error::LoginError;
-use crate::application::dto::login::{CompleteLoginRequest, CompleteLoginResponse, StartLoginResponse};
 use anyhow::Context;
 use reqwest::Client;
 
 // Dependency injection for session storage to make testing easier
 #[cfg_attr(test, mockall::automock)]
 pub trait SessionStore {
-    fn save_session_id(&self, session_id: &str) -> Result<(), crate::domain::errors::config_error::ConfigError>;
+    fn save_session_id(
+        &self,
+        session_id: &str,
+    ) -> Result<(), crate::domain::errors::config_error::ConfigError>;
     fn load_session_id(&self) -> Result<String, crate::domain::errors::config_error::ConfigError>;
-    fn save_jwt_token(&self, token: &str) -> Result<(), crate::domain::errors::config_error::ConfigError>;
+    fn save_jwt_token(
+        &self,
+        token: &str,
+    ) -> Result<(), crate::domain::errors::config_error::ConfigError>;
 }
 
 pub struct DefaultSessionStore;
 
 impl SessionStore for DefaultSessionStore {
-    fn save_session_id(&self, session_id: &str) -> Result<(), crate::domain::errors::config_error::ConfigError> {
+    fn save_session_id(
+        &self,
+        session_id: &str,
+    ) -> Result<(), crate::domain::errors::config_error::ConfigError> {
         config::save_session_id(session_id)
     }
 
@@ -23,7 +34,10 @@ impl SessionStore for DefaultSessionStore {
         config::load_session_id()
     }
 
-    fn save_jwt_token(&self, token: &str) -> Result<(), crate::domain::errors::config_error::ConfigError> {
+    fn save_jwt_token(
+        &self,
+        token: &str,
+    ) -> Result<(), crate::domain::errors::config_error::ConfigError> {
         config::save_jwt_token(token)
     }
 }
@@ -40,12 +54,17 @@ pub fn extract_session_id(url: &str) -> Result<String, LoginError> {
         .trim()
         .to_string();
     if session_id.is_empty() {
-        return Err(LoginError::ApiError("Missing session_id in URL".to_string()));
+        return Err(LoginError::ApiError(
+            "Missing session_id in URL".to_string(),
+        ));
     }
     Ok(session_id)
 }
 
-pub async fn start_login_with_deps<S: SessionStore>(config: &Config, session_store: &S) -> Result<String, LoginError> {
+pub async fn start_login_with_deps<S: SessionStore>(
+    config: &Config,
+    session_store: &S,
+) -> Result<String, LoginError> {
     let client = Client::new();
     let response = client
         .post(&format!("{}/start-login", config.api_url))
@@ -82,7 +101,11 @@ pub async fn start_login(config: &Config) -> Result<String, LoginError> {
     start_login_with_deps(config, &store).await
 }
 
-pub async fn complete_login_with_deps<S: SessionStore>(config: &Config, verification_code: &str, session_store: &S) -> anyhow::Result<String> {
+pub async fn complete_login_with_deps<S: SessionStore>(
+    config: &Config,
+    verification_code: &str,
+    session_store: &S,
+) -> anyhow::Result<String> {
     let session_id = session_store
         .load_session_id()
         .map_err(|e| LoginError::SessionError(e.to_string()))
@@ -150,15 +173,19 @@ mod tests {
 
     #[tokio::test]
     async fn test_complete_login_session_error() {
-        let config = Config { api_url: "https://api.guepard.run".to_string(), app_url: "https://app.guepard.run".to_string() };
+        let config = Config {
+            api_url: "https://api.guepard.run".to_string(),
+            app_url: "https://app.guepard.run".to_string(),
+        };
 
         let mut store = MockSessionStore::new();
-        store
-            .expect_load_session_id()
-            .times(1)
-            .returning(|| Err(crate::domain::errors::config_error::ConfigError::SessionError(
-                "You need to log in first! Run `guepard login` to get started. 🐆".to_string()
-            )));
+        store.expect_load_session_id().times(1).returning(|| {
+            Err(
+                crate::domain::errors::config_error::ConfigError::SessionError(
+                    "You need to log in first! Run `guepard login` to get started. 🐆".to_string(),
+                ),
+            )
+        });
 
         let result = complete_login_with_deps(&config, "0000", &store).await;
         assert!(result.is_err());
@@ -169,7 +196,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_complete_login_network_or_api_error_after_session_ok() {
-        let config = Config { api_url: "https://api.guepard.run".to_string(), app_url: "https://app.guepard.run".to_string() };
+        let config = Config {
+            api_url: "https://api.guepard.run".to_string(),
+            app_url: "https://app.guepard.run".to_string(),
+        };
 
         let mut store = MockSessionStore::new();
         store

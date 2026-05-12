@@ -1,10 +1,13 @@
-use crate::config::config::{load_config_data, save_config_data, ConfigData, is_logged_in, load_jwt_token, delete_session, delete_jwt_token};
+use crate::config::config::{
+    delete_jwt_token, delete_session, is_logged_in, load_config_data, load_jwt_token,
+    save_config_data, ConfigData,
+};
 use crate::domain::errors::config_error::ConfigError;
 use crate::structure::ConfigArgs;
-use colored::Colorize;
 use base64;
+use colored::Colorize;
 
-use crate::application::output::{OutputFormat, print_json};
+use crate::application::output::{print_json, OutputFormat};
 
 pub async fn config(args: &ConfigArgs, output_format: OutputFormat) -> Result<(), ConfigError> {
     if args.show || args.get {
@@ -38,14 +41,14 @@ async fn show_config(output_format: OutputFormat) -> Result<(), ConfigError> {
     println!("⚙️  Current Configuration:");
     println!("   API URL: {}", config_data.api_url);
     println!("   App URL: {}", config_data.app_url);
-    
+
     // Show login status
     if logged_in {
         println!("   User: {} {}", "✓".green(), user);
     } else {
         println!("   User: {} Not logged in", "✗".red());
     }
-    
+
     Ok(())
 }
 
@@ -60,12 +63,12 @@ async fn set_config(args: &ConfigArgs, output_format: OutputFormat) -> Result<()
 
     if !api_url.starts_with("http://") && !api_url.starts_with("https://") {
         return Err(ConfigError::IoError(
-            "Invalid API URL format. Must start with http:// or https://".to_string()
+            "Invalid API URL format. Must start with http:// or https://".to_string(),
         ));
     }
     if !app_url.starts_with("http://") && !app_url.starts_with("https://") {
         return Err(ConfigError::IoError(
-            "Invalid App URL format. Must start with http:// or https://".to_string()
+            "Invalid App URL format. Must start with http:// or https://".to_string(),
         ));
     }
 
@@ -74,8 +77,10 @@ async fn set_config(args: &ConfigArgs, output_format: OutputFormat) -> Result<()
             println!("⚠️  Changing API URL requires re-authentication.");
             println!("   Logging out current session...");
         }
-        delete_session().map_err(|e| ConfigError::IoError(format!("Failed to delete session: {}", e)))?;
-        delete_jwt_token().map_err(|e| ConfigError::IoError(format!("Failed to delete JWT token: {}", e)))?;
+        delete_session()
+            .map_err(|e| ConfigError::IoError(format!("Failed to delete session: {}", e)))?;
+        delete_jwt_token()
+            .map_err(|e| ConfigError::IoError(format!("Failed to delete JWT token: {}", e)))?;
         if output_format == OutputFormat::Table {
             println!("{}", "✓ Logged out successfully!".green());
             println!("   Please run `guepard login` to authenticate with the new API endpoint.");
@@ -105,33 +110,34 @@ async fn set_config(args: &ConfigArgs, output_format: OutputFormat) -> Result<()
 
 fn get_user_info_from_token() -> Result<String, ConfigError> {
     let token = load_jwt_token()?;
-    
+
     // JWT tokens have 3 parts separated by dots: header.payload.signature
     let parts: Vec<&str> = token.split('.').collect();
     if parts.len() != 3 {
         return Err(ConfigError::IoError("Invalid JWT token format".to_string()));
     }
-    
+
     // Decode the payload (second part)
     let payload = parts[1];
-    
+
     // Add padding if needed for base64 decoding
     let mut padded_payload = payload.to_string();
     while padded_payload.len() % 4 != 0 {
         padded_payload.push('=');
     }
-    
+
     // Decode base64
-    let decoded = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &padded_payload)
-        .map_err(|e| ConfigError::IoError(format!("Failed to decode JWT payload: {}", e)))?;
-    
+    let decoded =
+        base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &padded_payload)
+            .map_err(|e| ConfigError::IoError(format!("Failed to decode JWT payload: {}", e)))?;
+
     let payload_str = String::from_utf8(decoded)
         .map_err(|e| ConfigError::IoError(format!("Invalid UTF-8 in JWT payload: {}", e)))?;
-    
+
     // Parse JSON to extract user info
     let payload_json: serde_json::Value = serde_json::from_str(&payload_str)
         .map_err(|e| ConfigError::IoError(format!("Invalid JSON in JWT payload: {}", e)))?;
-    
+
     // Try to extract email or username from common JWT fields
     if let Some(email) = payload_json.get("email").and_then(|v| v.as_str()) {
         return Ok(email.to_string());
@@ -145,7 +151,7 @@ fn get_user_info_from_token() -> Result<String, ConfigError> {
     if let Some(name) = payload_json.get("name").and_then(|v| v.as_str()) {
         return Ok(name.to_string());
     }
-    
+
     // If no recognizable field, return a generic message
     Ok("User".to_string())
 }

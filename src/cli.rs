@@ -1,8 +1,15 @@
 use clap::Parser;
-use guepard_cli::application::commands::{deploy, commit, branch, log, checkout, compute, usage, login, logout, list, config, clone};
+use guepard_cli::application::commands::{
+    branch, checkout, clone, commit, compute, config, deploy, list, log, login, logout, tenet,
+    usage,
+};
 use guepard_cli::application::output::OutputFormat;
 use guepard_cli::config::config::{load_config, Config};
-use guepard_cli::domain::errors::{bookmark_error::BookmarkError, branch_error::BranchError, compute_error::ComputeError, deploy_error::DeployError, login_error::LoginError, usage_error::UsageError};
+use guepard_cli::domain::errors::{
+    bookmark_error::BookmarkError, branch_error::BranchError, compute_error::ComputeError,
+    deploy_error::DeployError, login_error::LoginError, tenet_error::TenetError,
+    usage_error::UsageError,
+};
 use guepard_cli::structure::{SubCommand, CLI};
 
 #[tokio::main]
@@ -38,6 +45,9 @@ async fn main() {
         } else if let Some(compute_error) = err.downcast_ref::<ComputeError>() {
             eprintln!("❌ Compute Error: {}", compute_error);
             exit_code = 5;
+        } else if let Some(tenet_error) = err.downcast_ref::<TenetError>() {
+            eprintln!("❌ Tenet Error: {}", tenet_error);
+            exit_code = 8;
         } else if let Some(usage_error) = err.downcast_ref::<UsageError>() {
             eprintln!("❌ {}", usage_error);
             exit_code = 6;
@@ -52,53 +62,104 @@ async fn main() {
 }
 
 async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
-        match sub_commands {
-            SubCommand::Deploy(args) => {
-                let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
-                deploy::deploy(args, config, output_format).await
-            }
+    match sub_commands {
+        SubCommand::Deploy(args) => {
+            let output_format = if args.output.json {
+                OutputFormat::Json
+            } else {
+                OutputFormat::Table
+            };
+            deploy::deploy(args, config, output_format).await
+        }
         SubCommand::Commit(args) => {
-            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+            let output_format = if args.output.json {
+                OutputFormat::Json
+            } else {
+                OutputFormat::Table
+            };
             commit::commit(args, config, output_format).await
         }
         SubCommand::Branch(args) => {
-            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+            let output_format = if args.output.json {
+                OutputFormat::Json
+            } else {
+                OutputFormat::Table
+            };
             branch::branch(args, config, output_format).await
         }
         SubCommand::Log(args) => {
-            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+            let output_format = if args.output.json {
+                OutputFormat::Json
+            } else {
+                OutputFormat::Table
+            };
             log::log(args, config, output_format).await
         }
         SubCommand::Checkout(args) => {
-            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+            let output_format = if args.output.json {
+                OutputFormat::Json
+            } else {
+                OutputFormat::Table
+            };
             checkout::checkout(args, config, output_format).await
         }
-                SubCommand::Compute(args) => {
-            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+        SubCommand::Compute(args) => {
+            let output_format = if args.output.json {
+                OutputFormat::Json
+            } else {
+                OutputFormat::Table
+            };
             compute::compute(args, config, output_format).await
         }
+        SubCommand::Tenet(args) => tenet::tenet(args, config).await,
         SubCommand::Usage(args) => {
-            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+            let output_format = if args.output.json {
+                OutputFormat::Json
+            } else {
+                OutputFormat::Table
+            };
             usage::usage(args, config, output_format).await
         }
         SubCommand::List(args) => {
-            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+            let output_format = if args.output.json {
+                OutputFormat::Json
+            } else {
+                OutputFormat::Table
+            };
             list::list(args, config, output_format).await
         }
         SubCommand::Login(args) => {
-            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+            let output_format = if args.output.json {
+                OutputFormat::Json
+            } else {
+                OutputFormat::Table
+            };
             login::execute(args, config, output_format).await
         }
         SubCommand::Logout(args) => {
-            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+            let output_format = if args.output.json {
+                OutputFormat::Json
+            } else {
+                OutputFormat::Table
+            };
             logout::logout(args, config, output_format).await
         }
         SubCommand::Config(args) => {
-            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
-            config::config(args, output_format).await.map_err(|e| anyhow::anyhow!("{}", e))
+            let output_format = if args.output.json {
+                OutputFormat::Json
+            } else {
+                OutputFormat::Table
+            };
+            config::config(args, output_format)
+                .await
+                .map_err(|e| anyhow::anyhow!("{}", e))
         }
         SubCommand::Clone(args) => {
-            let output_format = if args.output.json { OutputFormat::Json } else { OutputFormat::Table };
+            let output_format = if args.output.json {
+                OutputFormat::Json
+            } else {
+                OutputFormat::Table
+            };
             clone::clone_command(args, config, output_format).await
         }
     }

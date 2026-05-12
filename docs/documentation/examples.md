@@ -12,6 +12,7 @@ Explore practical examples and use cases for Guepard CLI in real-world scenarios
 - [Testing and QA Workflow](#testing-and-qa-workflow)
 - [Disaster Recovery](#disaster-recovery)
 - [Microservices Architecture](#microservices-architecture)
+- [Tenet (masked DB proxy)](#tenet-masked-db-proxy)
 
 ## E-commerce Application
 
@@ -709,6 +710,41 @@ guepard commit \
 guepard compute start --deployment-id $PAYMENT_DEPLOYMENT_ID
 
 echo "✅ All microservices deployed successfully!"
+```
+
+## Tenet (masked DB proxy)
+
+Tenet sits in front of your database and applies masking from `proxy.yaml`. Point clients at Tenet, not the raw DB. **Default:** omit `--proxy-port` / `--api-port` so the platform picks ports; use fixed ports only for local debugging. Connect using the **`host` and `proxy_port`** from the deploy response (or `--json`), not a guessed port.
+
+```bash
+guepard tenet deploy \
+  --tenant-id quiet-ocean-z68yfz \
+  --upstream-host 44.239.18.139 \
+  --upstream-port 29789 \
+  --masking-salt tenant-salt \
+  --proxy-config ./proxy.yaml
+```
+
+```bash
+guepard tenet deploy \
+  --tenant-id quiet-ocean-z68yfz \
+  --upstream-host 44.239.18.139 \
+  --upstream-port 29789 \
+  --masking-salt tenant-salt \
+  --proxy-config ./proxy.yaml \
+  --proxy-port 6544 \
+  --api-port 3010
+```
+
+```bash
+guepard tenet proxy set quiet-ocean-z68yfz-tenet --proxy-config ./proxy.yaml
+guepard tenet proxy get quiet-ocean-z68yfz-tenet --output ./proxy.yaml
+```
+
+```bash
+guepard tenet stop quiet-ocean-z68yfz-tenet
+guepard tenet start quiet-ocean-z68yfz-tenet
+guepard tenet purge quiet-ocean-z68yfz-tenet
 ```
 
 ## Best Practices Summary
