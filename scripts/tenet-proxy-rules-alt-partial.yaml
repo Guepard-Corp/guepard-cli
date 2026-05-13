@@ -1,0 +1,16 @@
+# Profile B: redact everywhere but with explicit replacement strings (if supported).
+masking_enabled: true
+protocol: postgres
+rules:
+  - table: tenet_masking_test
+    column: email
+    transformer: redact
+    options: { replacement: "[REDACTED_EMAIL]" }
+  - table: tenet_masking_test
+    column: phone
+    transformer: redact
+    options: { replacement: "[REDACTED_PHONE]" }
+  - table: tenet_masking_test
+    column: secret
+    transformer: redact
+    options: { replacement: "[REDACTED_SECRET]" }

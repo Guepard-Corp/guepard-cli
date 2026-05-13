@@ -1,0 +1,17 @@
+# Second Tenet profile: mixed transformers on same table as primary Tenet.
+# If a transformer is unknown to your Tenet build, swap that rule to `redact` / redeploy.
+masking_enabled: true
+protocol: postgres
+rules:
+  - table: tenet_masking_test
+    column: email
+    transformer: hash
+    options: {}
+  - table: tenet_masking_test
+    column: phone
+    transformer: mask
+    options: {}
+  - table: tenet_masking_test
+    column: secret
+    transformer: redact
+    options: {}

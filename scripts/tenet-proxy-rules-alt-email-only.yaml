@@ -1,0 +1,8 @@
+# Only email is masked; phone + secret pass through Tenet unchanged.
+masking_enabled: true
+protocol: postgres
+rules:
+  - table: tenet_masking_test
+    column: email
+    transformer: redact
+    options: {}

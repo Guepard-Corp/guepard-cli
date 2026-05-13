@@ -1,6 +1,18 @@
+use std::io::{self, Write};
+
 use serde::Serialize;
 use serde_json;
 use tabled::{settings::Style, Table};
+
+/// Write a full line to stdout; exit 0 on broken pipe (e.g. `| head`) instead of panicking.
+fn writeln_stdout_line(s: &str) {
+    let mut out = io::stdout().lock();
+    match writeln!(out, "{s}") {
+        Ok(()) => {}
+        Err(e) if e.kind() == io::ErrorKind::BrokenPipe => std::process::exit(0),
+        Err(_) => std::process::exit(0),
+    }
+}
 
 /// Output format options
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -22,7 +34,7 @@ impl OutputFormat {
 pub fn print_output<T: Serialize>(data: &T, format: OutputFormat) {
     match format {
         OutputFormat::Json => match serde_json::to_string_pretty(data) {
-            Ok(json) => println!("{}", json),
+            Ok(json) => writeln_stdout_line(&json),
             Err(e) => eprintln!("❌ Failed to serialize output: {}", e),
         },
         OutputFormat::Table => {
@@ -36,11 +48,12 @@ pub fn print_output<T: Serialize>(data: &T, format: OutputFormat) {
 pub fn print_table_or_json<T: Serialize + tabled::Tabled>(rows: Vec<T>, format: OutputFormat) {
     match format {
         OutputFormat::Json => match serde_json::to_string_pretty(&rows) {
-            Ok(json) => println!("{}", json),
+            Ok(json) => writeln_stdout_line(&json),
             Err(e) => eprintln!("❌ Failed to serialize output: {}", e),
         },
         OutputFormat::Table => {
-            println!("{}", Table::new(rows).with(Style::rounded()));
+            let table = Table::new(rows).with(Style::rounded()).to_string();
+            writeln_stdout_line(&table);
         }
     }
 }
@@ -53,7 +66,7 @@ pub fn print_row_or_json<T: Serialize + tabled::Tabled>(row: T, format: OutputFo
 /// Print any serializable data as JSON (for non-table data)
 pub fn print_json<T: Serialize>(data: &T) {
     match serde_json::to_string_pretty(data) {
-        Ok(json) => println!("{}", json),
+        Ok(json) => writeln_stdout_line(&json),
         Err(e) => eprintln!("❌ Failed to serialize output: {}", e),
     }
 }

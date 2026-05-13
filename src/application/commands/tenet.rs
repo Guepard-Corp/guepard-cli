@@ -1,5 +1,6 @@
 use std::fs;
 use std::io::Write;
+use std::net::IpAddr;
 
 use anyhow::Result;
 use colored::Colorize;
@@ -77,18 +78,38 @@ pub async fn tenet(args: &TenetArgs, config: &Config) -> Result<()> {
     }
 }
 
-fn tenet_deploy_hint_lines(resp: &TenetDeployResponse) -> Vec<String> {
+/// Table + psql hints: merged API `host`, `--client-host`, or resolved `--upstream-host` (literal IP or DNS).
+fn tenet_deploy_hint_lines(resp: &TenetDeployResponse, connect_host: Option<&str>) -> Vec<String> {
     let mut lines = Vec::new();
-    if let (Some(host), Some(port)) = (&resp.host, resp.proxy_port) {
+    if let (Some(host), Some(port)) = (connect_host, resp.proxy_port) {
         lines.push(format!(
             r#"PGPASSWORD=<password> psql "host={} port={} dbname=postgres user=guepard sslmode=disable""#,
             host, port
         ));
     }
-    if let (Some(host), Some(port)) = (&resp.host, resp.api_port) {
+    if let (Some(host), Some(port)) = (connect_host, resp.api_port) {
         lines.push(format!("Tenet API: http://{}:{}", host, port));
     }
     lines
+}
+
+async fn resolve_postgres_host_for_hints(upstream_host: &str) -> Option<String> {
+    let host = upstream_host.trim();
+    if host.is_empty() {
+        return None;
+    }
+    if let Ok(ip) = host.parse::<IpAddr>() {
+        return Some(ip.to_string());
+    }
+    let addrs: Vec<_> = tokio::net::lookup_host((host, 0u16)).await.ok()?.collect();
+    if addrs.is_empty() {
+        return None;
+    }
+    let picked = addrs
+        .iter()
+        .find(|a| a.is_ipv4())
+        .or_else(|| addrs.first())?;
+    Some(picked.ip().to_string())
 }
 
 async fn deploy(
@@ -128,12 +149,21 @@ async fn deploy(
     };
 
     let resp = tenet::deploy_tenet(&body, config).await?;
+    let resolved_upstream = resolve_postgres_host_for_hints(&d.upstream_host).await;
+    let connect_host = resp
+        .host
+        .clone()
+        .or_else(|| d.client_host.clone())
+        .or(resolved_upstream);
+    let connect_host_str = connect_host.as_deref();
     let row = TenetDeployRow {
         job_id: resp.job_id.clone(),
         eval_id: resp.eval_id.clone(),
         alloc_id: resp.alloc_id.clone(),
         node_id: resp.node_id.clone(),
-        host: resp.host.clone().unwrap_or_else(|| "-".to_string()),
+        host: connect_host
+            .clone()
+            .unwrap_or_else(|| "-".to_string()),
         proxy_port: resp
             .proxy_port
             .map(|p| p.to_string())
@@ -147,7 +177,7 @@ async fn deploy(
     if output_format == OutputFormat::Table {
         println!("{} Tenet deploy submitted", "✅".green());
         print_row_or_json(row, output_format);
-        for line in tenet_deploy_hint_lines(&resp) {
+        for line in tenet_deploy_hint_lines(&resp, connect_host_str) {
             println!("{}", line);
         }
     } else {
@@ -269,7 +299,7 @@ mod tests {
             proxy_port: Some(6544),
             api_port: Some(3010),
         };
-        let lines = tenet_deploy_hint_lines(&resp);
+        let lines = tenet_deploy_hint_lines(&resp, Some("10.0.0.2"));
         assert_eq!(lines.len(), 2);
         assert!(lines[0].contains("PGPASSWORD=<password>"));
         assert!(lines[0].contains("host=10.0.0.2") && lines[0].contains("port=6544"));
@@ -277,7 +307,7 @@ mod tests {
     }
 
     #[test]
-    fn tenet_deploy_hint_lines_empty_without_host() {
+    fn tenet_deploy_hint_lines_empty_without_connect_host() {
         let resp = TenetDeployResponse {
             job_id: "j".into(),
             eval_id: "e".into(),
@@ -287,7 +317,52 @@ mod tests {
             proxy_port: Some(6544),
             api_port: None,
         };
-        assert!(tenet_deploy_hint_lines(&resp).is_empty());
+        assert!(tenet_deploy_hint_lines(&resp, None).is_empty());
+    }
+
+    #[test]
+    fn tenet_deploy_hint_lines_use_explicit_connect_host() {
+        let resp = TenetDeployResponse {
+            job_id: "j".into(),
+            eval_id: "e".into(),
+            alloc_id: "a".into(),
+            node_id: "n".into(),
+            host: None,
+            proxy_port: Some(6544),
+            api_port: Some(3010),
+        };
+        let lines = tenet_deploy_hint_lines(&resp, Some("44.239.18.139"));
+        assert_eq!(lines.len(), 2);
+        assert!(lines[0].contains("host=44.239.18.139") && lines[0].contains("port=6544"));
+        assert_eq!(lines[1], "Tenet API: http://44.239.18.139:3010");
+    }
+
+    #[test]
+    fn tenet_deploy_hint_lines_use_resolved_upstream_style_ip() {
+        let resp = TenetDeployResponse {
+            job_id: "j".into(),
+            eval_id: "e".into(),
+            alloc_id: "a".into(),
+            node_id: "n".into(),
+            host: None,
+            proxy_port: Some(6544),
+            api_port: None,
+        };
+        let lines = tenet_deploy_hint_lines(&resp, Some("10.0.4.20"));
+        assert_eq!(lines.len(), 1);
+        assert!(lines[0].contains("host=10.0.4.20") && lines[0].contains("port=6544"));
+    }
+
+    #[tokio::test]
+    async fn resolve_postgres_host_ipv4_literal_unchanged() {
+        assert_eq!(
+            resolve_postgres_host_for_hints("10.0.4.20").await,
+            Some("10.0.4.20".into())
+        );
+        assert_eq!(
+            resolve_postgres_host_for_hints("  127.0.0.1  ").await,
+            Some("127.0.0.1".into())
+        );
     }
 
     #[test]

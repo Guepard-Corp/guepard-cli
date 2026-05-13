@@ -356,7 +356,9 @@ guepard compute list --deployment-id 12345678-1234-1234-1234-123456789abc
 guepard compute status --deployment-id <id> --json
 ```
 
-### `guepard tenet` - Tenet (transparent DB proxy)
+### `guepard tenet` / `cargo run -- tenet` - Tenet (transparent DB proxy)
+
+**Dev / unreleased features:** run from a clone of this repo with `cargo run -q -- …` so you always get the binary that matches `main` (a globally installed `guepard` package may not include `tenet` yet).
 
 Tenet is a database proxy that masks PII using a `proxy.yaml` config. Clients connect to Tenet instead of the upstream database. The CLI talks only to the Guepard public API (`config.api_url`); the API drives scheduling. You can supply `proxy.yaml` from a local file (`--proxy-config`) or inline (`--config-yaml`). The CLI does not parse YAML. If Tenet TLS is not configured, use `sslmode=disable` in your client connection string.
 
@@ -366,12 +368,12 @@ After a successful deploy, if the API returns `host` and `proxy_port`, the CLI p
 
 #### Syntax
 ```bash
-guepard tenet deploy [OPTIONS]
-guepard tenet start <job_id> [OPTIONS]
-guepard tenet stop <job_id> [OPTIONS]
-guepard tenet purge <job_id> [OPTIONS]
-guepard tenet proxy get <job_id> [OPTIONS]
-guepard tenet proxy set <job_id> [OPTIONS]
+cargo run -q -- tenet deploy [OPTIONS]
+cargo run -q -- tenet start <job_id> [OPTIONS]
+cargo run -q -- tenet stop <job_id> [OPTIONS]
+cargo run -q -- tenet purge <job_id> [OPTIONS]
+cargo run -q -- tenet proxy get <job_id> [OPTIONS]
+cargo run -q -- tenet proxy set <job_id> [OPTIONS]
 ```
 
 #### Deploy options
@@ -413,38 +415,40 @@ rules:
 #### Examples
 ```bash
 # Dynamic Tenet ports (default — recommended)
-guepard tenet deploy \
-  --tenant-id quiet-ocean-z68yfz \
-  --upstream-host 44.239.18.139 \
-  --upstream-port 29789 \
-  --masking-salt tenant-salt \
-  --proxy-config ./proxy.yaml
-```
-
-```bash
-# Reserved host ports (debug / single-tenant)
-guepard tenet deploy \
+cargo run -q -- tenet deploy \
   --tenant-id quiet-ocean-z68yfz \
   --upstream-host 44.239.18.139 \
   --upstream-port 29789 \
   --masking-salt tenant-salt \
   --proxy-config ./proxy.yaml \
+  --client-host 10.0.4.20
+```
+
+```bash
+# Reserved host ports (debug / single-tenant)
+cargo run -q -- tenet deploy \
+  --tenant-id quiet-ocean-z68yfz \
+  --upstream-host 44.239.18.139 \
+  --upstream-port 29789 \
+  --masking-salt tenant-salt \
+  --proxy-config ./proxy.yaml \
+  --client-host 10.0.4.20 \
   --proxy-port 6544 \
   --api-port 3010
 ```
 
 ```bash
-guepard tenet proxy set quiet-ocean-z68yfz-tenet --proxy-config ./proxy.yaml
+cargo run -q -- tenet proxy set quiet-ocean-z68yfz-tenet --proxy-config ./proxy.yaml
 ```
 
 ```bash
-guepard tenet proxy get quiet-ocean-z68yfz-tenet --output ./proxy.yaml
+cargo run -q -- tenet proxy get quiet-ocean-z68yfz-tenet --output ./proxy.yaml
 ```
 
 ```bash
-guepard tenet stop quiet-ocean-z68yfz-tenet
-guepard tenet start quiet-ocean-z68yfz-tenet
-guepard tenet purge quiet-ocean-z68yfz-tenet
+cargo run -q -- tenet stop quiet-ocean-z68yfz-tenet
+cargo run -q -- tenet start quiet-ocean-z68yfz-tenet
+cargo run -q -- tenet purge quiet-ocean-z68yfz-tenet
 ```
 
 ### `guepard list` - List Resources

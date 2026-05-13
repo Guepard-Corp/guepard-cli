@@ -1,0 +1,15 @@
+masking_enabled: true
+protocol: postgres
+rules:
+  - table: tenet_masking_test
+    column: email
+    transformer: redact
+    options: {}
+  - table: tenet_masking_test
+    column: phone
+    transformer: redact
+    options: {}
+  - table: tenet_masking_test
+    column: secret
+    transformer: redact
+    options: {}

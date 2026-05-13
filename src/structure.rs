@@ -173,11 +173,12 @@ pub enum SubCommand {
     /// Manage Tenet through the Guepard API. Clients connect to Tenet instead of the DB;
     /// masking rules live in proxy.yaml (local file or inline).
     ///
-    /// Examples:
-    ///   guepard tenet deploy --tenant-id T --upstream-host H --upstream-port 5432 \\
-    ///     --masking-salt s --proxy-config ./proxy.yaml --json
-    ///   guepard tenet start <job_id>
-    ///   guepard tenet proxy get <job_id> --output ./proxy.yaml
+    /// Examples (from repo root; use `cargo run --` so Tenet matches this binary):
+    ///   cargo run -- tenet deploy --tenant-id T --upstream-host H --upstream-port 5432 \\
+    ///     --masking-salt s --proxy-config ./proxy.yaml --client-host 10.0.4.20 --json
+    ///   # Printed host/hints use API host, or --client-host, or DNS/--upstream-host as IP
+    ///   cargo run -- tenet start <job_id>
+    ///   cargo run -- tenet proxy get <job_id> --output ./proxy.yaml
     Tenet(TenetArgs),
 
     /// 📊 Show account usage and quota information
@@ -761,6 +762,9 @@ pub struct TenetDeployCliArgs {
     /// Reserve this host port for the Tenet HTTP API (omit for dynamic Nomad port)
     #[arg(long)]
     pub api_port: Option<u16>,
+    /// Address shown in hints / where clients connect to Tenet (VPC or node IP, e.g. 10.0.4.20), not necessarily the upstream DB host.
+    #[arg(long)]
+    pub client_host: Option<String>,
 }
 
 #[derive(Args, Debug)]
