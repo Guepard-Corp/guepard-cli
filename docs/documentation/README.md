@@ -29,6 +29,7 @@ Guepard CLI is a powerful command-line tool that brings Git-like version control
 
 ### Command Reference
 - [Complete Command Reference](commands.md) - All available commands
+- [Tenet (PII masking proxy)](tenet.md) - Deploy Tenet via API, `proxy.yaml`, networking, troubleshooting
 - [Deploy Commands](deploy-commands.md) - Database deployment operations
 - [Branch Commands](branch-commands.md) - Branch management
 - [Compute Commands](compute-commands.md) - Instance management

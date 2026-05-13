@@ -358,6 +358,8 @@ guepard compute status --deployment-id <id> --json
 
 ### `guepard tenet` / `cargo run -- tenet` - Tenet (transparent DB proxy)
 
+**Full guide:** [Tenet documentation](tenet.md) — architecture, `proxy.yaml` vs [guepard-tenet](https://github.com/Guepard-Corp/guepard-tenet), networking, scripts, troubleshooting.
+
 **Dev / unreleased features:** run from a clone of this repo with `cargo run -q -- …` so you always get the binary that matches `main` (a globally installed `guepard` package may not include `tenet` yet).
 
 Tenet is a database proxy that masks PII using a `proxy.yaml` config. Clients connect to Tenet instead of the upstream database. The CLI talks only to the Guepard public API (`config.api_url`); the API drives scheduling. You can supply `proxy.yaml` from a local file (`--proxy-config`) or inline (`--config-yaml`). The CLI does not parse YAML. If Tenet TLS is not configured, use `sslmode=disable` in your client connection string.
