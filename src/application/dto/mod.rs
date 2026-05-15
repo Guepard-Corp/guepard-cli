@@ -1,3 +1,4 @@
+pub mod autostop;
 pub mod branch;
 pub mod clone;
 pub mod commit;

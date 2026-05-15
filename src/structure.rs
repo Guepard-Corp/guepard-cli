@@ -74,6 +74,16 @@ pub enum SubCommand {
     ///
     ///   # Delete deployment (use with caution)
     ///   guepard deploy -x <deployment_id> --purge
+    ///
+    ///   # List databases that are up (runtime state)
+    ///   guepard deploy list-active
+    ///
+    ///   # List databases still starting
+    ///   guepard deploy list-pending
+    ///
+    ///   # Autostop (stop compute after idle)
+    ///   guepard deploy autostop status <deployment_id>
+    ///   guepard deploy autostop enable <deployment_id>
     Deploy(DeployArgs),
 
     /// 📸 Create snapshots of your database state (like git commit)
@@ -315,8 +325,66 @@ pub struct ListArgs {
     pub limit: Option<usize>,
 }
 
+#[derive(Subcommand, Debug)]
+pub enum DeployRuntimeCommand {
+    /// List databases that are up and healthy
+    #[command(name = "list-active", visible_alias = "active")]
+    ListActive {
+        #[clap(flatten)]
+        output: OutputArgs,
+    },
+    /// List databases still starting
+    #[command(name = "list-pending", visible_alias = "pending")]
+    ListPending {
+        #[clap(flatten)]
+        output: OutputArgs,
+    },
+    /// Stop compute automatically after idle time
+    Autostop {
+        #[command(subcommand)]
+        command: AutostopCommand,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum AutostopCommand {
+    /// Enable autostop for a deployment
+    #[command(visible_alias = "on")]
+    Enable {
+        deployment_id: String,
+        #[clap(flatten)]
+        output: OutputArgs,
+    },
+    /// Disable autostop for a deployment
+    #[command(visible_alias = "off")]
+    Disable {
+        deployment_id: String,
+        #[clap(flatten)]
+        output: OutputArgs,
+    },
+    /// Show autostop status and idle duration
+    Status {
+        deployment_id: String,
+        #[clap(flatten)]
+        output: OutputArgs,
+    },
+    /// Set idle duration before autostop triggers (e.g. 30s, 45m, 2h, 1d)
+    Configure {
+        deployment_id: String,
+        #[arg(long = "idle-duration")]
+        idle_duration: Option<String>,
+        #[arg(value_name = "IDLE_DURATION")]
+        duration: Option<String>,
+        #[clap(flatten)]
+        output: OutputArgs,
+    },
+}
+
 #[derive(Args, Debug)]
 pub struct DeployArgs {
+    #[command(subcommand)]
+    pub command: Option<DeployRuntimeCommand>,
+
     #[clap(flatten)]
     pub output: OutputArgs,
 

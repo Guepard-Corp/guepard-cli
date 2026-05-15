@@ -51,6 +51,7 @@ mockall = "0.13.0"
 mockall = "0.13.0"
 tokio-test = "0.4.3"
 http = "1.0"
+wiremock = "0.6"
 
 # Multi-platform build configuration
 [package.metadata.deb]

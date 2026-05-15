@@ -64,11 +64,7 @@ async fn main() {
 async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
     match sub_commands {
         SubCommand::Deploy(args) => {
-            let output_format = if args.output.json {
-                OutputFormat::Json
-            } else {
-                OutputFormat::Table
-            };
+            let output_format = deploy::deploy_output_format(args);
             deploy::deploy(args, config, output_format).await
         }
         SubCommand::Commit(args) => {

@@ -1,6 +1,9 @@
 use crate::application::commands::list;
 use crate::application::dto::deploy::{CreateDeploymentRequest, UpdateDeploymentRequest};
-use crate::application::output::{print_json, OutputFormat};
+use crate::application::dto::deploy::DeploymentRuntimeSummary;
+use crate::application::output::{print_json, print_table_or_json, OutputFormat};
+use crate::application::commands::autostop;
+use crate::structure::DeployRuntimeCommand;
 use crate::application::services::{branch, clone, commit, compute, deploy, performance};
 use crate::config::config::Config;
 use crate::domain::errors::deploy_error::DeployError;
@@ -64,7 +67,116 @@ struct ConnectionInfo {
     connection_uri: String,
 }
 
+pub fn deploy_output_format(args: &DeployArgs) -> OutputFormat {
+    let json = args.output.json
+        || matches!(&args.command, Some(cmd) if deploy_command_wants_json(cmd));
+    if json {
+        OutputFormat::Json
+    } else {
+        OutputFormat::Table
+    }
+}
+
+fn deploy_command_wants_json(command: &DeployRuntimeCommand) -> bool {
+    match command {
+        DeployRuntimeCommand::ListActive { output }
+        | DeployRuntimeCommand::ListPending { output } => output.json,
+        DeployRuntimeCommand::Autostop { command } => autostop::autostop_output_format(command),
+    }
+}
+
+#[derive(Serialize, tabled::Tabled)]
+struct DeploymentRuntimeRow {
+    deployment_id: String,
+    name: String,
+    status: String,
+    port: String,
+}
+
+impl From<DeploymentRuntimeSummary> for DeploymentRuntimeRow {
+    fn from(s: DeploymentRuntimeSummary) -> Self {
+        Self {
+            deployment_id: s.deployment_id,
+            name: s.name,
+            status: s.status,
+            port: s.port.map(|p| p.to_string()).unwrap_or_default(),
+        }
+    }
+}
+
+async fn list_runtime_deployments(
+    fetch: impl std::future::Future<Output = Result<Vec<DeploymentRuntimeSummary>, DeployError>>,
+    label: &str,
+    output_format: OutputFormat,
+) -> Result<()> {
+    let deployments = fetch.await?;
+
+    if deployments.is_empty() {
+        if output_format == OutputFormat::Json {
+            print_json(&serde_json::json!([]));
+        } else {
+            println!("{} No {} deployments found", "ℹ️".blue(), label);
+        }
+        return Ok(());
+    }
+
+    let count = deployments.len();
+
+    if output_format == OutputFormat::Json {
+        print_json(&deployments);
+    } else {
+        let rows: Vec<DeploymentRuntimeRow> = deployments.into_iter().map(Into::into).collect();
+        println!(
+            "{} Found {} {} deployment{}",
+            "✅".green(),
+            count,
+            label,
+            if count == 1 { "" } else { "s" }
+        );
+        print_table_or_json(rows, output_format);
+    }
+    Ok(())
+}
+
+pub async fn list_active_deployments(
+    config: &Config,
+    output_format: OutputFormat,
+) -> Result<()> {
+    list_runtime_deployments(
+        deploy::list_active_deployments(config),
+        "active",
+        output_format,
+    )
+    .await
+}
+
+pub async fn list_pending_deployments(
+    config: &Config,
+    output_format: OutputFormat,
+) -> Result<()> {
+    list_runtime_deployments(
+        deploy::list_pending_deployments(config),
+        "pending",
+        output_format,
+    )
+    .await
+}
+
 pub async fn deploy(args: &DeployArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
+    if let Some(command) = &args.command {
+        return match command {
+            DeployRuntimeCommand::ListActive { .. } => {
+                list_active_deployments(config, output_format).await
+            }
+            DeployRuntimeCommand::ListPending { .. } => {
+                list_pending_deployments(config, output_format).await
+            }
+            DeployRuntimeCommand::Autostop { command } => {
+                autostop::run(command, config, output_format).await
+            }
+        };
+    }
+
     // Check for interactive mode
     if args.interactive {
         return interactive_deploy(config).await;

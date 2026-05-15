@@ -4,8 +4,8 @@ use serde_json;
 
 use crate::application::auth;
 use crate::application::dto::deploy::{
-    CreateDeploymentRequest, CreateDeploymentResponse, GetDeploymentResponse,
-    ListDeploymentsResponse, UpdateDeploymentRequest,
+    CreateDeploymentRequest, CreateDeploymentResponse, DeploymentRuntimeSummary,
+    GetDeploymentResponse, ListDeploymentsResponse, UpdateDeploymentRequest,
 };
 use crate::config::config::Config;
 use crate::domain::errors::deploy_error::{
@@ -226,6 +226,60 @@ pub async fn delete_deployment(deployment_id: &str, config: &Config) -> Result<s
     delete_deployment_with_deps(deployment_id, config, &auth_provider).await
 }
 
+async fn list_runtime_deployments_with_deps<A: AuthProvider>(
+    path: &str,
+    config: &Config,
+    auth_provider: &A,
+) -> Result<Vec<DeploymentRuntimeSummary>, DeployError> {
+    let jwt_token = auth_provider
+        .get_auth_token()
+        .map_err(|e| DeployError::SessionError(format!("{}", e)))?;
+    let client = Client::new();
+    let response = client
+        .get(format!("{}/deploy/{}", config.api_url, path))
+        .header("Authorization", format!("Bearer {}", jwt_token))
+        .send()
+        .await
+        .map_err(DeployError::RequestFailed)?;
+
+    if response.status().is_success() {
+        response
+            .json::<Vec<DeploymentRuntimeSummary>>()
+            .await
+            .map_err(|e| DeployError::ParseError(e.to_string()))
+    } else {
+        Err(DeployError::from_response(response).await)
+    }
+}
+
+pub async fn list_active_deployments_with_deps<A: AuthProvider>(
+    config: &Config,
+    auth_provider: &A,
+) -> Result<Vec<DeploymentRuntimeSummary>, DeployError> {
+    list_runtime_deployments_with_deps("active", config, auth_provider).await
+}
+
+pub async fn list_active_deployments(
+    config: &Config,
+) -> Result<Vec<DeploymentRuntimeSummary>, DeployError> {
+    let auth_provider = DefaultAuthProvider;
+    list_active_deployments_with_deps(config, &auth_provider).await
+}
+
+pub async fn list_pending_deployments_with_deps<A: AuthProvider>(
+    config: &Config,
+    auth_provider: &A,
+) -> Result<Vec<DeploymentRuntimeSummary>, DeployError> {
+    list_runtime_deployments_with_deps("pending", config, auth_provider).await
+}
+
+pub async fn list_pending_deployments(
+    config: &Config,
+) -> Result<Vec<DeploymentRuntimeSummary>, DeployError> {
+    let auth_provider = DefaultAuthProvider;
+    list_pending_deployments_with_deps(config, &auth_provider).await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -313,5 +367,102 @@ mod tests {
         // delete
         let r3 = delete_deployment_with_deps("dep-1", &config, &auth).await;
         assert!(r3.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_list_active_deployments_success() {
+        use wiremock::matchers::{header, method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/deploy/active"))
+            .and(header("authorization", "Bearer test-jwt-token"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!([
+                {
+                    "deployment_id": "dep-1",
+                    "name": "my-db",
+                    "status": "enabled",
+                    "port": 5432
+                },
+                {
+                    "deployment_id": "dep-2",
+                    "name": "other-db",
+                    "status": "enabled"
+                }
+            ])))
+            .mount(&mock_server)
+            .await;
+
+        let config = Config {
+            api_url: mock_server.uri(),
+            app_url: "https://app.guepard.run".to_string(),
+        };
+        let mut auth = MockAuthProvider::new();
+        auth.expect_get_auth_token()
+            .times(1)
+            .returning(|| Ok("test-jwt-token".to_string()));
+
+        let result = list_active_deployments_with_deps(&config, &auth).await.unwrap();
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].deployment_id, "dep-1");
+        assert_eq!(result[0].name, "my-db");
+        assert_eq!(result[0].status, "enabled");
+        assert_eq!(result[0].port, Some(5432));
+        assert_eq!(result[1].deployment_id, "dep-2");
+        assert_eq!(result[1].port, None);
+    }
+
+    #[tokio::test]
+    async fn test_list_pending_deployments_success() {
+        use wiremock::matchers::{header, method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/deploy/pending"))
+            .and(header("authorization", "Bearer test-jwt-token"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!([
+                {
+                    "deployment_id": "dep-pending",
+                    "name": "starting-db",
+                    "status": "provisioning"
+                }
+            ])))
+            .mount(&mock_server)
+            .await;
+
+        let config = Config {
+            api_url: mock_server.uri(),
+            app_url: "https://app.guepard.run".to_string(),
+        };
+        let mut auth = MockAuthProvider::new();
+        auth.expect_get_auth_token()
+            .times(1)
+            .returning(|| Ok("test-jwt-token".to_string()));
+
+        let result = list_pending_deployments_with_deps(&config, &auth).await.unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].deployment_id, "dep-pending");
+        assert_eq!(result[0].status, "provisioning");
+    }
+
+    #[tokio::test]
+    async fn test_list_runtime_deployments_session_error() {
+        let config = Config {
+            api_url: "https://api.guepard.run".to_string(),
+            app_url: "https://app.guepard.run".to_string(),
+        };
+        let mut auth = MockAuthProvider::new();
+        auth.expect_get_auth_token().times(1).returning(|| {
+            Err(
+                crate::domain::errors::config_error::ConfigError::SessionError(
+                    "You need to log in first!".to_string(),
+                ),
+            )
+        });
+
+        let active = list_active_deployments_with_deps(&config, &auth).await;
+        assert!(matches!(active.unwrap_err(), DeployError::SessionError(_)));
     }
 }

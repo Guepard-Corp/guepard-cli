@@ -59,6 +59,16 @@ pub struct ListDeploymentsResponse {
     pub created_by: String,
 }
 
+/// Runtime state for a deployment database (active or pending).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct DeploymentRuntimeSummary {
+    pub deployment_id: String,
+    pub name: String,
+    pub status: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub port: Option<i32>,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GetDeploymentResponse {
     pub id: String,
@@ -89,4 +99,20 @@ pub struct GetDeploymentResponse {
     pub branch_id: Option<String>,
     pub region: String,
     pub datacenter: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn deployment_runtime_summary_deserializes() {
+        let json = r#"[
+            {"deployment_id":"d1","name":"db","status":"enabled","port":5432},
+            {"deployment_id":"d2","name":"db2","status":"provisioning"}
+        ]"#;
+        let items: Vec<DeploymentRuntimeSummary> = serde_json::from_str(json).unwrap();
+        assert_eq!(items[0].port, Some(5432));
+        assert_eq!(items[1].port, None);
+    }
 }
