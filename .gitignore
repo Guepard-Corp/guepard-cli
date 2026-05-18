@@ -35,3 +35,9 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Local-only dev / E2E scripts (not published)
+/scripts/test/
+/scripts/tenet-e2e-api-dev.sh
+/scripts/test-db-connection.sh
+/scripts/sql/tenet_masking_grant_dev.sql
