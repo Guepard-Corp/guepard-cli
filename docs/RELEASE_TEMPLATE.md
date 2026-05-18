@@ -32,7 +32,7 @@ sudo snap install guepard
 #### macOS (Intel)
 ```bash
 # Download and extract
-curl -L https://github.com/Guepard-Corp/guepard-cli/releases/download/{{VERSION}}/guepard-cli-{{VERSION}}-macos-amd64.tar.gz | tar -xz
+curl -L https://github.com/Guepard-Corp/guepard-cli/releases/download/v{{VERSION}}/guepard-cli-{{VERSION}}-macos-amd64.tar.gz | tar -xz
 
 # Move to PATH
 sudo mv guepard /usr/local/bin/
@@ -44,7 +44,7 @@ guepard --version
 #### macOS (Apple Silicon)
 ```bash
 # Download and extract
-curl -L https://github.com/Guepard-Corp/guepard-cli/releases/download/{{VERSION}}/guepard-cli-{{VERSION}}-macos-arm64.tar.gz | tar -xz
+curl -L https://github.com/Guepard-Corp/guepard-cli/releases/download/v{{VERSION}}/guepard-cli-{{VERSION}}-macos-arm64.tar.gz | tar -xz
 
 # Move to PATH
 sudo mv guepard /usr/local/bin/
@@ -56,7 +56,7 @@ guepard --version
 #### Windows
 ```powershell
 # Download and extract
-Invoke-WebRequest -Uri "https://github.com/Guepard-Corp/guepard-cli/releases/download/{{VERSION}}/guepard-cli-{{VERSION}}-windows-amd64.zip" -OutFile "guepard-cli.zip"
+Invoke-WebRequest -Uri "https://github.com/Guepard-Corp/guepard-cli/releases/download/v{{VERSION}}/guepard-cli-{{VERSION}}-windows-amd64.zip" -OutFile "guepard-cli.zip"
 Expand-Archive -Path "guepard-cli.zip" -DestinationPath "."
 
 # Add to PATH (optional)

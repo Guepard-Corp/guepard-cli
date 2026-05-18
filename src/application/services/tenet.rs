@@ -1,6 +1,6 @@
 use crate::application::auth;
 use crate::application::dto::tenet::{
-    TenetDeployRequest, TenetDeployResponse, TenetLifecycleResponse,
+    TenetDeployRequest, TenetDeployResponse, TenetLifecycleResponse, TenetProxyYamlSetRequest,
 };
 use crate::config::config::Config;
 use crate::domain::errors::tenet_error::TenetError;
@@ -211,11 +211,14 @@ pub async fn set_proxy_yaml_with_deps<A: TenetAuthProvider>(
         "{}/tenet/{}/proxy.yaml?apply={}",
         config.api_url, job_id, apply
     );
+    let body = TenetProxyYamlSetRequest {
+        config_yaml: yaml.to_string(),
+    };
     let response = client
         .put(url)
         .header("Authorization", format!("Bearer {}", jwt_token))
-        .header("Content-Type", "application/x-yaml")
-        .body(yaml.to_string())
+        .header("Content-Type", "application/json")
+        .json(&body)
         .send()
         .await
         .map_err(TenetError::RequestFailed)?;

@@ -16,7 +16,7 @@ The CLI **does not run** the Tenet binary locally for production traffic. It cal
 | `tenet start` / `stop` / `purge` — lifecycle | Health, metrics, optional management API |
 | `tenet proxy get` / `set` — fetch or replace YAML on a running job | Reload / apply rules per API |
 
-Use **`cargo run -q -- tenet …`** from a clone of **guepard-cli** so your binary matches `main`. A Homebrew-installed `guepard` build may lag and omit `tenet`.
+Examples below use the **`guepard`** binary (Homebrew, direct download, or `cargo install`). **From a clone of this repo** you can run the same commands with `cargo run -q -- …` instead of `guepard` (no install step).
 
 ---
 
@@ -27,9 +27,7 @@ Use **`cargo run -q -- tenet …`** from a clone of **guepard-cli** so your bina
 You need a **running compute** job for the deployment (Nomad job id is usually `<deployment-name>-compute`). Get **host** and **port** from `guepard deploy -x <id> --json` → `connection` / `compute`, or from Nomad.
 
 ```bash
-cd /path/to/guepard-cli
-
-cargo run -q -- tenet deploy \
+guepard tenet deploy \
   --tenant-id <deployment-name> \
   --compute-job-id <deployment-name>-compute \
   --upstream-host <postgres-host> \
@@ -51,9 +49,9 @@ Omit **`--proxy-port`** / **`--api-port`** for **dynamic** Nomad ports (typical)
 ### 2. Lifecycle
 
 ```bash
-cargo run -q -- tenet start <job_id> --json
-cargo run -q -- tenet stop <job_id> --json
-cargo run -q -- tenet purge <job_id> --json
+guepard tenet start <job_id> --json
+guepard tenet stop <job_id> --json
+guepard tenet purge <job_id> --json
 ```
 
 `job_id` is returned by **`tenet deploy --json`** as `job_id` (e.g. `<tenant>-tenet`). If **`start`** returns **404** while Nomad already shows the task **running**, you can often ignore it and connect with `psql` anyway.
@@ -61,8 +59,8 @@ cargo run -q -- tenet purge <job_id> --json
 ### 3. Change rules without full redeploy
 
 ```bash
-cargo run -q -- tenet proxy set <job_id> --proxy-config ./proxy-new.yaml
-cargo run -q -- tenet proxy get <job_id> -o ./proxy-backup.yaml
+guepard tenet proxy set <job_id> --proxy-config ./proxy-new.yaml
+guepard tenet proxy get <job_id> -o ./proxy-backup.yaml
 ```
 
 ---
@@ -108,7 +106,7 @@ This repo ships small samples under **`scripts/`**:
 | `scripts/tenet-proxy-rules.min.yaml` | Simple redact rules for `tenet_masking_test` |
 | `scripts/tenet-proxy-rules-alt-*.yaml` | Variations for experiments / `proxy set` |
 | `scripts/sql/tenet_masking_seed.sql` | Seed table + row for demos |
-| `scripts/tenet-e2e-from-deploy.sh` | Scripted flow: deploy → compute → seed → tenet (`cargo run` by default) |
+| `scripts/tenet-e2e-from-deploy.sh` | Scripted flow: deploy → compute → seed → tenet (`cargo run` by default; set `USE_INSTALLED_GUEPARD=1` for `guepard` on `PATH`) |
 
 ---
 

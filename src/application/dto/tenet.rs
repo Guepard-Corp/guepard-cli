@@ -91,6 +91,11 @@ mod tests {
     }
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct TenetProxyYamlSetRequest {
+    pub config_yaml: String,
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct TenetLifecycleResponse {
     #[serde(default)]

@@ -1,0 +1,4 @@
+# Tenant C — masking disabled (passthrough, no rules applied)
+masking_enabled: false
+protocol: postgres
+rules: []
