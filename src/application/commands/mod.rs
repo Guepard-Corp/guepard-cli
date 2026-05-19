@@ -8,6 +8,7 @@ pub mod config;
 pub mod deploy;
 pub mod list;
 pub mod log;
+pub mod node;
 pub mod login;
 pub mod logout;
 pub mod tenet;

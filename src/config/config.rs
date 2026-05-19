@@ -30,6 +30,7 @@ pub fn load_config() -> Result<Config, ConfigError> {
 
     let api_url = load_config_data()
         .map(|c| c.api_url)
+        .or_else(|_| env::var("GUEPARD_API_URL"))
         .or_else(|_| env::var("PUBLIC_API"))
         .unwrap_or_else(|_| DEFAULT_API_URL.to_string());
     let app_url = load_config_data()

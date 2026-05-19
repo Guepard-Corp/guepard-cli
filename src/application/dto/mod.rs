@@ -1,5 +1,6 @@
 pub mod autostop;
 pub mod branch;
+pub mod node;
 pub mod clone;
 pub mod commit;
 pub mod compute;

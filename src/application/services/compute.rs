@@ -87,10 +87,7 @@ pub async fn start_compute_with_deps<A: AuthProvider>(
         StatusCode::OK => Ok(()),
         status => {
             let text = response.text().await.unwrap_or("No details".to_string());
-            Err(ComputeError::Unexpected(format!(
-                "Status {}: {}",
-                status, text
-            )))
+            Err(ComputeError::from_status_and_body(status, &text))
         }
     }
 }
@@ -120,10 +117,7 @@ pub async fn stop_compute_with_deps<A: AuthProvider>(
         StatusCode::OK => Ok(()),
         status => {
             let text = response.text().await.unwrap_or("No details".to_string());
-            Err(ComputeError::Unexpected(format!(
-                "Status {}: {}",
-                status, text
-            )))
+            Err(ComputeError::from_status_and_body(status, &text))
         }
     }
 }

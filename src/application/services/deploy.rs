@@ -52,41 +52,11 @@ pub async fn create_deployment_with_deps<A: AuthProvider>(
     if !response.status().is_success() {
         let status = response.status();
         let error_text = response.text().await.unwrap_or_default();
-
-        // Try to parse as JSON to extract meaningful error messages
-        let error_message = if let Ok(json) = serde_json::from_str::<serde_json::Value>(&error_text)
-        {
-            if let Some(msg) = json.get("message") {
-                if msg.is_string() {
-                    let s = msg.as_str().unwrap_or("");
-                    if s == "[object Object]" {
-                        // If we got the dreaded stringified object, show the whole JSON
-                        serde_json::to_string_pretty(&json).unwrap_or(error_text)
-                    } else {
-                        s.to_string()
-                    }
-                } else {
-                    serde_json::to_string_pretty(msg).unwrap_or_else(|_| format!("{}", msg))
-                }
-            } else if let Some(errors) = json.get("errors") {
-                serde_json::to_string_pretty(errors).unwrap_or_else(|_| format!("{}", errors))
-            } else {
-                serde_json::to_string_pretty(&json).unwrap_or(error_text)
-            }
-        } else {
-            error_text
-        };
-
-        // Build detailed error message with request info
-        let mut error_msg = format!("{} - {}", status, error_message);
-
-        // Add request details for debugging
-        if std::env::var("GUEPARD_DEBUG").is_ok() || std::env::var("RUST_LOG").is_ok() {
-            error_msg.push_str(&format!("\n\nRequest payload:\n{}", request_json));
-            error_msg.push_str(&format!("\n\nAPI URL: {}/deploy", config.api_url));
-        }
-
-        return Err(DeployError::ApiError(error_msg));
+        return Err(append_create_debug(
+            DeployError::from_status_and_body(status, &error_text),
+            &request_json,
+            &config.api_url,
+        ));
     }
 
     response
@@ -224,6 +194,38 @@ pub async fn delete_deployment_with_deps<A: AuthProvider>(
 pub async fn delete_deployment(deployment_id: &str, config: &Config) -> Result<serde_json::Value> {
     let auth_provider = DefaultAuthProvider;
     delete_deployment_with_deps(deployment_id, config, &auth_provider).await
+}
+
+fn append_create_debug(err: DeployError, request_json: &str, api_url: &str) -> DeployError {
+    if std::env::var("GUEPARD_DEBUG").is_err() && std::env::var("RUST_LOG").is_err() {
+        return err;
+    }
+    let debug = format!(
+        "\n\nRequest payload:\n{request_json}\n\nAPI URL: {api_url}/deploy"
+    );
+    match err {
+        DeployError::BadRequest(mut m) => {
+            m.push_str(&debug);
+            DeployError::BadRequest(m)
+        }
+        DeployError::Conflict(mut m) => {
+            m.push_str(&debug);
+            DeployError::Conflict(m)
+        }
+        DeployError::InsufficientNodeResources(mut m) => {
+            m.push_str(&debug);
+            DeployError::InsufficientNodeResources(m)
+        }
+        DeployError::Unexpected(mut m) => {
+            m.push_str(&debug);
+            DeployError::Unexpected(m)
+        }
+        DeployError::ApiError(mut m) => {
+            m.push_str(&debug);
+            DeployError::ApiError(m)
+        }
+        other => other,
+    }
 }
 
 async fn list_runtime_deployments_with_deps<A: AuthProvider>(

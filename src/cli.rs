@@ -1,6 +1,6 @@
 use clap::Parser;
 use guepard_cli::application::commands::{
-    branch, checkout, clone, commit, compute, config, deploy, list, log, login, logout, tenet,
+    branch, checkout, clone, commit, compute, config, deploy, list, log, login, logout, node, tenet,
     usage,
 };
 use guepard_cli::application::output::OutputFormat;
@@ -17,13 +17,16 @@ async fn main() {
     let args = CLI::parse();
     let sub_commands: &SubCommand = &args.sub_commands;
 
-    let config = match load_config() {
+    let mut config = match load_config() {
         Ok(cfg) => cfg,
         Err(e) => {
             eprintln!("❌ Configuration Error: {}", e);
             std::process::exit(1);
         }
     };
+    if let Some(url) = &args.api_url {
+        config.api_url = url.clone();
+    }
 
     let mut exit_code = 0;
     if let Err(err) = run(sub_commands, &config).await {
@@ -35,7 +38,10 @@ async fn main() {
             if format!("{}", deploy_error).contains("Purge plan") {
                 eprintln!("   (Check API/Lambda logs for full purge job stdout and stderr)");
             }
-            exit_code = 2;
+            exit_code = match deploy_error {
+                DeployError::InsufficientNodeResources(_) => 1,
+                _ => 2,
+            };
         } else if let Some(branch_error) = err.downcast_ref::<BranchError>() {
             eprintln!("❌ Branch Error: {}", branch_error);
             exit_code = 3;
@@ -44,7 +50,10 @@ async fn main() {
             exit_code = 4;
         } else if let Some(compute_error) = err.downcast_ref::<ComputeError>() {
             eprintln!("❌ Compute Error: {}", compute_error);
-            exit_code = 5;
+            exit_code = match compute_error {
+                ComputeError::InsufficientNodeResources(_) => 1,
+                _ => 5,
+            };
         } else if let Some(tenet_error) = err.downcast_ref::<TenetError>() {
             eprintln!("❌ Tenet Error: {}", tenet_error);
             exit_code = 8;
@@ -66,6 +75,14 @@ async fn run(sub_commands: &SubCommand, config: &Config) -> anyhow::Result<()> {
         SubCommand::Deploy(args) => {
             let output_format = deploy::deploy_output_format(args);
             deploy::deploy(args, config, output_format).await
+        }
+        SubCommand::Node(args) => {
+            let output_format = if node::node_output_format(&args.command) {
+                OutputFormat::Json
+            } else {
+                OutputFormat::Table
+            };
+            node::run(&args.command, config, output_format).await
         }
         SubCommand::Commit(args) => {
             let output_format = if args.output.json {

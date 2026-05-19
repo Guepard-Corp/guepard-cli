@@ -31,6 +31,14 @@ For detailed documentation, visit: https://docs.guepard.run",
     propagate_version = true
 )]
 pub struct CLI {
+    /// API base URL (overrides ~/.guepard/config.json and GUEPARD_API_URL)
+    ///
+    /// Examples:
+    ///   guepard --api-url https://api.dev.guepard.run deploy list-active
+    ///   GUEPARD_API_URL=https://api.dev.guepard.run guepard node resources
+    #[arg(long = "api-url", global = true, env = "GUEPARD_API_URL")]
+    pub api_url: Option<String>,
+
     #[clap(subcommand)]
     pub sub_commands: SubCommand,
 }
@@ -84,7 +92,16 @@ pub enum SubCommand {
     ///   # Autostop (stop compute after idle)
     ///   guepard deploy autostop status <deployment_id>
     ///   guepard deploy autostop enable <deployment_id>
+    ///
+    ///   # List nodes you can deploy to
+    ///   guepard deploy accessible-nodes
     Deploy(DeployArgs),
+
+    /// 🖧 Inspect node capacity and schedulability
+    ///
+    /// Examples:
+    ///   guepard node resources
+    Node(NodeArgs),
 
     /// 📸 Create snapshots of your database state (like git commit)
     ///
@@ -339,6 +356,12 @@ pub enum DeployRuntimeCommand {
         #[clap(flatten)]
         output: OutputArgs,
     },
+    /// List nodes available for deployment
+    #[command(name = "accessible-nodes")]
+    AccessibleNodes {
+        #[clap(flatten)]
+        output: OutputArgs,
+    },
     /// Stop compute automatically after idle time
     Autostop {
         #[command(subcommand)]
@@ -375,6 +398,24 @@ pub enum AutostopCommand {
         idle_duration: Option<String>,
         #[arg(value_name = "IDLE_DURATION")]
         duration: Option<String>,
+        #[clap(flatten)]
+        output: OutputArgs,
+    },
+}
+
+#[derive(Args, Debug)]
+pub struct NodeArgs {
+    #[command(subcommand)]
+    pub command: NodeCommand,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum NodeCommand {
+    /// Show CPU/memory for your account node (private if active, else default public)
+    Resources {
+        /// Override: query a specific node by ID
+        #[arg(long = "node-id")]
+        node_id: Option<String>,
         #[clap(flatten)]
         output: OutputArgs,
     },

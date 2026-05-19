@@ -17,14 +17,20 @@ pub enum DeployError {
     #[error("400 Bad Request: {0}")]
     BadRequest(String),
 
+    #[error("409 Conflict: {0}")]
+    Conflict(String),
+
+    #[error("Insufficient node resources: {0}")]
+    InsufficientNodeResources(String),
+
     #[error("403 Forbidden: Invalid API token or permissions")]
     Forbidden,
 
     #[error("404 Not Found: The requested resource was not found")]
     NotFound,
 
-    #[error("500 Internal Server Error: Something went wrong on the server")]
-    InternalServerError,
+    #[error("500 Internal Server Error: {0}")]
+    InternalServerError(String),
 
     #[error("503 Service Unavailable: The API is currently down")]
     ServiceUnavailable,
@@ -36,41 +42,59 @@ pub enum DeployError {
     SessionError(String),
 }
 
+pub fn parse_api_error_body(text: &str) -> (String, Option<String>) {
+    if let Ok(json) = serde_json::from_str::<serde_json::Value>(text) {
+        let message = json
+            .get("message")
+            .and_then(|m| {
+                if m.is_string() {
+                    m.as_str().map(String::from)
+                } else if m.is_object() {
+                    Some(serde_json::to_string_pretty(m).unwrap_or_else(|_| format!("{}", m)))
+                } else {
+                    Some(format!("{}", m))
+                }
+            })
+            .or_else(|| {
+                json.get("errors")
+                    .map(|e| serde_json::to_string_pretty(e).unwrap_or_else(|_| format!("{}", e)))
+            })
+            .unwrap_or_else(|| serde_json::to_string_pretty(&json).unwrap_or_else(|_| text.to_string()));
+        let code = json
+            .get("code")
+            .and_then(|c| c.as_str())
+            .map(String::from);
+        (message, code)
+    } else {
+        (text.to_string(), None)
+    }
+}
+
 impl DeployError {
+    pub fn from_status_and_body(status: StatusCode, text: &str) -> Self {
+        let (error_message, code) = parse_api_error_body(text);
+        match status {
+            StatusCode::BAD_REQUEST => DeployError::BadRequest(error_message),
+            StatusCode::CONFLICT if code.as_deref() == Some("INSUFFICIENT_NODE_RESOURCES") => {
+                DeployError::InsufficientNodeResources(error_message)
+            }
+            StatusCode::CONFLICT => DeployError::Conflict(error_message),
+            StatusCode::UNAUTHORIZED => DeployError::SessionError(error_message),
+            StatusCode::FORBIDDEN => DeployError::Forbidden,
+            StatusCode::NOT_FOUND => DeployError::NotFound,
+            StatusCode::INTERNAL_SERVER_ERROR => DeployError::InternalServerError(error_message),
+            StatusCode::SERVICE_UNAVAILABLE => DeployError::ServiceUnavailable,
+            _ => DeployError::Unexpected(format!("{}: {}", status, error_message)),
+        }
+    }
+
     pub async fn from_response(response: reqwest::Response) -> Self {
         let status = response.status();
         let text = response
             .text()
             .await
             .unwrap_or_else(|_| "Unknown error".to_string());
-
-        // Try to parse JSON error response
-        let error_message = if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) {
-            if let Some(msg) = json.get("message") {
-                if msg.is_string() {
-                    msg.as_str().unwrap_or("").to_string()
-                } else if msg.is_object() {
-                    serde_json::to_string_pretty(msg).unwrap_or_else(|_| format!("{:?}", msg))
-                } else {
-                    format!("{}", msg)
-                }
-            } else if let Some(errors) = json.get("errors") {
-                serde_json::to_string_pretty(errors).unwrap_or_else(|_| format!("{:?}", errors))
-            } else {
-                serde_json::to_string_pretty(&json).unwrap_or(text)
-            }
-        } else {
-            text
-        };
-
-        match status {
-            StatusCode::BAD_REQUEST => DeployError::BadRequest(error_message),
-            StatusCode::FORBIDDEN => DeployError::Forbidden,
-            StatusCode::NOT_FOUND => DeployError::NotFound,
-            StatusCode::INTERNAL_SERVER_ERROR => DeployError::InternalServerError,
-            StatusCode::SERVICE_UNAVAILABLE => DeployError::ServiceUnavailable,
-            _ => DeployError::Unexpected(format!("{}: {}", status, error_message)),
-        }
+        Self::from_status_and_body(status, &text)
     }
 }
 

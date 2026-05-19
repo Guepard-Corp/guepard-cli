@@ -4,7 +4,8 @@ use crate::application::dto::deploy::DeploymentRuntimeSummary;
 use crate::application::output::{print_json, print_table_or_json, OutputFormat};
 use crate::application::commands::autostop;
 use crate::structure::DeployRuntimeCommand;
-use crate::application::services::{branch, clone, commit, compute, deploy, performance};
+use crate::application::dto::node::AccessibleNode;
+use crate::application::services::{branch, clone, commit, compute, deploy, node, performance};
 use crate::config::config::Config;
 use crate::domain::errors::deploy_error::DeployError;
 use crate::structure::DeployArgs;
@@ -80,26 +81,48 @@ pub fn deploy_output_format(args: &DeployArgs) -> OutputFormat {
 fn deploy_command_wants_json(command: &DeployRuntimeCommand) -> bool {
     match command {
         DeployRuntimeCommand::ListActive { output }
-        | DeployRuntimeCommand::ListPending { output } => output.json,
+        | DeployRuntimeCommand::ListPending { output }
+        | DeployRuntimeCommand::AccessibleNodes { output } => output.json,
         DeployRuntimeCommand::Autostop { command } => autostop::autostop_output_format(command),
     }
 }
 
 #[derive(Serialize, tabled::Tabled)]
 struct DeploymentRuntimeRow {
-    deployment_id: String,
     name: String,
-    status: String,
+    deployment_id: String,
     port: String,
+    status: String,
 }
 
 impl From<DeploymentRuntimeSummary> for DeploymentRuntimeRow {
     fn from(s: DeploymentRuntimeSummary) -> Self {
         Self {
-            deployment_id: s.deployment_id,
             name: s.name,
-            status: s.status,
+            deployment_id: s.deployment_id,
             port: s.port.map(|p| p.to_string()).unwrap_or_default(),
+            status: s.status,
+        }
+    }
+}
+
+#[derive(Serialize, tabled::Tabled)]
+struct AccessibleNodeRow {
+    id: String,
+    label_name: String,
+    node_status: String,
+    region: String,
+    node_pool: String,
+}
+
+impl From<AccessibleNode> for AccessibleNodeRow {
+    fn from(n: AccessibleNode) -> Self {
+        Self {
+            id: n.id,
+            label_name: n.label_name,
+            node_status: n.node_status.unwrap_or_default(),
+            region: n.region.unwrap_or_default(),
+            node_pool: n.node_pool.unwrap_or_default(),
         }
     }
 }
@@ -162,6 +185,33 @@ pub async fn list_pending_deployments(
     .await
 }
 
+pub async fn list_accessible_nodes(config: &Config, output_format: OutputFormat) -> Result<()> {
+    let nodes = node::list_accessible_nodes(config).await?;
+
+    if nodes.is_empty() {
+        if output_format == OutputFormat::Json {
+            print_json(&serde_json::json!([]));
+        } else {
+            println!("{} No accessible nodes found", "ℹ️".blue());
+        }
+        return Ok(());
+    }
+
+    if output_format == OutputFormat::Json {
+        print_json(&nodes);
+    } else {
+        let rows: Vec<AccessibleNodeRow> = nodes.into_iter().map(Into::into).collect();
+        println!(
+            "{} Found {} accessible node{}",
+            "✅".green(),
+            rows.len(),
+            if rows.len() == 1 { "" } else { "s" }
+        );
+        print_table_or_json(rows, output_format);
+    }
+    Ok(())
+}
+
 pub async fn deploy(args: &DeployArgs, config: &Config, output_format: OutputFormat) -> Result<()> {
     if let Some(command) = &args.command {
         return match command {
@@ -170,6 +220,9 @@ pub async fn deploy(args: &DeployArgs, config: &Config, output_format: OutputFor
             }
             DeployRuntimeCommand::ListPending { .. } => {
                 list_pending_deployments(config, output_format).await
+            }
+            DeployRuntimeCommand::AccessibleNodes { .. } => {
+                list_accessible_nodes(config, output_format).await
             }
             DeployRuntimeCommand::Autostop { command } => {
                 autostop::run(command, config, output_format).await
