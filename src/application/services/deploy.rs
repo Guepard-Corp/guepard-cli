@@ -355,6 +355,9 @@ mod tests {
             database_password: "pass".to_string(),
             performance_profile_id: "perf-1".to_string(),
             node_id: None,
+            masked: None,
+            proxy_yaml: None,
+            masking_salt: None,
         };
         let r1 = create_deployment_with_deps(create_req, &config, &auth).await;
         assert!(r1.is_err());

@@ -39,6 +39,9 @@ guepard deploy [OPTIONS]
 | `--node-id` | `-s` | Node ID for deployment | No |
 | `--interactive` | `-I` | Interactive mode | No |
 | `--json` | | Output results as JSON | No |
+| `--masked` | | Deploy Tenet with PII masking | No |
+| `--proxy-config` | | Path to local `proxy.yaml` (required with `--masked`) | When masked |
+| `--masking-salt` | | Tenet masking salt (API generates if omitted) | No |
 
 #### Examples
 
@@ -76,6 +79,16 @@ guepard deploy -p PostgreSQL -v 17 -r us-west-aws -i REPOSITORY -d us-west-aws -
 ```bash
 guepard deploy --deployment-id <id> --json
 ```
+
+**Masked deployment (DB + Tenet in one step):**
+```bash
+guepard deploy \
+  -p PostgreSQL -v 17 -r us-west-aws -i REPOSITORY -d us-west-aws \
+  -n myapp -w secret \
+  --masked --proxy-config ./proxy.yaml
+```
+
+Connection output uses the **Tenet proxy port** from the API (`tenet_proxy_port`, `connection_string`). Use `sslmode=disable` through Tenet unless TLS is configured on the proxy.
 
 **Interactive deployment:**
 ```bash

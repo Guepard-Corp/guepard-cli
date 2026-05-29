@@ -14,6 +14,12 @@ pub struct CreateDeploymentRequest {
     pub performance_profile_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub node_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub masked: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub proxy_yaml: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub masking_salt: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -39,6 +45,12 @@ pub struct CreateDeploymentResponse {
     pub datacenter: String,
     pub created_date: String,
     pub created_by: String,
+    #[serde(default)]
+    pub is_masked: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tenet_job_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tenet_proxy_port: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

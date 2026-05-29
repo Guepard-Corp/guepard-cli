@@ -21,7 +21,15 @@ struct DeploymentDetails {
     deployment: DeploymentInfo,
     checkout: Option<CheckoutInfo>,
     compute: Option<ComputeInfo>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tenet: Option<TenetInfo>,
     connection: ConnectionInfo,
+}
+
+#[derive(Serialize)]
+struct TenetInfo {
+    job_id: String,
+    proxy_port: i32,
 }
 
 #[derive(Serialize)]
@@ -298,6 +306,17 @@ async fn create_deployment(
     )
     .await?;
 
+    let proxy_yaml = if args.masked {
+        let path = args.proxy_config.as_ref().ok_or_else(|| {
+            anyhow::anyhow!("--masked requires --proxy-config <path to proxy.yaml>")
+        })?;
+        Some(std::fs::read_to_string(path).map_err(|e| {
+            anyhow::anyhow!("Cannot read --proxy-config {}: {}", path.display(), e)
+        })?)
+    } else {
+        None
+    };
+
     let request = CreateDeploymentRequest {
         repository_name: args
             .repository_name
@@ -315,35 +334,53 @@ async fn create_deployment(
         database_password: args.database_password.clone().unwrap(),
         performance_profile_id,
         node_id: args.node_id.clone(),
+        masked: if args.masked { Some(true) } else { None },
+        proxy_yaml,
+        masking_salt: args.masking_salt.clone(),
     };
 
     let deployment = deploy::create_deployment(request, config).await?;
 
     // Try to get compute information for the real port
-    let compute_data = match compute::list_compute(&deployment.id, config).await {
-        Ok(compute_info) => Some(compute_info),
-        Err(_) => None,
+    let compute_data = if deployment.is_masked {
+        None
+    } else {
+        match compute::list_compute(&deployment.id, config).await {
+            Ok(compute_info) => Some(compute_info),
+            Err(_) => None,
+        }
     };
 
-    let port = compute_data
-        .as_ref()
-        .map(|c| c.port.to_string())
-        .unwrap_or_else(|| {
-            deployment
-                .port
-                .map(|p| p.to_string())
-                .unwrap_or_else(|| "5432".to_string())
-        });
+    let port = if let Some(p) = deployment.tenet_proxy_port {
+        p.to_string()
+    } else {
+        compute_data
+            .as_ref()
+            .map(|c| c.port.to_string())
+            .unwrap_or_else(|| {
+                deployment
+                    .port
+                    .map(|p| p.to_string())
+                    .unwrap_or_else(|| "5432".to_string())
+            })
+    };
 
-    // Construct connection URI
-    let connection_uri = format!(
-        "postgresql://{}:{}@{}:{}/{}",
-        deployment.database_username,
-        deployment.database_password,
-        deployment.fqdn,
-        port,
-        deployment.repository_name
-    );
+    let mut connection_uri = deployment
+        .connection_string
+        .clone()
+        .unwrap_or_else(|| {
+            format!(
+                "postgresql://{}:{}@{}:{}/{}",
+                deployment.database_username,
+                deployment.database_password,
+                deployment.fqdn,
+                port,
+                deployment.repository_name
+            )
+        });
+    if deployment.is_masked {
+        connection_uri = connection_uri.replace("sslmode=require", "sslmode=disable");
+    }
 
     let connection_info = ConnectionInfo {
         host: deployment.fqdn.clone(),
@@ -353,6 +390,17 @@ async fn create_deployment(
         password: deployment.database_password.clone(),
         connection_uri: connection_uri.clone(),
     };
+
+    if deployment.is_masked {
+        if let Some(job_id) = &deployment.tenet_job_id {
+            println!(
+                "{} Tenet job {} (proxy port {})",
+                "🎭".cyan(),
+                job_id.cyan(),
+                port.cyan()
+            );
+        }
+    }
 
     if output_format == OutputFormat::Json {
         let is_clone = deployment.deployment_type == "SHADOW";
@@ -383,6 +431,11 @@ async fn create_deployment(
                 port: c.port,
                 connection_string: c.connection_string,
             }),
+            tenet: deployment
+                .tenet_job_id
+                .clone()
+                .zip(deployment.tenet_proxy_port)
+                .map(|(job_id, proxy_port)| TenetInfo { job_id, proxy_port }),
             connection: connection_info,
         };
         print_json(&details);
@@ -672,6 +725,7 @@ async fn get_deployment(
                 port: c.port,
                 connection_string: c.connection_string,
             }),
+            tenet: None,
             connection: connection_info,
         };
         print_json(&details);
@@ -1410,7 +1464,10 @@ async fn interactive_deploy(config: &Config) -> Result<()> {
         database_username: user.to_string(),
         database_password: database_password.to_string(),
         performance_profile_id,
-        node_id: None, // Interactive mode doesn't support node_id yet
+        node_id: None,
+        masked: None,
+        proxy_yaml: None,
+        masking_salt: None,
     };
 
     let deployment = deploy::create_deployment(request, config).await?;
