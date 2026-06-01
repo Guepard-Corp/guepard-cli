@@ -48,9 +48,13 @@ pub struct CreateDeploymentResponse {
     #[serde(default)]
     pub is_masked: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub masked_status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub tenet_job_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tenet_proxy_port: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -111,6 +115,16 @@ pub struct GetDeploymentResponse {
     pub branch_id: Option<String>,
     pub region: String,
     pub datacenter: String,
+    #[serde(default)]
+    pub is_masked: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub masked_status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tenet_job_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tenet_proxy_port: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
 }
 
 #[cfg(test)]

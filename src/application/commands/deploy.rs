@@ -339,7 +339,27 @@ async fn create_deployment(
         masking_salt: args.masking_salt.clone(),
     };
 
-    let deployment = deploy::create_deployment(request, config).await?;
+    let mut deployment = deploy::create_deployment(request, config).await?;
+
+    if deployment.is_masked
+        && deployment.tenet_proxy_port.is_none()
+        && deployment.masked_status.as_deref() != Some("ready")
+    {
+        if output_format == OutputFormat::Table {
+            println!(
+                "{} Masked Tenet provisioning (poll GET /deploy/{})…",
+                "⏳".yellow(),
+                deployment.id
+            );
+        }
+        let ready = deploy::poll_masked_deployment_ready(&deployment.id, config).await?;
+        deployment.connection_string = ready.connection_string;
+        deployment.port = ready.port.or(ready.tenet_proxy_port);
+        deployment.tenet_proxy_port = ready.tenet_proxy_port;
+        deployment.tenet_job_id = ready.tenet_job_id;
+        deployment.masked_status = ready.masked_status;
+        deployment.message = ready.message;
+    }
 
     // Try to get compute information for the real port
     let compute_data = if deployment.is_masked {
@@ -667,10 +687,15 @@ async fn get_deployment(
         }
     }
 
-    // Determine real port
-    let port = compute_data
-        .as_ref()
-        .map(|c| c.port.to_string())
+    // Determine real port (Tenet proxy for masked deployments)
+    let port = deployment
+        .tenet_proxy_port
+        .map(|p| p.to_string())
+        .or_else(|| {
+            compute_data
+                .as_ref()
+                .map(|c| c.port.to_string())
+        })
         .unwrap_or_else(|| {
             deployment
                 .port
@@ -678,15 +703,22 @@ async fn get_deployment(
                 .unwrap_or_else(|| "5432".to_string())
         });
 
-    // Construct connection URI
-    let connection_uri = format!(
-        "postgresql://{}:{}@{}:{}/{}",
-        deployment.database_username,
-        deployment.database_password,
-        deployment.fqdn,
-        port,
-        deployment.repository_name
-    );
+    let mut connection_uri = deployment
+        .connection_string
+        .clone()
+        .unwrap_or_else(|| {
+            format!(
+                "postgresql://{}:{}@{}:{}/{}",
+                deployment.database_username,
+                deployment.database_password,
+                deployment.fqdn,
+                port,
+                deployment.repository_name
+            )
+        });
+    if deployment.is_masked {
+        connection_uri = connection_uri.replace("sslmode=require", "sslmode=disable");
+    }
 
     let connection_info = ConnectionInfo {
         host: deployment.fqdn.clone(),
@@ -725,11 +757,24 @@ async fn get_deployment(
                 port: c.port,
                 connection_string: c.connection_string,
             }),
-            tenet: None,
+            tenet: deployment
+                .tenet_job_id
+                .clone()
+                .zip(deployment.tenet_proxy_port)
+                .map(|(job_id, proxy_port)| TenetInfo { job_id, proxy_port }),
             connection: connection_info,
         };
         print_json(&details);
         return Ok(());
+    }
+
+    if deployment.is_masked {
+        if let Some(status) = &deployment.masked_status {
+            println!("  {} {}", "Masked status:".yellow(), status.cyan());
+        }
+        if let Some(job_id) = &deployment.tenet_job_id {
+            println!("  {} {}", "Tenet job:".yellow(), job_id.cyan());
+        }
     }
 
     let deployment_label = if is_clone {

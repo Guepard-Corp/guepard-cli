@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use reqwest::Client;
 use serde_json;
+use std::time::Duration;
 
 use crate::application::auth;
 use crate::application::dto::deploy::{
@@ -71,6 +72,33 @@ pub async fn create_deployment(
 ) -> Result<CreateDeploymentResponse, DeployError> {
     let auth_provider = DefaultAuthProvider;
     create_deployment_with_deps(request, config, &auth_provider).await
+}
+
+/// Poll GET /deploy/{id} until masked Tenet is ready or failed.
+pub async fn poll_masked_deployment_ready(
+    deployment_id: &str,
+    config: &Config,
+) -> Result<GetDeploymentResponse, DeployError> {
+    const POLL_INTERVAL: Duration = Duration::from_secs(5);
+    const MAX_WAIT: Duration = Duration::from_secs(300);
+    let started = std::time::Instant::now();
+
+    loop {
+        let dep = get_deployment(deployment_id, config).await?;
+        if dep.masked_status.as_deref() == Some("ready") || dep.tenet_proxy_port.is_some() {
+            return Ok(dep);
+        }
+        if dep.masked_status.as_deref() == Some("failed") {
+            let detail = dep.message.unwrap_or_else(|| "Tenet provisioning failed".to_string());
+            return Err(DeployError::ApiError(detail));
+        }
+        if started.elapsed() > MAX_WAIT {
+            return Err(DeployError::ApiError(
+                "Timed out waiting for masked Tenet proxy (300s)".to_string(),
+            ));
+        }
+        tokio::time::sleep(POLL_INTERVAL).await;
+    }
 }
 
 pub async fn update_deployment_with_deps<A: AuthProvider>(
