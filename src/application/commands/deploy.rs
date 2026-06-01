@@ -5,6 +5,7 @@ use crate::application::output::{print_json, print_table_or_json, OutputFormat};
 use crate::application::commands::autostop;
 use crate::structure::DeployRuntimeCommand;
 use crate::application::dto::node::AccessibleNode;
+use crate::application::dto::compute::ListComputeResponse;
 use crate::application::services::{branch, clone, commit, compute, deploy, node, performance};
 use crate::config::config::Config;
 use crate::domain::errors::deploy_error::DeployError;
@@ -74,6 +75,118 @@ struct ConnectionInfo {
     username: String,
     password: String,
     connection_uri: String,
+}
+
+fn client_connect_port(
+    is_masked: bool,
+    tenet_proxy_port: Option<i32>,
+    compute: Option<&ListComputeResponse>,
+    deployment_port: Option<i32>,
+) -> String {
+    if is_masked {
+        return tenet_proxy_port
+            .or(deployment_port)
+            .map(|p| p.to_string())
+            .unwrap_or_else(|| "pending".to_string());
+    }
+    tenet_proxy_port
+        .or_else(|| compute.map(|c| c.port))
+        .or(deployment_port)
+        .map(|p| p.to_string())
+        .unwrap_or_else(|| "5432".to_string())
+}
+
+fn print_compute_information(
+    compute: Option<&ListComputeResponse>,
+    is_masked: bool,
+    tenet_job_id: Option<&str>,
+    tenet_proxy_port: Option<i32>,
+) {
+    if compute.is_none() && !is_masked {
+        return;
+    }
+
+    if let Some(c) = compute {
+        println!();
+        println!("{} Compute Information", "🖥️".blue());
+        println!("  {} {}", "Compute Name:".yellow(), c.name.cyan());
+        println!("  {} {}", "FQDN:".yellow(), c.fqdn.cyan());
+        if is_masked {
+            println!(
+                "  {} {}",
+                "Direct port:".yellow(),
+                c.port.to_string().cyan()
+            );
+            println!(
+                "  {} {}",
+                "Direct connection:".yellow(),
+                c.connection_string.dimmed()
+            );
+        } else {
+            println!(
+                "  {} {}",
+                "Port:".yellow(),
+                c.port.to_string().cyan()
+            );
+            println!(
+                "  {} {}",
+                "Connection String:".yellow(),
+                c.connection_string.cyan()
+            );
+        }
+    }
+
+    if is_masked {
+        println!();
+        println!(
+            "{} Tenet masked proxy (connect using proxy port)",
+            "🎭".cyan()
+        );
+        if let Some(job) = tenet_job_id {
+            println!("  {} {}", "Tenet job:".yellow(), job.cyan());
+        }
+        match tenet_proxy_port {
+            Some(p) => println!(
+                "  {} {}",
+                "Proxy port:".yellow(),
+                p.to_string().cyan()
+            ),
+            None => println!(
+                "  {} {}",
+                "Proxy port:".yellow(),
+                "pending".dimmed()
+            ),
+        }
+    }
+}
+
+fn print_database_connection_block(
+    fqdn: &str,
+    port: &str,
+    database: &str,
+    username: &str,
+    password: &str,
+    connection_uri: &str,
+) {
+    println!();
+    println!("{} Database Connection", "🔗".blue());
+    println!("  {} {}", "Host:".yellow(), fqdn);
+    println!("  {} {}", "Port:".yellow(), port);
+    println!("  {} {}", "Database:".yellow(), database);
+    println!("  {} {}", "Username:".yellow(), username);
+    println!("  {} {}", "Password:".yellow(), password);
+    println!();
+    println!("{} Ready-to-use Connection URI:", "💡".green());
+    println!("{}", connection_uri.cyan().bold());
+    println!();
+    println!("{} Connect with psql:", "📝".yellow());
+    println!("{} psql '{}'", "  $".dimmed(), connection_uri);
+    println!();
+    println!(
+        "{} Connect with any PostgreSQL client using the URI above",
+        "ℹ️".blue()
+    );
+    println!();
 }
 
 pub fn deploy_output_format(args: &DeployArgs) -> OutputFormat {
@@ -361,43 +474,28 @@ async fn create_deployment(
         deployment.message = ready.message;
     }
 
-    // Try to get compute information for the real port
-    let compute_data = if deployment.is_masked {
-        None
-    } else {
-        match compute::list_compute(&deployment.id, config).await {
-            Ok(compute_info) => Some(compute_info),
-            Err(_) => None,
+    let compute_data = compute::list_compute(&deployment.id, config).await.ok();
+
+    let port = client_connect_port(
+        deployment.is_masked,
+        deployment.tenet_proxy_port,
+        compute_data.as_ref(),
+        deployment.port,
+    );
+
+    let mut connection_uri = deployment.connection_string.clone().unwrap_or_else(|| {
+        if deployment.is_masked && deployment.tenet_proxy_port.is_none() {
+            return String::from("(Tenet proxy not ready — poll: guepard deploy -x <id>)");
         }
-    };
-
-    let port = if let Some(p) = deployment.tenet_proxy_port {
-        p.to_string()
-    } else {
-        compute_data
-            .as_ref()
-            .map(|c| c.port.to_string())
-            .unwrap_or_else(|| {
-                deployment
-                    .port
-                    .map(|p| p.to_string())
-                    .unwrap_or_else(|| "5432".to_string())
-            })
-    };
-
-    let mut connection_uri = deployment
-        .connection_string
-        .clone()
-        .unwrap_or_else(|| {
-            format!(
-                "postgresql://{}:{}@{}:{}/{}",
-                deployment.database_username,
-                deployment.database_password,
-                deployment.fqdn,
-                port,
-                deployment.repository_name
-            )
-        });
+        format!(
+            "postgresql://{}:{}@{}:{}/{}",
+            deployment.database_username,
+            deployment.database_password,
+            deployment.fqdn,
+            port,
+            deployment.repository_name
+        )
+    });
     if deployment.is_masked {
         connection_uri = connection_uri.replace("sslmode=require", "sslmode=disable");
     }
@@ -410,17 +508,6 @@ async fn create_deployment(
         password: deployment.database_password.clone(),
         connection_uri: connection_uri.clone(),
     };
-
-    if deployment.is_masked {
-        if let Some(job_id) = &deployment.tenet_job_id {
-            println!(
-                "{} Tenet job {} (proxy port {})",
-                "🎭".cyan(),
-                job_id.cyan(),
-                port.cyan()
-            );
-        }
-    }
 
     if output_format == OutputFormat::Json {
         let is_clone = deployment.deployment_type == "SHADOW";
@@ -499,44 +586,27 @@ async fn create_deployment(
     println!("  {} {}", "Datacenter:".yellow(), deployment.datacenter);
     println!("  {} {}", "Created:".yellow(), deployment.created_date);
 
-    // Show database connection information
-    if let Some(port_display) = deployment.port {
-        println!("  {} {}", "Port:".yellow(), port_display);
-    }
-    if let Some(connection_string) = &deployment.connection_string {
-        println!("  {} {}", "Connection URI:".yellow(), connection_string);
+    if deployment.is_masked {
+        if let Some(status) = &deployment.masked_status {
+            println!("  {} {}", "Masked status:".yellow(), status.cyan());
+        }
     }
 
-    // Show helpful connection information
-    println!();
-    println!("{} Database Connection", "🔗".blue());
-    println!("  {} {}", "Host:".yellow(), deployment.fqdn);
-    println!("  {} {}", "Port:".yellow(), port);
-    println!("  {} {}", "Database:".yellow(), deployment.repository_name);
-    println!(
-        "  {} {}",
-        "Username:".yellow(),
-        deployment.database_username
-    );
-    println!(
-        "  {} {}",
-        "Password:".yellow(),
-        deployment.database_password
+    print_compute_information(
+        compute_data.as_ref(),
+        deployment.is_masked,
+        deployment.tenet_job_id.as_deref(),
+        deployment.tenet_proxy_port,
     );
 
-    println!();
-    println!("{} Ready-to-use Connection URI:", "💡".green());
-    println!("{}", connection_uri.cyan().bold());
-    println!();
-    println!("{} Connect with psql:", "📝".yellow());
-    println!("{} psql '{}'", "  $".dimmed(), connection_uri);
-    println!();
-    println!(
-        "{} Connect with any PostgreSQL client using the URI above",
-        "ℹ️".blue()
+    print_database_connection_block(
+        &deployment.fqdn,
+        &port,
+        &deployment.repository_name,
+        &deployment.database_username,
+        &deployment.database_password,
+        &connection_uri,
     );
-
-    println!();
 
     println!(
         "{} Use 'guepard deploy -x {}' to get more details",
@@ -687,35 +757,26 @@ async fn get_deployment(
         }
     }
 
-    // Determine real port (Tenet proxy for masked deployments)
-    let port = deployment
-        .tenet_proxy_port
-        .map(|p| p.to_string())
-        .or_else(|| {
-            compute_data
-                .as_ref()
-                .map(|c| c.port.to_string())
-        })
-        .unwrap_or_else(|| {
-            deployment
-                .port
-                .map(|p| p.to_string())
-                .unwrap_or_else(|| "5432".to_string())
-        });
+    let port = client_connect_port(
+        deployment.is_masked,
+        deployment.tenet_proxy_port,
+        compute_data.as_ref(),
+        deployment.port,
+    );
 
-    let mut connection_uri = deployment
-        .connection_string
-        .clone()
-        .unwrap_or_else(|| {
-            format!(
-                "postgresql://{}:{}@{}:{}/{}",
-                deployment.database_username,
-                deployment.database_password,
-                deployment.fqdn,
-                port,
-                deployment.repository_name
-            )
-        });
+    let mut connection_uri = deployment.connection_string.clone().unwrap_or_else(|| {
+        if deployment.is_masked && deployment.tenet_proxy_port.is_none() {
+            return String::from("(Tenet proxy not ready — poll: guepard deploy -x <id>)");
+        }
+        format!(
+            "postgresql://{}:{}@{}:{}/{}",
+            deployment.database_username,
+            deployment.database_password,
+            deployment.fqdn,
+            port,
+            deployment.repository_name
+        )
+    });
     if deployment.is_masked {
         connection_uri = connection_uri.replace("sslmode=require", "sslmode=disable");
     }
@@ -766,15 +827,6 @@ async fn get_deployment(
         };
         print_json(&details);
         return Ok(());
-    }
-
-    if deployment.is_masked {
-        if let Some(status) = &deployment.masked_status {
-            println!("  {} {}", "Masked status:".yellow(), status.cyan());
-        }
-        if let Some(job_id) = &deployment.tenet_job_id {
-            println!("  {} {}", "Tenet job:".yellow(), job_id.cyan());
-        }
     }
 
     let deployment_label = if is_clone {
@@ -851,49 +903,28 @@ async fn get_deployment(
         );
     }
 
-    if let Some(compute) = &compute_data {
-        println!();
-        println!("{} Compute Information", "🖥️".blue());
-        println!("  {} {}", "Compute Name:".yellow(), compute.name.cyan());
-        println!("  {} {}", "FQDN:".yellow(), compute.fqdn.cyan());
-        println!("  {} {}", "Port:".yellow(), compute.port.to_string().cyan());
-        println!(
-            "  {} {}",
-            "Connection String:".yellow(),
-            compute.connection_string.cyan()
-        );
+    if deployment.is_masked {
+        if let Some(status) = &deployment.masked_status {
+            println!("  {} {}", "Masked status:".yellow(), status.cyan());
+        }
     }
 
-    // Show database connection information
-    println!();
-    println!("{} Database Connection", "🔗".blue());
-    println!("  {} {}", "Host:".yellow(), deployment.fqdn);
-    println!("  {} {}", "Port:".yellow(), port);
-    println!("  {} {}", "Database:".yellow(), deployment.repository_name);
-    println!(
-        "  {} {}",
-        "Username:".yellow(),
-        deployment.database_username
-    );
-    println!(
-        "  {} {}",
-        "Password:".yellow(),
-        deployment.database_password
+    print_compute_information(
+        compute_data.as_ref(),
+        deployment.is_masked,
+        deployment.tenet_job_id.as_deref(),
+        deployment.tenet_proxy_port,
     );
 
-    println!();
-    println!("{} Ready-to-use Connection URI:", "💡".green());
-    println!("{}", connection_uri.cyan().bold());
-    println!();
-    println!("{} Connect with psql:", "📝".yellow());
-    println!("{} psql '{}'", "  $".dimmed(), connection_uri);
-    println!();
-    println!(
-        "{} Connect with any PostgreSQL client using the URI above",
-        "ℹ️".blue()
+    print_database_connection_block(
+        &deployment.fqdn,
+        &port,
+        &deployment.repository_name,
+        &deployment.database_username,
+        &deployment.database_password,
+        &connection_uri,
     );
 
-    println!();
     Ok(())
 }
 
