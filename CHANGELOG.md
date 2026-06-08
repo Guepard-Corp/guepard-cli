@@ -2,6 +2,23 @@
 
 All notable changes to Guepard CLI will be documented in this file.
 
+## v0.29.10 (2026-06-08)
+
+### Features
+- **Tenet CLI**: `tenet deploy`, `start`, `stop`, `purge`, and `proxy get` / `proxy set` via the Guepard API (Nomad scheduling)
+- **Tenet deploy**: optional `--proxy-port`, `--api-port`, and `--client-host` for printed connection hints
+- **Tenet deploy hints**: connect host resolves from API `host`, then `--client-host`, then DNS/`--upstream-host`
+- **Masked deploy**: `deploy --masked` with `proxy.yaml` upload and readiness polling (when enabled in your build)
+- **E2E scripts**: `scripts/tenet-e2e-from-deploy.sh`, sample `proxy.yaml` rules, and `scripts/sql/tenet_masking_seed.sql`
+
+### Improvements
+- **JSON output**: exit cleanly on broken pipe (e.g. `list deployments --json | head`) instead of panicking
+
+### Documentation
+- **Tenet guide**: [docs/documentation/tenet.md](docs/documentation/tenet.md) — CLI usage, `proxy.yaml`, `psql`, networking, troubleshooting
+- Links to upstream [guepard-tenet](https://github.com/Guepard-Corp/guepard-tenet) configuration and transformer docs
+- Updated [commands.md](docs/documentation/commands.md) and [README.md](README.md) with Tenet usage (`cargo run -q -- tenet …`)
+
 ## v0.27.19 - v0.27.18 (2025-10-27)
 
 ### Changes

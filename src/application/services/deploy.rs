@@ -1,11 +1,12 @@
 use anyhow::{Context, Result};
 use reqwest::Client;
 use serde_json;
+use std::time::Duration;
 
 use crate::application::auth;
 use crate::application::dto::deploy::{
-    CreateDeploymentRequest, CreateDeploymentResponse, GetDeploymentResponse,
-    ListDeploymentsResponse, UpdateDeploymentRequest,
+    CreateDeploymentRequest, CreateDeploymentResponse, DeploymentRuntimeSummary,
+    GetDeploymentResponse, ListDeploymentsResponse, UpdateDeploymentRequest,
 };
 use crate::config::config::Config;
 use crate::domain::errors::deploy_error::{
@@ -52,41 +53,11 @@ pub async fn create_deployment_with_deps<A: AuthProvider>(
     if !response.status().is_success() {
         let status = response.status();
         let error_text = response.text().await.unwrap_or_default();
-
-        // Try to parse as JSON to extract meaningful error messages
-        let error_message = if let Ok(json) = serde_json::from_str::<serde_json::Value>(&error_text)
-        {
-            if let Some(msg) = json.get("message") {
-                if msg.is_string() {
-                    let s = msg.as_str().unwrap_or("");
-                    if s == "[object Object]" {
-                        // If we got the dreaded stringified object, show the whole JSON
-                        serde_json::to_string_pretty(&json).unwrap_or(error_text)
-                    } else {
-                        s.to_string()
-                    }
-                } else {
-                    serde_json::to_string_pretty(msg).unwrap_or_else(|_| format!("{}", msg))
-                }
-            } else if let Some(errors) = json.get("errors") {
-                serde_json::to_string_pretty(errors).unwrap_or_else(|_| format!("{}", errors))
-            } else {
-                serde_json::to_string_pretty(&json).unwrap_or(error_text)
-            }
-        } else {
-            error_text
-        };
-
-        // Build detailed error message with request info
-        let mut error_msg = format!("{} - {}", status, error_message);
-
-        // Add request details for debugging
-        if std::env::var("GUEPARD_DEBUG").is_ok() || std::env::var("RUST_LOG").is_ok() {
-            error_msg.push_str(&format!("\n\nRequest payload:\n{}", request_json));
-            error_msg.push_str(&format!("\n\nAPI URL: {}/deploy", config.api_url));
-        }
-
-        return Err(DeployError::ApiError(error_msg));
+        return Err(append_create_debug(
+            DeployError::from_status_and_body(status, &error_text),
+            &request_json,
+            &config.api_url,
+        ));
     }
 
     response
@@ -101,6 +72,33 @@ pub async fn create_deployment(
 ) -> Result<CreateDeploymentResponse, DeployError> {
     let auth_provider = DefaultAuthProvider;
     create_deployment_with_deps(request, config, &auth_provider).await
+}
+
+/// Poll GET /deploy/{id} until masked Tenet is ready or failed.
+pub async fn poll_masked_deployment_ready(
+    deployment_id: &str,
+    config: &Config,
+) -> Result<GetDeploymentResponse, DeployError> {
+    const POLL_INTERVAL: Duration = Duration::from_secs(5);
+    const MAX_WAIT: Duration = Duration::from_secs(300);
+    let started = std::time::Instant::now();
+
+    loop {
+        let dep = get_deployment(deployment_id, config).await?;
+        if dep.masked_status.as_deref() == Some("ready") || dep.tenet_proxy_port.is_some() {
+            return Ok(dep);
+        }
+        if dep.masked_status.as_deref() == Some("failed") {
+            let detail = dep.message.unwrap_or_else(|| "Tenet provisioning failed".to_string());
+            return Err(DeployError::ApiError(detail));
+        }
+        if started.elapsed() > MAX_WAIT {
+            return Err(DeployError::ApiError(
+                "Timed out waiting for masked Tenet proxy (300s)".to_string(),
+            ));
+        }
+        tokio::time::sleep(POLL_INTERVAL).await;
+    }
 }
 
 pub async fn update_deployment_with_deps<A: AuthProvider>(
@@ -226,6 +224,92 @@ pub async fn delete_deployment(deployment_id: &str, config: &Config) -> Result<s
     delete_deployment_with_deps(deployment_id, config, &auth_provider).await
 }
 
+fn append_create_debug(err: DeployError, request_json: &str, api_url: &str) -> DeployError {
+    if std::env::var("GUEPARD_DEBUG").is_err() && std::env::var("RUST_LOG").is_err() {
+        return err;
+    }
+    let debug = format!(
+        "\n\nRequest payload:\n{request_json}\n\nAPI URL: {api_url}/deploy"
+    );
+    match err {
+        DeployError::BadRequest(mut m) => {
+            m.push_str(&debug);
+            DeployError::BadRequest(m)
+        }
+        DeployError::Conflict(mut m) => {
+            m.push_str(&debug);
+            DeployError::Conflict(m)
+        }
+        DeployError::InsufficientNodeResources(mut m) => {
+            m.push_str(&debug);
+            DeployError::InsufficientNodeResources(m)
+        }
+        DeployError::Unexpected(mut m) => {
+            m.push_str(&debug);
+            DeployError::Unexpected(m)
+        }
+        DeployError::ApiError(mut m) => {
+            m.push_str(&debug);
+            DeployError::ApiError(m)
+        }
+        other => other,
+    }
+}
+
+async fn list_runtime_deployments_with_deps<A: AuthProvider>(
+    path: &str,
+    config: &Config,
+    auth_provider: &A,
+) -> Result<Vec<DeploymentRuntimeSummary>, DeployError> {
+    let jwt_token = auth_provider
+        .get_auth_token()
+        .map_err(|e| DeployError::SessionError(format!("{}", e)))?;
+    let client = Client::new();
+    let response = client
+        .get(format!("{}/deploy/{}", config.api_url, path))
+        .header("Authorization", format!("Bearer {}", jwt_token))
+        .send()
+        .await
+        .map_err(DeployError::RequestFailed)?;
+
+    if response.status().is_success() {
+        response
+            .json::<Vec<DeploymentRuntimeSummary>>()
+            .await
+            .map_err(|e| DeployError::ParseError(e.to_string()))
+    } else {
+        Err(DeployError::from_response(response).await)
+    }
+}
+
+pub async fn list_active_deployments_with_deps<A: AuthProvider>(
+    config: &Config,
+    auth_provider: &A,
+) -> Result<Vec<DeploymentRuntimeSummary>, DeployError> {
+    list_runtime_deployments_with_deps("active", config, auth_provider).await
+}
+
+pub async fn list_active_deployments(
+    config: &Config,
+) -> Result<Vec<DeploymentRuntimeSummary>, DeployError> {
+    let auth_provider = DefaultAuthProvider;
+    list_active_deployments_with_deps(config, &auth_provider).await
+}
+
+pub async fn list_pending_deployments_with_deps<A: AuthProvider>(
+    config: &Config,
+    auth_provider: &A,
+) -> Result<Vec<DeploymentRuntimeSummary>, DeployError> {
+    list_runtime_deployments_with_deps("pending", config, auth_provider).await
+}
+
+pub async fn list_pending_deployments(
+    config: &Config,
+) -> Result<Vec<DeploymentRuntimeSummary>, DeployError> {
+    let auth_provider = DefaultAuthProvider;
+    list_pending_deployments_with_deps(config, &auth_provider).await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -299,6 +383,9 @@ mod tests {
             database_password: "pass".to_string(),
             performance_profile_id: "perf-1".to_string(),
             node_id: None,
+            masked: None,
+            proxy_yaml: None,
+            masking_salt: None,
         };
         let r1 = create_deployment_with_deps(create_req, &config, &auth).await;
         assert!(r1.is_err());
@@ -313,5 +400,102 @@ mod tests {
         // delete
         let r3 = delete_deployment_with_deps("dep-1", &config, &auth).await;
         assert!(r3.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_list_active_deployments_success() {
+        use wiremock::matchers::{header, method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/deploy/active"))
+            .and(header("authorization", "Bearer test-jwt-token"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!([
+                {
+                    "deployment_id": "dep-1",
+                    "name": "my-db",
+                    "status": "enabled",
+                    "port": 5432
+                },
+                {
+                    "deployment_id": "dep-2",
+                    "name": "other-db",
+                    "status": "enabled"
+                }
+            ])))
+            .mount(&mock_server)
+            .await;
+
+        let config = Config {
+            api_url: mock_server.uri(),
+            app_url: "https://app.guepard.run".to_string(),
+        };
+        let mut auth = MockAuthProvider::new();
+        auth.expect_get_auth_token()
+            .times(1)
+            .returning(|| Ok("test-jwt-token".to_string()));
+
+        let result = list_active_deployments_with_deps(&config, &auth).await.unwrap();
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].deployment_id, "dep-1");
+        assert_eq!(result[0].name, "my-db");
+        assert_eq!(result[0].status, "enabled");
+        assert_eq!(result[0].port, Some(5432));
+        assert_eq!(result[1].deployment_id, "dep-2");
+        assert_eq!(result[1].port, None);
+    }
+
+    #[tokio::test]
+    async fn test_list_pending_deployments_success() {
+        use wiremock::matchers::{header, method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/deploy/pending"))
+            .and(header("authorization", "Bearer test-jwt-token"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!([
+                {
+                    "deployment_id": "dep-pending",
+                    "name": "starting-db",
+                    "status": "provisioning"
+                }
+            ])))
+            .mount(&mock_server)
+            .await;
+
+        let config = Config {
+            api_url: mock_server.uri(),
+            app_url: "https://app.guepard.run".to_string(),
+        };
+        let mut auth = MockAuthProvider::new();
+        auth.expect_get_auth_token()
+            .times(1)
+            .returning(|| Ok("test-jwt-token".to_string()));
+
+        let result = list_pending_deployments_with_deps(&config, &auth).await.unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].deployment_id, "dep-pending");
+        assert_eq!(result[0].status, "provisioning");
+    }
+
+    #[tokio::test]
+    async fn test_list_runtime_deployments_session_error() {
+        let config = Config {
+            api_url: "https://api.guepard.run".to_string(),
+            app_url: "https://app.guepard.run".to_string(),
+        };
+        let mut auth = MockAuthProvider::new();
+        auth.expect_get_auth_token().times(1).returning(|| {
+            Err(
+                crate::domain::errors::config_error::ConfigError::SessionError(
+                    "You need to log in first!".to_string(),
+                ),
+            )
+        });
+
+        let active = list_active_deployments_with_deps(&config, &auth).await;
+        assert!(matches!(active.unwrap_err(), DeployError::SessionError(_)));
     }
 }

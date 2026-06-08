@@ -14,6 +14,12 @@ pub struct CreateDeploymentRequest {
     pub performance_profile_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub node_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub masked: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub proxy_yaml: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub masking_salt: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -39,6 +45,16 @@ pub struct CreateDeploymentResponse {
     pub datacenter: String,
     pub created_date: String,
     pub created_by: String,
+    #[serde(default)]
+    pub is_masked: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub masked_status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tenet_job_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tenet_proxy_port: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -57,6 +73,16 @@ pub struct ListDeploymentsResponse {
     pub datacenter: String,
     pub created_date: String,
     pub created_by: String,
+}
+
+/// Runtime state for a deployment database (active or pending).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct DeploymentRuntimeSummary {
+    pub deployment_id: String,
+    pub name: String,
+    pub status: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub port: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -89,4 +115,30 @@ pub struct GetDeploymentResponse {
     pub branch_id: Option<String>,
     pub region: String,
     pub datacenter: String,
+    #[serde(default)]
+    pub is_masked: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub masked_status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tenet_job_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tenet_proxy_port: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn deployment_runtime_summary_deserializes() {
+        let json = r#"[
+            {"deployment_id":"d1","name":"db","status":"enabled","port":5432},
+            {"deployment_id":"d2","name":"db2","status":"provisioning"}
+        ]"#;
+        let items: Vec<DeploymentRuntimeSummary> = serde_json::from_str(json).unwrap();
+        assert_eq!(items[0].port, Some(5432));
+        assert_eq!(items[1].port, None);
+    }
 }
