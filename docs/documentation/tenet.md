@@ -108,6 +108,30 @@ This repo ships small samples under **`scripts/`**:
 | `scripts/sql/tenet_masking_seed.sql` | Seed table + row for demos |
 | `scripts/tenet-e2e-from-deploy.sh` | Scripted flow: deploy → compute → seed → tenet (`cargo run` by default; set `USE_INSTALLED_GUEPARD=1` for `guepard` on `PATH`) |
 
+### Behaviour changes in the next Tenet release
+
+The next Tenet (guepard-tenet branch `feature/performance-tuning`, not yet on its `main`) reads
+every `proxy.yaml` shipped under `scripts/` unchanged, but two defaults change what clients of a
+masked port see. Both can be set back in `proxy.yaml`, then pushed with `guepard tenet proxy set`.
+
+| Change | What a client notices | Keep the old behaviour |
+|--------|-----------------------|------------------------|
+| **Writes are refused** on a masked connection (`block_writes`, on by default) | `INSERT` / `UPDATE` / `DELETE` through the Tenet port fail with `UPDATE is not permitted on a masked connection while block_writes is on…`. Reads are unchanged. Writing directly to Postgres still works. | `block_writes: false`. With it off, Tenet refuses a write that would store a masked value in a column masked by another rule. |
+| **Masked values change** for the same salt (`seed_derivation` now defaults to `siphash`, was `xxhash64`) | Every deterministic masked value (for example a `hash` column) differs from what the previous release returned. | `seed_derivation: xxhash64`, while anything that stored old masked values is migrated. |
+
+Other additions, all opt-in (see the guepard-tenet docs on that branch):
+
+- **`tuning`**: developers can create and drop indexes and refresh statistics on the real database through Tenet, without seeing values.
+- **`auth`**: Tenet authenticates clients itself and connects upstream with its own account.
+- **`strict_masking`**: refuses any statement that would move a masked value out of its column.
+- **`column_groups`**: masks related columns from one draw, so a row stays consistent.
+- **Column patterns and `table: "*"`**: one rule can cover several columns.
+
+The `custom-wasm` transformer is removed. Columns that used it fall back to the generic masking and log a warning.
+
+`table:` is not enforced: a rule masks its column in every result set, not only in the named
+table. The proxy logs this as a warning at startup.
+
 ---
 
 ## Connecting with `psql`
@@ -134,6 +158,8 @@ psql "host=<client-host> port=<tenet-proxy-port> user=guepard dbname=postgres ss
 | **`tenet start` 404** | Scheduler idempotency / job already running — verify Nomad alloc. |
 | **Hang on `psql` to EIP:tenet-port** | Security group / NACL / no DNAT to host where Tenet listens. Open same path as for Postgres host port. |
 | **Plaintext through Tenet** | Rules don’t match **table/column** names; wrong DB in connection string; or `masking_enabled: false`. |
+| **`… is not permitted on a masked connection while block_writes is on`** | Next Tenet release: writes through the masked port are refused by default. Write directly to Postgres, or set `block_writes: false` ([behaviour changes](#behaviour-changes-in-the-next-tenet-release)). |
+| **Masked values differ after a Tenet upgrade** | Next Tenet release: `seed_derivation` defaults to `siphash`. Pin `seed_derivation: xxhash64` to keep the old values. |
 
 ---
 
