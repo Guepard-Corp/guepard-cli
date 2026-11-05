@@ -25,6 +25,22 @@ fn is_accepted(status: StatusCode) -> bool {
     status == StatusCode::OK || status == StatusCode::ACCEPTED
 }
 
+/// The API's own reason from an error body (`{"message": ...}`), else the body as it came.
+/// A Nomad failure carries the reason in `body` under `message: "Nomad error"`.
+fn error_detail(body: &str) -> String {
+    let Ok(json) = serde_json::from_str::<serde_json::Value>(body) else {
+        return body.to_string();
+    };
+    match json.get("message").and_then(|m| m.as_str()) {
+        Some("Nomad error") => match json.get("body").and_then(|b| b.as_str()) {
+            Some(reason) => format!("Nomad: {}", reason),
+            None => body.to_string(),
+        },
+        Some(message) => message.to_string(),
+        None => body.to_string(),
+    }
+}
+
 async fn read_error_body(response: reqwest::Response) -> String {
     response
         .text()
@@ -59,7 +75,8 @@ pub async fn deploy_tenet_with_deps<A: TenetAuthProvider>(
             let text = read_error_body(response).await;
             Err(TenetError::Unexpected(format!(
                 "Status {}: {}",
-                status, text
+                status,
+                error_detail(&text)
             )))
         }
     }
@@ -160,7 +177,8 @@ async fn lifecycle_post<A: TenetAuthProvider>(
             let text = read_error_body(response).await;
             Err(TenetError::Unexpected(format!(
                 "Status {}: {}",
-                status, text
+                status,
+                error_detail(&text)
             )))
         }
     }
@@ -191,7 +209,8 @@ pub async fn get_proxy_yaml_with_deps<A: TenetAuthProvider>(
             let text = read_error_body(response).await;
             Err(TenetError::Unexpected(format!(
                 "Status {}: {}",
-                status, text
+                status,
+                error_detail(&text)
             )))
         }
     }
@@ -250,7 +269,8 @@ pub async fn set_proxy_yaml_with_deps<A: TenetAuthProvider>(
             let text = read_error_body(response).await;
             Err(TenetError::Unexpected(format!(
                 "Status {}: {}",
-                status, text
+                status,
+                error_detail(&text)
             )))
         }
     }
@@ -269,6 +289,20 @@ pub async fn set_proxy_yaml(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn errors_print_the_api_reason() {
+        assert_eq!(
+            error_detail(r#"{"message":"auth.upstream.user \"stranger\" has no password"}"#),
+            r#"auth.upstream.user "stranger" has no password"#
+        );
+        assert_eq!(
+            error_detail(r#"{"message":"Nomad error","status":502,"body":"no leader"}"#),
+            "Nomad: no leader"
+        );
+        assert_eq!(error_detail("plain text"), "plain text");
+        assert_eq!(error_detail(r#"{"other":1}"#), r#"{"other":1}"#);
+    }
 
     #[test]
     fn a_pending_202_counts_as_success() {
