@@ -112,6 +112,14 @@ async fn resolve_postgres_host_for_hints(upstream_host: &str) -> Option<String> 
     Some(picked.ip().to_string())
 }
 
+const PENDING_NOTE: &str =
+    "⏳ The proxy is still starting with this config; it is not accepting connections yet. Check again in a few seconds.";
+
+/// The API answers 202 with status "pending" when the proxy was not running yet when it stopped waiting.
+fn is_pending(status: Option<&str>) -> bool {
+    status == Some("pending")
+}
+
 async fn deploy(
     d: &TenetDeployCliArgs,
     config: &Config,
@@ -146,6 +154,7 @@ async fn deploy(
         config_yaml,
         proxy_port: d.proxy_port,
         api_port: d.api_port,
+        upstream_password: d.upstream_password.clone(),
     };
 
     let resp = tenet::deploy_tenet(&body, config).await?;
@@ -176,6 +185,9 @@ async fn deploy(
 
     if output_format == OutputFormat::Table {
         println!("{} Tenet deploy submitted", "✅".green());
+        if is_pending(resp.status.as_deref()) {
+            println!("{}", PENDING_NOTE.yellow());
+        }
         print_row_or_json(row, output_format);
         for line in tenet_deploy_hint_lines(&resp, connect_host_str) {
             println!("{}", line);
@@ -199,6 +211,7 @@ async fn lifecycle(
         _ => unreachable!(),
     };
 
+    let pending = is_pending(resp.status.as_deref());
     let message = resp
         .message
         .unwrap_or_else(|| format!("Tenet {} completed", action));
@@ -210,6 +223,9 @@ async fn lifecycle(
 
     if output_format == OutputFormat::Table {
         println!("{} Tenet {}", "✅".green(), action);
+        if pending {
+            println!("{}", PENDING_NOTE.yellow());
+        }
         print_row_or_json(row, output_format);
     } else {
         print_json(&row);
@@ -265,6 +281,7 @@ async fn proxy_set(
     })?;
     let apply = s.apply.unwrap_or(true);
     let resp = tenet::set_proxy_yaml(&s.job_id, &yaml, apply, config).await?;
+    let pending = is_pending(resp.status.as_deref());
 
     if output_format == OutputFormat::Json {
         print_json(&serde_json::json!({
@@ -272,7 +289,11 @@ async fn proxy_set(
             "apply": apply,
             "message": resp.message,
             "status": "updated",
+            "proxy_status": resp.status,
         }));
+    } else if pending {
+        println!("{} Proxy config saved (apply={})", "✅".green(), apply);
+        println!("{}", PENDING_NOTE.yellow());
     } else {
         println!("{} Proxy config updated (apply={})", "✅".green(), apply);
         if let Some(m) = resp.message {
@@ -285,6 +306,84 @@ async fn proxy_set(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn parse_tenet_deploy(args: &[&str]) -> crate::structure::TenetDeployCliArgs {
+        use clap::Parser;
+        let cli = crate::structure::CLI::try_parse_from(args).expect("parses");
+        match cli.sub_commands {
+            crate::structure::SubCommand::Tenet(t) => match t.command {
+                crate::structure::TenetCommand::Deploy(d) => d,
+                other => panic!("not tenet deploy: {:?}", other),
+            },
+            other => panic!("not tenet: {:?}", other),
+        }
+    }
+
+    #[test]
+    fn standalone_tenet_deploy_takes_upstream_password_from_flag_or_env() {
+        let base = [
+            "guepard",
+            "tenet",
+            "deploy",
+            "--tenant-id",
+            "t1",
+            "--upstream-host",
+            "10.0.0.5",
+            "--upstream-port",
+            "5432",
+            "--masking-salt",
+            "s",
+            "--config-yaml",
+            "rules: []",
+        ];
+        let from_flag =
+            parse_tenet_deploy(&[&base[..], &["--upstream-password", "flag-pw"]].concat());
+        assert_eq!(from_flag.upstream_password.as_deref(), Some("flag-pw"));
+
+        std::env::set_var("GUEPARD_TENET_UPSTREAM_PASSWORD", "env-pw");
+        let from_env = parse_tenet_deploy(&base);
+        std::env::remove_var("GUEPARD_TENET_UPSTREAM_PASSWORD");
+        assert_eq!(from_env.upstream_password.as_deref(), Some("env-pw"));
+    }
+
+    #[test]
+    fn proxy_set_and_masked_deploy_take_no_upstream_password() {
+        use clap::Parser;
+        // The API supplies the deployment user's password for these two.
+        for args in [
+            &[
+                "guepard",
+                "tenet",
+                "proxy",
+                "set",
+                "job-1",
+                "--proxy-config",
+                "p.yaml",
+                "--upstream-password",
+                "x",
+            ][..],
+            &[
+                "guepard",
+                "deploy",
+                "--masked",
+                "--proxy-config",
+                "p.yaml",
+                "--upstream-password",
+                "x",
+            ][..],
+        ] {
+            let without_flag = &args[..args.len() - 2];
+            assert!(crate::structure::CLI::try_parse_from(without_flag).is_ok());
+            assert!(crate::structure::CLI::try_parse_from(args).is_err());
+        }
+    }
+
+    #[test]
+    fn only_a_pending_status_is_pending() {
+        assert!(is_pending(Some("pending")));
+        assert!(!is_pending(Some("running")));
+        assert!(!is_pending(None));
+    }
     use crate::application::dto::tenet::TenetDeployRequest;
     use std::fs;
 
@@ -298,6 +397,7 @@ mod tests {
             host: Some("10.0.0.2".into()),
             proxy_port: Some(6544),
             api_port: Some(3010),
+            status: None,
         };
         let lines = tenet_deploy_hint_lines(&resp, Some("10.0.0.2"));
         assert_eq!(lines.len(), 2);
@@ -316,6 +416,7 @@ mod tests {
             host: None,
             proxy_port: Some(6544),
             api_port: None,
+            status: None,
         };
         assert!(tenet_deploy_hint_lines(&resp, None).is_empty());
     }
@@ -330,6 +431,7 @@ mod tests {
             host: None,
             proxy_port: Some(6544),
             api_port: Some(3010),
+            status: None,
         };
         let lines = tenet_deploy_hint_lines(&resp, Some("44.239.18.139"));
         assert_eq!(lines.len(), 2);
@@ -347,6 +449,7 @@ mod tests {
             host: None,
             proxy_port: Some(6544),
             api_port: None,
+            status: None,
         };
         let lines = tenet_deploy_hint_lines(&resp, Some("10.0.4.20"));
         assert_eq!(lines.len(), 1);
@@ -386,6 +489,7 @@ mod tests {
             config_yaml: yaml,
             proxy_port: None,
             api_port: None,
+            upstream_password: None,
         };
         let j = serde_json::to_value(&body).unwrap();
         assert_eq!(

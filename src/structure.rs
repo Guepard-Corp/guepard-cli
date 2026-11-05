@@ -891,6 +891,11 @@ pub struct TenetDeployCliArgs {
     /// Address shown in hints / where clients connect to Tenet (VPC or node IP, e.g. 10.0.4.20), not necessarily the upstream DB host.
     #[arg(long)]
     pub client_host: Option<String>,
+    /// Tenet's own database password when proxy.yaml uses auth (password_env: TENET_UPSTREAM_PASSWORD).
+    /// Needed here because this upstream is not a Guepard deployment whose users the API knows.
+    /// Stored in the proxy's Nomad Variable, never in proxy.yaml.
+    #[arg(long, env = "GUEPARD_TENET_UPSTREAM_PASSWORD", hide_env_values = true)]
+    pub upstream_password: Option<String>,
 }
 
 #[derive(Args, Debug)]
