@@ -5,7 +5,7 @@ All notable changes to Guepard CLI will be documented in this file.
 ## Unreleased
 
 ### Features
-- **Tenet `auth`**: `--upstream-password` (or `GUEPARD_TENET_UPSTREAM_PASSWORD`) on `deploy --masked`, `tenet deploy` and `tenet proxy set` sends Tenet's own database password separately from `proxy.yaml`
+- **Tenet `auth`**: name one of the deployment's database users as `auth.upstream.user` and the API supplies its password, for `deploy --masked` and `tenet proxy set` alike; a standalone `tenet deploy` takes it with `--upstream-password` (or `GUEPARD_TENET_UPSTREAM_PASSWORD`)
 
 ### Fixes
 - **Masked deploy**: waits for `masked_status: ready` instead of returning as soon as a Tenet port exists

@@ -206,7 +206,6 @@ pub async fn set_proxy_yaml_with_deps<A: TenetAuthProvider>(
     job_id: &str,
     yaml: &str,
     apply: bool,
-    upstream_password: Option<&str>,
     config: &Config,
     auth_provider: &A,
 ) -> Result<TenetLifecycleResponse, TenetError> {
@@ -220,7 +219,6 @@ pub async fn set_proxy_yaml_with_deps<A: TenetAuthProvider>(
     );
     let body = TenetProxyYamlSetRequest {
         config_yaml: yaml.to_string(),
-        upstream_password: upstream_password.map(str::to_string),
     };
     let response = client
         .put(url)
@@ -262,11 +260,10 @@ pub async fn set_proxy_yaml(
     job_id: &str,
     yaml: &str,
     apply: bool,
-    upstream_password: Option<&str>,
     config: &Config,
 ) -> Result<TenetLifecycleResponse, TenetError> {
     let auth = DefaultTenetAuthProvider;
-    set_proxy_yaml_with_deps(job_id, yaml, apply, upstream_password, config, &auth).await
+    set_proxy_yaml_with_deps(job_id, yaml, apply, config, &auth).await
 }
 
 #[cfg(test)]
@@ -343,7 +340,7 @@ mod tests {
             .await
             .is_err());
         assert!(
-            set_proxy_yaml_with_deps("job", "a: 1", true, None, &config, &auth)
+            set_proxy_yaml_with_deps("job", "a: 1", true, &config, &auth)
                 .await
                 .is_err()
         );

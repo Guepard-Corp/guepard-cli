@@ -62,17 +62,25 @@ mod tests {
 
     #[test]
     fn upstream_password_is_sent_only_when_set() {
-        let unset = TenetProxyYamlSetRequest {
+        let unset = TenetDeployRequest {
+            tenant_id: "t1".to_string(),
+            compute_job_id: None,
+            upstream_host: "h".to_string(),
+            upstream_port: 5432,
+            masking_salt: "s".to_string(),
+            config_dir: None,
             config_yaml: "x: 1".to_string(),
+            proxy_port: None,
+            api_port: None,
             upstream_password: None,
         };
         assert!(serde_json::to_value(&unset)
             .unwrap()
             .get("upstream_password")
             .is_none());
-        let set = TenetProxyYamlSetRequest {
-            config_yaml: "x: 1".to_string(),
+        let set = TenetDeployRequest {
             upstream_password: Some("pw".to_string()),
+            ..unset
         };
         assert_eq!(
             serde_json::to_value(&set).unwrap()["upstream_password"],
@@ -128,8 +136,6 @@ mod tests {
 #[derive(Debug, Clone, Serialize)]
 pub struct TenetProxyYamlSetRequest {
     pub config_yaml: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub upstream_password: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]

@@ -280,14 +280,7 @@ async fn proxy_set(
         ))
     })?;
     let apply = s.apply.unwrap_or(true);
-    let resp = tenet::set_proxy_yaml(
-        &s.job_id,
-        &yaml,
-        apply,
-        s.upstream_password.as_deref(),
-        config,
-    )
-    .await?;
+    let resp = tenet::set_proxy_yaml(&s.job_id, &yaml, apply, config).await?;
     let pending = is_pending(resp.status.as_deref());
 
     if output_format == OutputFormat::Json {
@@ -314,41 +307,75 @@ async fn proxy_set(
 mod tests {
     use super::*;
 
-    fn parse_proxy_set(args: &[&str]) -> crate::structure::TenetProxySetArgs {
+    fn parse_tenet_deploy(args: &[&str]) -> crate::structure::TenetDeployCliArgs {
         use clap::Parser;
         let cli = crate::structure::CLI::try_parse_from(args).expect("parses");
         match cli.sub_commands {
             crate::structure::SubCommand::Tenet(t) => match t.command {
-                crate::structure::TenetCommand::Proxy(p) => match p.action {
-                    crate::structure::TenetProxyAction::Set(s) => s,
-                    other => panic!("not proxy set: {:?}", other),
-                },
-                other => panic!("not tenet proxy: {:?}", other),
+                crate::structure::TenetCommand::Deploy(d) => d,
+                other => panic!("not tenet deploy: {:?}", other),
             },
             other => panic!("not tenet: {:?}", other),
         }
     }
 
     #[test]
-    fn proxy_set_takes_upstream_password_from_flag_or_env() {
+    fn standalone_tenet_deploy_takes_upstream_password_from_flag_or_env() {
         let base = [
             "guepard",
             "tenet",
-            "proxy",
-            "set",
-            "job-1",
-            "--proxy-config",
-            "p.yaml",
+            "deploy",
+            "--tenant-id",
+            "t1",
+            "--upstream-host",
+            "10.0.0.5",
+            "--upstream-port",
+            "5432",
+            "--masking-salt",
+            "s",
+            "--config-yaml",
+            "rules: []",
         ];
-        let from_flag = parse_proxy_set(&[&base[..], &["--upstream-password", "flag-pw"]].concat());
+        let from_flag =
+            parse_tenet_deploy(&[&base[..], &["--upstream-password", "flag-pw"]].concat());
         assert_eq!(from_flag.upstream_password.as_deref(), Some("flag-pw"));
 
         std::env::set_var("GUEPARD_TENET_UPSTREAM_PASSWORD", "env-pw");
-        let from_env = parse_proxy_set(&base);
+        let from_env = parse_tenet_deploy(&base);
         std::env::remove_var("GUEPARD_TENET_UPSTREAM_PASSWORD");
         assert_eq!(from_env.upstream_password.as_deref(), Some("env-pw"));
+    }
 
-        assert_eq!(parse_proxy_set(&base).upstream_password, None);
+    #[test]
+    fn proxy_set_and_masked_deploy_take_no_upstream_password() {
+        use clap::Parser;
+        // The API supplies the deployment user's password for these two.
+        for args in [
+            &[
+                "guepard",
+                "tenet",
+                "proxy",
+                "set",
+                "job-1",
+                "--proxy-config",
+                "p.yaml",
+                "--upstream-password",
+                "x",
+            ][..],
+            &[
+                "guepard",
+                "deploy",
+                "--masked",
+                "--proxy-config",
+                "p.yaml",
+                "--upstream-password",
+                "x",
+            ][..],
+        ] {
+            let without_flag = &args[..args.len() - 2];
+            assert!(crate::structure::CLI::try_parse_from(without_flag).is_ok());
+            assert!(crate::structure::CLI::try_parse_from(args).is_err());
+        }
     }
 
     #[test]

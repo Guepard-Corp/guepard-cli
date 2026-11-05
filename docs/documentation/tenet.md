@@ -156,12 +156,13 @@ The `custom-wasm` transformer is removed. Columns that used it fall back to the 
 `table:` is not enforced: a rule masks its column in every result set, not only in the named
 table. The proxy logs this as a warning at startup.
 
-#### Tenet's own login (`auth`) and `--upstream-password`
+#### Tenet's own login (`auth`)
 
 With `auth:`, clients sign in to Tenet with Tenet's own users, and Tenet signs in to the
-database with one account of its own. Its password never goes in `proxy.yaml` (the API refuses
-an inline `auth.upstream.password` with 400): point Tenet at an environment variable and send the
-password separately.
+database with one account of its own. Name one of the deployment's database users as that
+account: the user you deployed with (`-u`, default `guepard`) or the admin (`guepard-admin`).
+The API created both and already holds their passwords, so it gives Tenet the right one; you send
+no password.
 
 ```yaml
 auth:
@@ -169,19 +170,22 @@ auth:
     - name: dev
       password: "SCRAM-SHA-256$4096:..."   # a verifier, as PostgreSQL stores it
   upstream:
-    user: app_owner
+    user: guepard                          # a database user of this deployment
     password_env: TENET_UPSTREAM_PASSWORD
 ```
 
 ```bash
-export GUEPARD_TENET_UPSTREAM_PASSWORD='<app_owner password>'   # or --upstream-password
-guepard deploy ... --masked --proxy-config ./proxy.yaml           # new masked deployment
-guepard tenet proxy set <job_id> --proxy-config ./proxy.yaml      # existing proxy
+guepard deploy ... -u guepard -w '<password>' --masked --proxy-config ./proxy.yaml
+guepard tenet proxy set <job_id> --proxy-config ./proxy.yaml   # an existing masked deployment
 ```
 
-The API keeps the password in the proxy's Nomad Variable and hands it to Tenet as
-`TENET_UPSTREAM_PASSWORD`; it is not in the job definition, its history, or `tenet proxy get`.
-Set it once: later `proxy set` calls without it keep the stored one.
+The password never goes in `proxy.yaml`: the API refuses an inline `auth.upstream.password`, and an
+`upstream.user` that is not one of the deployment's users, with 400. It keeps the password in the
+proxy's Nomad Variable and hands it to Tenet as `TENET_UPSTREAM_PASSWORD`; it is not in the job
+definition, its history, or `tenet proxy get`.
+
+Only a standalone `guepard tenet deploy`, pointed at an upstream that is not a Guepard deployment,
+needs the password from you: `--upstream-password`, or `GUEPARD_TENET_UPSTREAM_PASSWORD`.
 
 #### When a change takes a while to apply
 
