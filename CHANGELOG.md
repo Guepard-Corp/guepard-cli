@@ -4,6 +4,13 @@ All notable changes to Guepard CLI will be documented in this file.
 
 ## Unreleased
 
+### Features
+- **Tenet `auth`**: `--upstream-password` (or `GUEPARD_TENET_UPSTREAM_PASSWORD`) on `deploy --masked`, `tenet deploy` and `tenet proxy set` sends Tenet's own database password separately from `proxy.yaml`
+
+### Fixes
+- **Masked deploy**: waits for `masked_status: ready` instead of returning as soon as a Tenet port exists
+- **Tenet commands**: a proxy that is still starting (API answer 202, `status: pending`) is reported as such instead of as an error
+
 ### Documentation
 - **Tenet guide**: [behaviour changes in the next Tenet release](docs/documentation/tenet.md#behaviour-changes-in-the-next-tenet-release). Writes through a masked port are refused by default (`block_writes`), and masked values change for the same salt (`seed_derivation: siphash`); the guide shows how to keep the old behaviour, and why allowing writes needs `strict_masking: true`. Every sample `proxy.yaml` under `scripts/` was checked against that release and loads unchanged.
 

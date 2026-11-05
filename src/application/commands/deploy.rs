@@ -450,6 +450,12 @@ async fn create_deployment(
         masked: if args.masked { Some(true) } else { None },
         proxy_yaml,
         masking_salt: args.masking_salt.clone(),
+        // Only for a masked deploy: the env var may be set for other commands.
+        upstream_password: if args.masked {
+            args.upstream_password.clone()
+        } else {
+            None
+        },
     };
 
     let mut deployment = deploy::create_deployment(request, config).await?;
@@ -1544,6 +1550,7 @@ async fn interactive_deploy(config: &Config) -> Result<()> {
         masked: None,
         proxy_yaml: None,
         masking_salt: None,
+        upstream_password: None,
     };
 
     let deployment = deploy::create_deployment(request, config).await?;

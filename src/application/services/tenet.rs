@@ -20,6 +20,11 @@ impl TenetAuthProvider for DefaultTenetAuthProvider {
     }
 }
 
+/// 202: the API registered the change but answered before the proxy was running again.
+fn is_accepted(status: StatusCode) -> bool {
+    status == StatusCode::OK || status == StatusCode::ACCEPTED
+}
+
 async fn read_error_body(response: reqwest::Response) -> String {
     response
         .text()
@@ -46,7 +51,7 @@ pub async fn deploy_tenet_with_deps<A: TenetAuthProvider>(
         .map_err(TenetError::RequestFailed)?;
 
     match response.status() {
-        StatusCode::OK => response
+        status if is_accepted(status) => response
             .json::<TenetDeployResponse>()
             .await
             .map_err(|e| TenetError::ParseError(e.to_string())),
@@ -135,7 +140,7 @@ async fn lifecycle_post<A: TenetAuthProvider>(
         .map_err(TenetError::RequestFailed)?;
 
     match response.status() {
-        StatusCode::OK => {
+        status if is_accepted(status) => {
             let text = response
                 .text()
                 .await
@@ -147,6 +152,7 @@ async fn lifecycle_post<A: TenetAuthProvider>(
                 Ok(v) => Ok(v),
                 Err(_) => Ok(TenetLifecycleResponse {
                     message: Some(text),
+                    status: None,
                 }),
             }
         }
@@ -200,6 +206,7 @@ pub async fn set_proxy_yaml_with_deps<A: TenetAuthProvider>(
     job_id: &str,
     yaml: &str,
     apply: bool,
+    upstream_password: Option<&str>,
     config: &Config,
     auth_provider: &A,
 ) -> Result<TenetLifecycleResponse, TenetError> {
@@ -213,6 +220,7 @@ pub async fn set_proxy_yaml_with_deps<A: TenetAuthProvider>(
     );
     let body = TenetProxyYamlSetRequest {
         config_yaml: yaml.to_string(),
+        upstream_password: upstream_password.map(str::to_string),
     };
     let response = client
         .put(url)
@@ -224,7 +232,7 @@ pub async fn set_proxy_yaml_with_deps<A: TenetAuthProvider>(
         .map_err(TenetError::RequestFailed)?;
 
     match response.status() {
-        StatusCode::OK => {
+        status if is_accepted(status) => {
             let text = response
                 .text()
                 .await
@@ -236,6 +244,7 @@ pub async fn set_proxy_yaml_with_deps<A: TenetAuthProvider>(
                 Ok(v) => Ok(v),
                 Err(_) => Ok(TenetLifecycleResponse {
                     message: Some(text),
+                    status: None,
                 }),
             }
         }
@@ -253,15 +262,24 @@ pub async fn set_proxy_yaml(
     job_id: &str,
     yaml: &str,
     apply: bool,
+    upstream_password: Option<&str>,
     config: &Config,
 ) -> Result<TenetLifecycleResponse, TenetError> {
     let auth = DefaultTenetAuthProvider;
-    set_proxy_yaml_with_deps(job_id, yaml, apply, config, &auth).await
+    set_proxy_yaml_with_deps(job_id, yaml, apply, upstream_password, config, &auth).await
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_pending_202_counts_as_success() {
+        assert!(is_accepted(StatusCode::OK));
+        assert!(is_accepted(StatusCode::ACCEPTED));
+        assert!(!is_accepted(StatusCode::BAD_GATEWAY));
+        assert!(!is_accepted(StatusCode::NO_CONTENT));
+    }
 
     #[tokio::test]
     async fn deploy_session_error() {
@@ -288,6 +306,7 @@ mod tests {
             config_yaml: "x: 1".to_string(),
             proxy_port: None,
             api_port: None,
+            upstream_password: None,
         };
         let r = deploy_tenet_with_deps(&body, &config, &auth).await;
         assert!(matches!(r.unwrap_err(), TenetError::SessionError(_)));
@@ -314,6 +333,7 @@ mod tests {
             config_yaml: "x".to_string(),
             proxy_port: None,
             api_port: None,
+            upstream_password: None,
         };
         assert!(deploy_tenet_with_deps(&body, &config, &auth).await.is_err());
         assert!(start_tenet_with_deps("job", &config, &auth).await.is_err());
@@ -323,7 +343,7 @@ mod tests {
             .await
             .is_err());
         assert!(
-            set_proxy_yaml_with_deps("job", "a: 1", true, &config, &auth)
+            set_proxy_yaml_with_deps("job", "a: 1", true, None, &config, &auth)
                 .await
                 .is_err()
         );

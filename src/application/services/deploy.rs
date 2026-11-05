@@ -429,6 +429,7 @@ mod tests {
             masked: None,
             proxy_yaml: None,
             masking_salt: None,
+            upstream_password: None,
         };
         let r1 = create_deployment_with_deps(create_req, &config, &auth).await;
         assert!(r1.is_err());

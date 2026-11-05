@@ -156,6 +156,40 @@ The `custom-wasm` transformer is removed. Columns that used it fall back to the 
 `table:` is not enforced: a rule masks its column in every result set, not only in the named
 table. The proxy logs this as a warning at startup.
 
+#### Tenet's own login (`auth`) and `--upstream-password`
+
+With `auth:`, clients sign in to Tenet with Tenet's own users, and Tenet signs in to the
+database with one account of its own. Its password never goes in `proxy.yaml` (the API refuses
+an inline `auth.upstream.password` with 400): point Tenet at an environment variable and send the
+password separately.
+
+```yaml
+auth:
+  users:
+    - name: dev
+      password: "SCRAM-SHA-256$4096:..."   # a verifier, as PostgreSQL stores it
+  upstream:
+    user: app_owner
+    password_env: TENET_UPSTREAM_PASSWORD
+```
+
+```bash
+export GUEPARD_TENET_UPSTREAM_PASSWORD='<app_owner password>'   # or --upstream-password
+guepard deploy ... --masked --proxy-config ./proxy.yaml           # new masked deployment
+guepard tenet proxy set <job_id> --proxy-config ./proxy.yaml      # existing proxy
+```
+
+The API keeps the password in the proxy's Nomad Variable and hands it to Tenet as
+`TENET_UPSTREAM_PASSWORD`; it is not in the job definition, its history, or `tenet proxy get`.
+Set it once: later `proxy set` calls without it keep the stored one.
+
+#### When a change takes a while to apply
+
+`tenet deploy`, `tenet start` and `tenet proxy set` wait up to about 20 seconds for the proxy to
+run. If it is still starting, they say so (`⏳ The proxy is still starting...`) instead of
+failing; the change is saved and applies on its own. `guepard deploy -x <id>` shows
+`Masked status: ready` once both Tenet and the database behind it are running.
+
 ---
 
 ## Connecting with `psql`

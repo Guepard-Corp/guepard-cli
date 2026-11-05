@@ -20,6 +20,8 @@ pub struct CreateDeploymentRequest {
     pub proxy_yaml: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub masking_salt: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub upstream_password: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
