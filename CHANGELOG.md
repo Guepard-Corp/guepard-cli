@@ -5,7 +5,7 @@ All notable changes to Guepard CLI will be documented in this file.
 ## Unreleased
 
 ### Documentation
-- **Tenet guide**: [behaviour changes in the next Tenet release](docs/documentation/tenet.md#behaviour-changes-in-the-next-tenet-release). Writes through a masked port are refused by default (`block_writes`), and masked values change for the same salt (`seed_derivation: siphash`); the guide shows how to keep the old behaviour. Every sample `proxy.yaml` under `scripts/` was checked against that release and loads unchanged.
+- **Tenet guide**: [behaviour changes in the next Tenet release](docs/documentation/tenet.md#behaviour-changes-in-the-next-tenet-release). Writes through a masked port are refused by default (`block_writes`), and masked values change for the same salt (`seed_derivation: siphash`); the guide shows how to keep the old behaviour, and why allowing writes needs `strict_masking: true`. Every sample `proxy.yaml` under `scripts/` was checked against that release and loads unchanged.
 
 ## v0.29.10 (2026-06-08)
 

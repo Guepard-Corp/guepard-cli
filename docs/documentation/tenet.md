@@ -116,16 +116,40 @@ masked port see. Both can be set back in `proxy.yaml`, then pushed with `guepard
 
 | Change | What a client notices | Keep the old behaviour |
 |--------|-----------------------|------------------------|
-| **Writes are refused** on a masked connection (`block_writes`, on by default) | `INSERT` / `UPDATE` / `DELETE` through the Tenet port fail with `UPDATE is not permitted on a masked connection while block_writes is on…`. Reads are unchanged. Writing directly to Postgres still works. | `block_writes: false`. With it off, Tenet refuses a write that would store a masked value in a column masked by another rule. |
+| **Writes are refused** on a masked connection (`block_writes`, on by default) | `INSERT` / `UPDATE` / `DELETE` through the Tenet port fail with `UPDATE is not permitted on a masked connection while block_writes is on…`. Reads are unchanged. Writing directly to Postgres still works. | `block_writes: false` **together with `strict_masking: true`** ([see below](#allowing-writes-safely)). |
 | **Masked values change** for the same salt (`seed_derivation` now defaults to `siphash`, was `xxhash64`) | Every deterministic masked value (for example a `hash` column) differs from what the previous release returned. | `seed_derivation: xxhash64`, while anything that stored old masked values is migrated. |
 
 Other additions, all opt-in (see the guepard-tenet docs on that branch):
 
 - **`tuning`**: developers can create and drop indexes and refresh statistics on the real database through Tenet, without seeing values.
 - **`auth`**: Tenet authenticates clients itself and connects upstream with its own account.
-- **`strict_masking`**: refuses any statement that would move a masked value out of its column.
+- **`strict_masking`**: refuses any statement that would move a masked value out of its column. On by default only with `tuning` or `auth`.
 - **`column_groups`**: masks related columns from one draw, so a row stays consistent.
 - **Column patterns and `table: "*"`**: one rule can cover several columns.
+
+#### Allowing writes safely
+
+Never set `block_writes: false` without `strict_masking: true`. With strict masking off, a
+client can copy a masked column into a column no rule covers and read the real value back:
+
+```sql
+UPDATE customers SET notes = 'reach me: ' || email WHERE id = 4;  -- accepted
+SELECT notes FROM customers WHERE id = 4;                         -- the real email, unmasked
+```
+
+With `strict_masking: true` the copy is refused (`the operator || over a masked column is not
+permitted`; a plain `SET notes = email` gets `'notes' would receive the value of a masked
+column`). Strict masking also refuses functions and casts over masked columns
+in reads (`SELECT upper(email)`), so check the application's queries before turning it on.
+
+```yaml
+block_writes: false
+strict_masking: true
+```
+
+The content scanner does not mask an email that sits inside free text in a column without a
+rule (`call back at user1@example.com` comes through as is). Give free-text columns a rule of
+their own, for example `column: notes` with `transformer: redacted`.
 
 The `custom-wasm` transformer is removed. Columns that used it fall back to the generic masking and log a warning.
 
@@ -158,7 +182,7 @@ psql "host=<client-host> port=<tenet-proxy-port> user=guepard dbname=postgres ss
 | **`tenet start` 404** | Scheduler idempotency / job already running — verify Nomad alloc. |
 | **Hang on `psql` to EIP:tenet-port** | Security group / NACL / no DNAT to host where Tenet listens. Open same path as for Postgres host port. |
 | **Plaintext through Tenet** | Rules don’t match **table/column** names; wrong DB in connection string; or `masking_enabled: false`. |
-| **`… is not permitted on a masked connection while block_writes is on`** | Next Tenet release: writes through the masked port are refused by default. Write directly to Postgres, or set `block_writes: false` ([behaviour changes](#behaviour-changes-in-the-next-tenet-release)). |
+| **`… is not permitted on a masked connection while block_writes is on`** | Next Tenet release: writes through the masked port are refused by default. Write directly to Postgres, or set `block_writes: false` with `strict_masking: true` ([allowing writes safely](#allowing-writes-safely)). |
 | **Masked values differ after a Tenet upgrade** | Next Tenet release: `seed_derivation` defaults to `siphash`. Pin `seed_derivation: xxhash64` to keep the old values. |
 
 ---
