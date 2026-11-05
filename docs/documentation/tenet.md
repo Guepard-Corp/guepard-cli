@@ -111,13 +111,15 @@ This repo ships small samples under **`scripts/`**:
 ### Behaviour changes in the next Tenet release
 
 The next Tenet (guepard-tenet branch `feature/performance-tuning`, not yet on its `main`) reads
-every `proxy.yaml` shipped under `scripts/` unchanged, but two defaults change what clients of a
-masked port see. Both can be set back in `proxy.yaml`, then pushed with `guepard tenet proxy set`.
+every `proxy.yaml` shipped under `scripts/` unchanged, but these changes affect what clients of a
+masked port see. Settings go in `proxy.yaml`, pushed with `guepard tenet proxy set`.
 
 | Change | What a client notices | Keep the old behaviour |
 |--------|-----------------------|------------------------|
 | **Writes are refused** on a masked connection (`block_writes`, on by default) | `INSERT` / `UPDATE` / `DELETE` through the Tenet port fail with `UPDATE is not permitted on a masked connection while block_writes is on…`. Reads are unchanged. Writing directly to Postgres still works. | `block_writes: false` **together with `strict_masking: true`** ([see below](#allowing-writes-safely)). |
 | **Masked values change** for the same salt (`seed_derivation` now defaults to `siphash`, was `xxhash64`) | Every deterministic masked value (for example a `hash` column) differs from what the previous release returned. | `seed_derivation: xxhash64`, while anything that stored old masked values is migrated. |
+| **Rules with a column pattern now apply** (for example `column: "*phone*"`) | The previous release matched rule columns literally, so a pattern rule did not apply: a `phone` column under `column: "*phone*"` came back in clear. It is masked now. | None needed; this is the rule doing what it says. Check your `proxy.yaml` for patterns to see which columns start being masked. |
+| **`LIKE` and range filters on a masked column are refused** (`LIKE`, regex, `SIMILAR TO`, `BETWEEN`, `<`, `>`; `refuse_unsupported_predicates`, on by default) | The query fails with `LIKE on a masked column is not permitted…`. The previous release ran these filters on the real values, so a client could learn them one guess at a time. Filter with `=`, `<>` or `IN` on a value the proxy showed instead. | `refuse_unsupported_predicates: false` answers them again, on real values, with a `NOTICE`: it reopens that leak. |
 
 Other additions, all opt-in (see the guepard-tenet docs on that branch):
 
