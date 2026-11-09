@@ -1,3 +1,6 @@
+> [!WARNING]
+> **This repository is frozen.** `guepard-cli` 0.30 is the last release of this CLI and talks to the previous Guepard platform, which is no longer served. The `guepard` command is now built on the `/v1` Management API; the migration guide lists every command of this CLI, its replacement and what changed: https://docs.guepard.run/guepard/features/guepard-cli/migration
+
 ![Guepard](/resources/guepard-cover.png)
 
 <div align="center">
