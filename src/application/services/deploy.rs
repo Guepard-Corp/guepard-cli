@@ -74,6 +74,25 @@ pub async fn create_deployment(
     create_deployment_with_deps(request, config, &auth_provider).await
 }
 
+#[derive(Debug, PartialEq, Eq)]
+enum MaskedProgress {
+    Ready,
+    Failed,
+    Pending,
+}
+
+/// The API returns the Tenet port as soon as the proxy job runs, before the database behind it
+/// is up, so only `masked_status: ready` means ready. The port alone counts only for an API that
+/// sends no `masked_status` at all.
+fn masked_progress(masked_status: Option<&str>, tenet_proxy_port: Option<i32>) -> MaskedProgress {
+    match masked_status {
+        Some("ready") => MaskedProgress::Ready,
+        Some("failed") => MaskedProgress::Failed,
+        None if tenet_proxy_port.is_some() => MaskedProgress::Ready,
+        _ => MaskedProgress::Pending,
+    }
+}
+
 /// Poll GET /deploy/{id} until masked Tenet is ready or failed.
 pub async fn poll_masked_deployment_ready(
     deployment_id: &str,
@@ -85,12 +104,15 @@ pub async fn poll_masked_deployment_ready(
 
     loop {
         let dep = get_deployment(deployment_id, config).await?;
-        if dep.masked_status.as_deref() == Some("ready") || dep.tenet_proxy_port.is_some() {
-            return Ok(dep);
-        }
-        if dep.masked_status.as_deref() == Some("failed") {
-            let detail = dep.message.unwrap_or_else(|| "Tenet provisioning failed".to_string());
-            return Err(DeployError::ApiError(detail));
+        match masked_progress(dep.masked_status.as_deref(), dep.tenet_proxy_port) {
+            MaskedProgress::Ready => return Ok(dep),
+            MaskedProgress::Failed => {
+                let detail = dep
+                    .message
+                    .unwrap_or_else(|| "Tenet provisioning failed".to_string());
+                return Err(DeployError::ApiError(detail));
+            }
+            MaskedProgress::Pending => {}
         }
         if started.elapsed() > MAX_WAIT {
             return Err(DeployError::ApiError(
@@ -313,6 +335,27 @@ pub async fn list_pending_deployments(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn masked_deployment_with_a_port_but_not_ready_keeps_waiting() {
+        // What GET returns while Tenet runs and the database behind it is still starting.
+        let progress = masked_progress(Some("provisioning"), Some(30665));
+        assert_eq!(progress, MaskedProgress::Pending);
+    }
+
+    #[test]
+    fn masked_deployment_is_ready_only_on_ready() {
+        let port = Some(30665);
+        assert_eq!(masked_progress(Some("ready"), port), MaskedProgress::Ready);
+        assert_eq!(masked_progress(Some("failed"), port), MaskedProgress::Failed);
+        assert_eq!(masked_progress(Some("starting"), None), MaskedProgress::Pending);
+    }
+
+    #[test]
+    fn an_api_without_masked_status_falls_back_to_the_port() {
+        assert_eq!(masked_progress(None, Some(30665)), MaskedProgress::Ready);
+        assert_eq!(masked_progress(None, None), MaskedProgress::Pending);
+    }
 
     #[tokio::test]
     async fn test_list_deployments_session_error() {

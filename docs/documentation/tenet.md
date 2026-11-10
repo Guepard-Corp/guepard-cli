@@ -108,6 +108,94 @@ This repo ships small samples under **`scripts/`**:
 | `scripts/sql/tenet_masking_seed.sql` | Seed table + row for demos |
 | `scripts/tenet-e2e-from-deploy.sh` | Scripted flow: deploy → compute → seed → tenet (`cargo run` by default; set `USE_INSTALLED_GUEPARD=1` for `guepard` on `PATH`) |
 
+### Behaviour changes in the next Tenet release
+
+The next Tenet (guepard-tenet branch `feature/performance-tuning`, not yet on its `main`) reads
+every `proxy.yaml` shipped under `scripts/` unchanged, but these changes affect what clients of a
+masked port see. Settings go in `proxy.yaml`, pushed with `guepard tenet proxy set`.
+
+| Change | What a client notices | Keep the old behaviour |
+|--------|-----------------------|------------------------|
+| **Writes are refused** on a masked connection (`block_writes`, on by default) | `INSERT` / `UPDATE` / `DELETE` through the Tenet port fail with `UPDATE is not permitted on a masked connection while block_writes is on…`. Reads are unchanged. Writing directly to Postgres still works. | `block_writes: false` **together with `strict_masking: true`** ([see below](#allowing-writes-safely)). |
+| **Masked values change** for the same salt (`seed_derivation` now defaults to `siphash`, was `xxhash64`) | Every deterministic masked value (for example a `hash` column) differs from what the previous release returned. | `seed_derivation: xxhash64`, while anything that stored old masked values is migrated. |
+| **Rules with a column pattern now apply** (for example `column: "*phone*"`) | The previous release matched rule columns literally, so a pattern rule did not apply: a `phone` column under `column: "*phone*"` came back in clear. It is masked now. | None needed; this is the rule doing what it says. Check your `proxy.yaml` for patterns to see which columns start being masked. |
+| **`LIKE` and range filters on a masked column are refused** (`LIKE`, regex, `SIMILAR TO`, `BETWEEN`, `<`, `>`; `refuse_unsupported_predicates`, on by default) | The query fails with `LIKE on a masked column is not permitted…`. The previous release ran these filters on the real values, so a client could learn them one guess at a time. Filter with `=`, `<>` or `IN` on a value the proxy showed instead. | `refuse_unsupported_predicates: false` answers them again, on real values, with a `NOTICE`: it reopens that leak. |
+
+Other additions, all opt-in (see the guepard-tenet docs on that branch):
+
+- **`tuning`**: developers can create and drop indexes and refresh statistics on the real database through Tenet, without seeing values.
+- **`auth`**: Tenet authenticates clients itself and connects upstream with its own account.
+- **`strict_masking`**: refuses any statement that would move a masked value out of its column. On by default only with `tuning` or `auth`.
+- **`column_groups`**: masks related columns from one draw, so a row stays consistent.
+- **Column patterns and `table: "*"`**: one rule can cover several columns.
+
+#### Allowing writes safely
+
+Never set `block_writes: false` without `strict_masking: true`. With strict masking off, a
+client can copy a masked column into a column no rule covers and read the real value back:
+
+```sql
+UPDATE customers SET notes = 'reach me: ' || email WHERE id = 4;  -- accepted
+SELECT notes FROM customers WHERE id = 4;                         -- the real email, unmasked
+```
+
+With `strict_masking: true` the copy is refused (`the operator || over a masked column is not
+permitted`; a plain `SET notes = email` gets `'notes' would receive the value of a masked
+column`). Strict masking also refuses functions and casts over masked columns
+in reads (`SELECT upper(email)`), so check the application's queries before turning it on.
+
+```yaml
+block_writes: false
+strict_masking: true
+```
+
+The content scanner does not mask an email that sits inside free text in a column without a
+rule (`call back at user1@example.com` comes through as is). Give free-text columns a rule of
+their own, for example `column: notes` with `transformer: redacted`.
+
+The `custom-wasm` transformer is removed. Columns that used it fall back to the generic masking and log a warning.
+
+`table:` is not enforced: a rule masks its column in every result set, not only in the named
+table. The proxy logs this as a warning at startup.
+
+#### Tenet's own login (`auth`)
+
+With `auth:`, clients sign in to Tenet with Tenet's own users, and Tenet signs in to the
+database with one account of its own. Name one of the deployment's database users as that
+account: the user you deployed with (`-u`, default `guepard`) or the admin (`guepard-admin`).
+The API created both and already holds their passwords, so it gives Tenet the right one; you send
+no password.
+
+```yaml
+auth:
+  users:
+    - name: dev
+      password: "SCRAM-SHA-256$4096:..."   # a verifier, as PostgreSQL stores it
+  upstream:
+    user: guepard                          # a database user of this deployment
+    password_env: TENET_UPSTREAM_PASSWORD
+```
+
+```bash
+guepard deploy ... -u guepard -w '<password>' --masked --proxy-config ./proxy.yaml
+guepard tenet proxy set <job_id> --proxy-config ./proxy.yaml   # an existing masked deployment
+```
+
+The password never goes in `proxy.yaml`: the API refuses an inline `auth.upstream.password`, and an
+`upstream.user` that is not one of the deployment's users, with 400. It keeps the password in the
+proxy's Nomad Variable and hands it to Tenet as `TENET_UPSTREAM_PASSWORD`; it is not in the job
+definition, its history, or `tenet proxy get`.
+
+Only a standalone `guepard tenet deploy`, pointed at an upstream that is not a Guepard deployment,
+needs the password from you: `--upstream-password`, or `GUEPARD_TENET_UPSTREAM_PASSWORD`.
+
+#### When a change takes a while to apply
+
+`tenet deploy`, `tenet start` and `tenet proxy set` wait up to about 20 seconds for the proxy to
+run. If it is still starting, they say so (`⏳ The proxy is still starting...`) instead of
+failing; the change is saved and applies on its own. `guepard deploy -x <id>` shows
+`Masked status: ready` once both Tenet and the database behind it are running.
+
 ---
 
 ## Connecting with `psql`
@@ -134,6 +222,8 @@ psql "host=<client-host> port=<tenet-proxy-port> user=guepard dbname=postgres ss
 | **`tenet start` 404** | Scheduler idempotency / job already running — verify Nomad alloc. |
 | **Hang on `psql` to EIP:tenet-port** | Security group / NACL / no DNAT to host where Tenet listens. Open same path as for Postgres host port. |
 | **Plaintext through Tenet** | Rules don’t match **table/column** names; wrong DB in connection string; or `masking_enabled: false`. |
+| **`… is not permitted on a masked connection while block_writes is on`** | Next Tenet release: writes through the masked port are refused by default. Write directly to Postgres, or set `block_writes: false` with `strict_masking: true` ([allowing writes safely](#allowing-writes-safely)). |
+| **Masked values differ after a Tenet upgrade** | Next Tenet release: `seed_derivation` defaults to `siphash`. Pin `seed_derivation: xxhash64` to keep the old values. |
 
 ---
 

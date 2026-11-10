@@ -20,6 +20,27 @@ impl TenetAuthProvider for DefaultTenetAuthProvider {
     }
 }
 
+/// 202: the API registered the change but answered before the proxy was running again.
+fn is_accepted(status: StatusCode) -> bool {
+    status == StatusCode::OK || status == StatusCode::ACCEPTED
+}
+
+/// The API's own reason from an error body (`{"message": ...}`), else the body as it came.
+/// A Nomad failure carries the reason in `body` under `message: "Nomad error"`.
+fn error_detail(body: &str) -> String {
+    let Ok(json) = serde_json::from_str::<serde_json::Value>(body) else {
+        return body.to_string();
+    };
+    match json.get("message").and_then(|m| m.as_str()) {
+        Some("Nomad error") => match json.get("body").and_then(|b| b.as_str()) {
+            Some(reason) => format!("Nomad: {}", reason),
+            None => body.to_string(),
+        },
+        Some(message) => message.to_string(),
+        None => body.to_string(),
+    }
+}
+
 async fn read_error_body(response: reqwest::Response) -> String {
     response
         .text()
@@ -46,7 +67,7 @@ pub async fn deploy_tenet_with_deps<A: TenetAuthProvider>(
         .map_err(TenetError::RequestFailed)?;
 
     match response.status() {
-        StatusCode::OK => response
+        status if is_accepted(status) => response
             .json::<TenetDeployResponse>()
             .await
             .map_err(|e| TenetError::ParseError(e.to_string())),
@@ -54,7 +75,8 @@ pub async fn deploy_tenet_with_deps<A: TenetAuthProvider>(
             let text = read_error_body(response).await;
             Err(TenetError::Unexpected(format!(
                 "Status {}: {}",
-                status, text
+                status,
+                error_detail(&text)
             )))
         }
     }
@@ -135,7 +157,7 @@ async fn lifecycle_post<A: TenetAuthProvider>(
         .map_err(TenetError::RequestFailed)?;
 
     match response.status() {
-        StatusCode::OK => {
+        status if is_accepted(status) => {
             let text = response
                 .text()
                 .await
@@ -147,6 +169,7 @@ async fn lifecycle_post<A: TenetAuthProvider>(
                 Ok(v) => Ok(v),
                 Err(_) => Ok(TenetLifecycleResponse {
                     message: Some(text),
+                    status: None,
                 }),
             }
         }
@@ -154,7 +177,8 @@ async fn lifecycle_post<A: TenetAuthProvider>(
             let text = read_error_body(response).await;
             Err(TenetError::Unexpected(format!(
                 "Status {}: {}",
-                status, text
+                status,
+                error_detail(&text)
             )))
         }
     }
@@ -185,7 +209,8 @@ pub async fn get_proxy_yaml_with_deps<A: TenetAuthProvider>(
             let text = read_error_body(response).await;
             Err(TenetError::Unexpected(format!(
                 "Status {}: {}",
-                status, text
+                status,
+                error_detail(&text)
             )))
         }
     }
@@ -224,7 +249,7 @@ pub async fn set_proxy_yaml_with_deps<A: TenetAuthProvider>(
         .map_err(TenetError::RequestFailed)?;
 
     match response.status() {
-        StatusCode::OK => {
+        status if is_accepted(status) => {
             let text = response
                 .text()
                 .await
@@ -236,6 +261,7 @@ pub async fn set_proxy_yaml_with_deps<A: TenetAuthProvider>(
                 Ok(v) => Ok(v),
                 Err(_) => Ok(TenetLifecycleResponse {
                     message: Some(text),
+                    status: None,
                 }),
             }
         }
@@ -243,7 +269,8 @@ pub async fn set_proxy_yaml_with_deps<A: TenetAuthProvider>(
             let text = read_error_body(response).await;
             Err(TenetError::Unexpected(format!(
                 "Status {}: {}",
-                status, text
+                status,
+                error_detail(&text)
             )))
         }
     }
@@ -262,6 +289,28 @@ pub async fn set_proxy_yaml(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn errors_print_the_api_reason() {
+        assert_eq!(
+            error_detail(r#"{"message":"auth.upstream.user \"stranger\" has no password"}"#),
+            r#"auth.upstream.user "stranger" has no password"#
+        );
+        assert_eq!(
+            error_detail(r#"{"message":"Nomad error","status":502,"body":"no leader"}"#),
+            "Nomad: no leader"
+        );
+        assert_eq!(error_detail("plain text"), "plain text");
+        assert_eq!(error_detail(r#"{"other":1}"#), r#"{"other":1}"#);
+    }
+
+    #[test]
+    fn a_pending_202_counts_as_success() {
+        assert!(is_accepted(StatusCode::OK));
+        assert!(is_accepted(StatusCode::ACCEPTED));
+        assert!(!is_accepted(StatusCode::BAD_GATEWAY));
+        assert!(!is_accepted(StatusCode::NO_CONTENT));
+    }
 
     #[tokio::test]
     async fn deploy_session_error() {
@@ -288,6 +337,7 @@ mod tests {
             config_yaml: "x: 1".to_string(),
             proxy_port: None,
             api_port: None,
+            upstream_password: None,
         };
         let r = deploy_tenet_with_deps(&body, &config, &auth).await;
         assert!(matches!(r.unwrap_err(), TenetError::SessionError(_)));
@@ -314,6 +364,7 @@ mod tests {
             config_yaml: "x".to_string(),
             proxy_port: None,
             api_port: None,
+            upstream_password: None,
         };
         assert!(deploy_tenet_with_deps(&body, &config, &auth).await.is_err());
         assert!(start_tenet_with_deps("job", &config, &auth).await.is_err());

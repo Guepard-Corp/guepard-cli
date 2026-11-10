@@ -15,6 +15,8 @@ pub struct TenetDeployRequest {
     pub proxy_port: Option<u16>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub api_port: Option<u16>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub upstream_password: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -29,6 +31,9 @@ pub struct TenetDeployResponse {
     pub proxy_port: Option<u16>,
     #[serde(default)]
     pub api_port: Option<u16>,
+    /// "pending" when the API answered before the proxy was running.
+    #[serde(default)]
+    pub status: Option<String>,
 }
 
 #[cfg(test)]
@@ -47,11 +52,47 @@ mod tests {
             config_yaml: "x: 1".to_string(),
             proxy_port: None,
             api_port: None,
+            upstream_password: None,
         };
         let v = serde_json::to_value(&r).unwrap();
         assert!(v.get("proxy_port").is_none());
         assert!(v.get("api_port").is_none());
         assert_eq!(v.get("tenant_id").unwrap(), "t1");
+    }
+
+    #[test]
+    fn upstream_password_is_sent_only_when_set() {
+        let unset = TenetDeployRequest {
+            tenant_id: "t1".to_string(),
+            compute_job_id: None,
+            upstream_host: "h".to_string(),
+            upstream_port: 5432,
+            masking_salt: "s".to_string(),
+            config_dir: None,
+            config_yaml: "x: 1".to_string(),
+            proxy_port: None,
+            api_port: None,
+            upstream_password: None,
+        };
+        assert!(serde_json::to_value(&unset)
+            .unwrap()
+            .get("upstream_password")
+            .is_none());
+        let set = TenetDeployRequest {
+            upstream_password: Some("pw".to_string()),
+            ..unset
+        };
+        assert_eq!(
+            serde_json::to_value(&set).unwrap()["upstream_password"],
+            "pw"
+        );
+    }
+
+    #[test]
+    fn deploy_response_reads_a_pending_status() {
+        let j = r#"{"job_id":"j","eval_id":"e","alloc_id":"","node_id":"","proxy_port":31000,"status":"pending"}"#;
+        let r: TenetDeployResponse = serde_json::from_str(j).unwrap();
+        assert_eq!(r.status.as_deref(), Some("pending"));
     }
 
     #[test]
@@ -66,6 +107,7 @@ mod tests {
             config_yaml: "rules: []".to_string(),
             proxy_port: Some(6544),
             api_port: Some(3010),
+            upstream_password: None,
         };
         let v = serde_json::to_value(&r).unwrap();
         assert_eq!(v.get("proxy_port").and_then(|x| x.as_u64()), Some(6544));
@@ -100,4 +142,7 @@ pub struct TenetProxyYamlSetRequest {
 pub struct TenetLifecycleResponse {
     #[serde(default)]
     pub message: Option<String>,
+    /// "pending" when the API answered before the proxy was running again.
+    #[serde(default)]
+    pub status: Option<String>,
 }
